@@ -14,7 +14,8 @@ import {
   Users,
   FileText,
   Lock,
-  Sliders
+  Sliders,
+  Zap
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import {
@@ -87,6 +88,12 @@ const settingsNavItems = [
     url: "/receipts",
     icon: FileText,
     locked: false,
+  },
+  {
+    title: "Integrations",
+    url: "/integrations",
+    icon: Zap,
+    locked: true,
   },
   {
     title: "Team Collaboration",

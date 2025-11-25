@@ -23,6 +23,7 @@ import { ApiKeysPage } from "@/pages/ApiKeysPage";
 import { TeamCollaborationPage } from "@/pages/TeamCollaborationPage";
 import { ReceiptStoragePage } from "@/pages/ReceiptStoragePage";
 import { AdvancedToolsManagement } from "@/pages/AdvancedToolsManagement";
+import { IntegrationsHub } from "@/pages/IntegrationsHub";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedApp() {
@@ -53,6 +54,7 @@ function AuthenticatedApp() {
               <Route path="/api-keys" component={ApiKeysPage} />
               <Route path="/team" component={TeamCollaborationPage} />
               <Route path="/receipts" component={ReceiptStoragePage} />
+              <Route path="/integrations" component={IntegrationsHub} />
               <Route path="/settings" component={SettingsPage} />
               <Route component={NotFound} />
             </Switch>

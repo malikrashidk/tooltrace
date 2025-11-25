@@ -132,8 +132,6 @@ export function AdvancedToolsManagement() {
     });
   };
 
-  const selectedToolsArray = Array.from(selectedTools);
-  
   const totalCost = tools
     .filter((t) => selectedTools.size === 0 || selectedTools.has(t.id))
     .reduce((sum, t) => sum + (t.billingAmount || 0), 0);
@@ -335,7 +333,7 @@ export function AdvancedToolsManagement() {
                           {editingNotes[tool.id] !== undefined && (
                             <div className="flex gap-1">
                               <Button
-                                size="xs"
+                                size="sm"
                                 variant="ghost"
                                 onClick={() => handleSaveNote(tool.id)}
                                 data-testid={`button-save-notes-${tool.id}`}
@@ -343,7 +341,7 @@ export function AdvancedToolsManagement() {
                                 <Save className="h-3 w-3" />
                               </Button>
                               <Button
-                                size="xs"
+                                size="sm"
                                 variant="ghost"
                                 onClick={() => {
                                   const updated = { ...editingNotes };
