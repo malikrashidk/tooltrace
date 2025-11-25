@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/context/AuthContext";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   Table,
@@ -38,6 +39,9 @@ const mockApiKeys = [
 ];
 
 export function ApiKeysPage() {
+  const { user } = useAuth();
+  const isPaidPlan = user?.plan === "standard" || user?.plan === "premium";
+  
   const [apiKeys, setApiKeys] = useState(mockApiKeys);
   const [visibleKeys, setVisibleKeys] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
@@ -87,6 +91,31 @@ export function ApiKeysPage() {
       description: "API key created successfully",
     });
   };
+
+  if (!isPaidPlan) {
+    return (
+      <div className="space-y-6 p-6">
+        <div>
+          <h1 className="text-3xl font-semibold">API Keys</h1>
+          <p className="text-muted-foreground">Manage API keys to integrate with external applications</p>
+        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="text-center space-y-4 max-w-md">
+              <div className="text-5xl">🔒</div>
+              <h2 className="text-2xl font-semibold">Upgrade to Access API Keys</h2>
+              <p className="text-muted-foreground">
+                API key management is available on Standard and Premium plans. Upgrade to get programmatic access to your SaaS tools.
+              </p>
+              <Button asChild className="mt-4">
+                <a href="/pricing">View Pricing Plans</a>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-6">

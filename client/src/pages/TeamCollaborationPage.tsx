@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/context/AuthContext";
 import {
   Select,
   SelectContent,
@@ -67,6 +68,9 @@ const roleDescriptions = {
 };
 
 export function TeamCollaborationPage() {
+  const { user } = useAuth();
+  const isPaidPlan = user?.plan === "standard" || user?.plan === "premium";
+  
   const [teamMembers, setTeamMembers] = useState(mockTeamMembers);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("member");
@@ -132,6 +136,31 @@ export function TeamCollaborationPage() {
       description: "Role updated",
     });
   };
+
+  if (!isPaidPlan) {
+    return (
+      <div className="space-y-6 p-6">
+        <div>
+          <h1 className="text-3xl font-semibold">Team Collaboration</h1>
+          <p className="text-muted-foreground">Invite team members to collaborate on SaaS management</p>
+        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="text-center space-y-4 max-w-md">
+              <div className="text-5xl">👥</div>
+              <h2 className="text-2xl font-semibold">Unlock Team Collaboration</h2>
+              <p className="text-muted-foreground">
+                Invite team members and collaborate on SaaS management with Standard and Premium plans.
+              </p>
+              <Button asChild className="mt-4">
+                <a href="/pricing">View Pricing Plans</a>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-6">

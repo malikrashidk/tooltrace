@@ -68,33 +68,45 @@ const mainNavItems = [
   },
 ];
 
-const settingsNavItems = [
-  {
-    title: "Pricing",
-    url: "/pricing",
-    icon: CreditCard,
-  },
-  {
-    title: "Team Collaboration",
-    url: "/team",
-    icon: Users,
-  },
-  {
-    title: "API Keys",
-    url: "/api-keys",
-    icon: Code2,
-  },
-  {
-    title: "Receipts & Invoices",
-    url: "/receipts",
-    icon: FileText,
-  },
-  {
-    title: "Settings",
-    url: "/settings",
-    icon: Settings,
-  },
-];
+const getSettingsNavItems = (isPaidPlan: boolean) => {
+  const baseItems = [
+    {
+      title: "Pricing",
+      url: "/pricing",
+      icon: CreditCard,
+    },
+    {
+      title: "Receipts & Invoices",
+      url: "/receipts",
+      icon: FileText,
+    },
+    {
+      title: "Settings",
+      url: "/settings",
+      icon: Settings,
+    },
+  ];
+
+  const paidItems = [
+    {
+      title: "Team Collaboration",
+      url: "/team",
+      icon: Users,
+    },
+    {
+      title: "API Keys",
+      url: "/api-keys",
+      icon: Code2,
+    },
+  ];
+
+  // Insert paid items after Pricing but before Settings
+  if (isPaidPlan) {
+    baseItems.splice(2, 0, ...paidItems);
+  }
+
+  return baseItems;
+};
 
 const adminNavItems = [
   {
@@ -107,6 +119,7 @@ const adminNavItems = [
 export function AppSidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const isPaidPlan = user?.plan === "standard" || user?.plan === "premium";
   const { state } = useSidebar();
 
   const getInitials = (name: string) => {
@@ -161,7 +174,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Account</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {settingsNavItems.map((item) => (
+              {getSettingsNavItems(isPaidPlan).map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
