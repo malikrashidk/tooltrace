@@ -120,15 +120,16 @@ export function AdvancedToolsManagement() {
 
   const handleBulkCategoryEdit = (category: string) => {
     if (selectedTools.size === 0) return;
+    const selectedSize = selectedTools.size;
     const updated = tools.map((t) =>
       selectedTools.has(t.id)
-        ? { ...t, categories: [...new Set([...t.categories, category])] }
+        ? { ...t, categories: [...Array.from(new Set([...t.categories, category]))] }
         : t
     );
     setTools(updated);
     setSelectedTools(new Set());
     toast({
-      description: `Added category to ${selectedTools.size} tool(s)`,
+      description: `Added category to ${selectedSize} tool(s)`,
     });
   };
 

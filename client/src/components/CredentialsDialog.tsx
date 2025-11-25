@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Eye, EyeOff, Copy, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Eye, EyeOff, Copy, Check, Lock, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { encryptCredential, decryptCredential, generateSecurePassword } from "@/lib/encryption";
+import { validatePasswordStrength, sanitizeInput, auditLogger } from "@/lib/security";
 import type { Tool } from "@/lib/mockData";
 
 interface CredentialsDialogProps {
@@ -27,6 +29,11 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
   const [showPassword, setShowPassword] = useState(false);
   const [showForm, setShowForm] = useState(!tool.credentials?.username);
   const [copied, setCopied] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState<{ isStrong: boolean; errors: string[] }>({
+    isStrong: false,
+    errors: [],
+  });
   const [formData, setFormData] = useState({
     username: tool.credentials?.username || "",
     email: tool.credentials?.email || "",
@@ -34,32 +41,85 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
     notes: tool.credentials?.notes || "",
   });
 
-  const handleCopy = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(label);
-    toast({ description: `${label} copied to clipboard` });
-    setTimeout(() => setCopied(null), 2000);
+  // Validate password strength on change
+  useEffect(() => {
+    if (formData.password) {
+      const strength = validatePasswordStrength(formData.password);
+      setPasswordStrength(strength);
+    }
+  }, [formData.password]);
+
+  const handleGeneratePassword = () => {
+    const newPassword = generateSecurePassword();
+    setFormData({ ...formData, password: newPassword });
+    toast({ description: "Secure password generated" });
   };
 
-  const handleSave = () => {
+  const handleCopy = (text: string, label: string) => {
+    if (!text) return;
+    
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(label);
+      auditLogger.log("credential_copied", undefined, tool.id, label);
+      toast({ description: `${label} copied to clipboard` });
+      
+      // Clear clipboard after 2 minutes for security
+      setTimeout(() => {
+        navigator.clipboard.writeText("");
+        setCopied(null);
+      }, 120000);
+    });
+  };
+
+  const handleSave = async () => {
     if (!formData.username && !formData.email) {
       toast({ description: "Please enter at least a username or email", variant: "destructive" });
       return;
     }
 
-    const updatedTool: Tool = {
-      ...tool,
-      credentials: {
-        username: formData.username,
-        email: formData.email,
-        password: formData.password,
-        notes: formData.notes,
-        lastUpdated: new Date().toISOString(),
-      },
-    };
+    if (formData.password && !passwordStrength.isStrong) {
+      toast({
+        description: "Password is weak. " + passwordStrength.errors[0],
+        variant: "destructive",
+      });
+      return;
+    }
 
-    onSave?.(updatedTool);
-    setShowForm(false);
+    setIsLoading(true);
+    try {
+      // Sanitize inputs
+      const sanitizedUsername = sanitizeInput(formData.username);
+      const sanitizedEmail = sanitizeInput(formData.email);
+      const sanitizedNotes = sanitizeInput(formData.notes);
+
+      // Encrypt password before storing
+      const encryptedPassword = formData.password
+        ? await encryptCredential(formData.password)
+        : "";
+
+      const updatedTool: Tool = {
+        ...tool,
+        credentials: {
+          username: sanitizedUsername,
+          email: sanitizedEmail,
+          password: encryptedPassword,
+          notes: sanitizedNotes,
+          lastUpdated: new Date().toISOString(),
+        },
+      };
+
+      auditLogger.log("credentials_saved", undefined, tool.id);
+      onSave?.(updatedTool);
+      setShowForm(false);
+    } catch (error) {
+      toast({
+        description: "Failed to save credentials. Please try again.",
+        variant: "destructive",
+      });
+      console.error("Save error:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDelete = () => {
@@ -67,8 +127,9 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
       ...tool,
       credentials: undefined,
     };
+    auditLogger.log("credentials_deleted", undefined, tool.id);
     onSave?.(updatedTool);
-    toast({ description: "Login info deleted" });
+    toast({ description: "Login info deleted securely" });
   };
 
   return (
@@ -91,7 +152,7 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
                 )}
               </CardHeader>
               <CardContent className="space-y-3">
-                {tool.credentials && tool.credentials.username && (
+                {tool.credentials?.username && (
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Username</Label>
                     <div className="flex gap-2">
@@ -105,7 +166,7 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleCopy(tool.credentials.username!, "Username")}
+                        onClick={() => handleCopy(tool.credentials?.username || "", "Username")}
                         data-testid={`button-copy-username-${tool.id}`}
                       >
                         {copied === "Username" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -114,7 +175,7 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
                   </div>
                 )}
 
-                {tool.credentials && tool.credentials.email && (
+                {tool.credentials?.email && (
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Email</Label>
                     <div className="flex gap-2">
@@ -128,7 +189,7 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleCopy(tool.credentials.email!, "Email")}
+                        onClick={() => handleCopy(tool.credentials?.email || "", "Email")}
                         data-testid={`button-copy-email-${tool.id}`}
                       >
                         {copied === "Email" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -137,7 +198,7 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
                   </div>
                 )}
 
-                {tool.credentials && tool.credentials.password && (
+                {tool.credentials?.password && (
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Password</Label>
                     <div className="flex gap-2">
@@ -159,7 +220,7 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleCopy(tool.credentials.password!, "Password")}
+                        onClick={() => handleCopy(tool.credentials?.password || "", "Password")}
                         data-testid={`button-copy-password-${tool.id}`}
                       >
                         {copied === "Password" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -168,7 +229,7 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
                   </div>
                 )}
 
-                {tool.credentials && tool.credentials.notes && (
+                {tool.credentials?.notes && (
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Notes</Label>
                     <p className="text-xs text-muted-foreground bg-background rounded-md p-2">
@@ -229,9 +290,22 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="password" className="text-sm">
-                  Password
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password" className="text-sm">
+                    Password
+                  </Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleGeneratePassword}
+                    data-testid={`button-generate-password-${tool.id}`}
+                    className="h-auto p-1 text-xs"
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Generate
+                  </Button>
+                </div>
                 <div className="flex gap-2">
                   <Input
                     id="password"
@@ -250,6 +324,26 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
+                {formData.password && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <Lock className="h-3 w-3 text-muted-foreground" />
+                      <span className={`text-xs font-medium ${passwordStrength.isStrong ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"}`}>
+                        {passwordStrength.isStrong ? "Strong password" : "Weak password"}
+                      </span>
+                    </div>
+                    {passwordStrength.errors.length > 0 && (
+                      <ul className="space-y-0.5">
+                        {passwordStrength.errors.map((error) => (
+                          <li key={error} className="text-xs text-amber-600 dark:text-amber-400 flex items-start gap-1">
+                            <AlertCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                            {error}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1">

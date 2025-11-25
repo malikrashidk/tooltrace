@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { ExternalLink, MoreVertical, Pencil, Trash2, Clock, Calendar, Key, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,8 +11,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { CredentialsDialog } from "@/components/CredentialsDialog";
 import type { Tool } from "@/lib/mockData";
+
+// Lazy load CredentialsDialog to avoid circular dependency
+const CredentialsDialog = lazy(() =>
+  import("@/components/CredentialsDialog").then(mod => ({ default: mod.CredentialsDialog }))
+);
 
 interface ToolCardProps {
   tool: Tool;
@@ -164,16 +168,18 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
           )}
         </div>
 
-        <CredentialsDialog
-          tool={tool}
-          open={showCredentials}
-          onOpenChange={setShowCredentials}
-          onSave={(updatedTool: Tool) => {
-            onCredentialsUpdate?.(updatedTool);
-            setShowCredentials(false);
-            toast({ description: "Login info saved securely" });
-          }}
-        />
+        <Suspense fallback={null}>
+          <CredentialsDialog
+            tool={tool}
+            open={showCredentials}
+            onOpenChange={setShowCredentials}
+            onSave={(updatedTool: Tool) => {
+              onCredentialsUpdate?.(updatedTool);
+              setShowCredentials(false);
+              toast({ description: "Login info saved securely" });
+            }}
+          />
+        </Suspense>
       </CardContent>
     </Card>
   );
