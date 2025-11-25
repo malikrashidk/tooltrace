@@ -1,10 +1,12 @@
 import { useState, useMemo } from "react";
-import { Plus, Download, Upload, Copy, Edit2, Trash2, ChevronRight, Calendar, DollarSign, Zap, Filter } from "lucide-react";
+import { Plus, Download, Upload, Copy, Edit2, Trash2, ChevronRight, Calendar, DollarSign, Zap, Filter, X, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 import { mockTools, type Tool } from "@/lib/mockData";
 import {
   Table,
@@ -26,10 +28,38 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
 export function AdvancedToolsManagement() {
+  const { user } = useAuth();
+  const isPaidPlan = user?.plan === "standard" || user?.plan === "premium";
   const { toast } = useToast();
   const [tools, setTools] = useState<Tool[]>(mockTools);
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
   const [expandedTool, setExpandedTool] = useState<string | null>(null);
+  const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
+
+  if (!isPaidPlan) {
+    return (
+      <div className="space-y-6 p-6">
+        <div>
+          <h1 className="text-3xl font-semibold">Advanced Tools Management</h1>
+          <p className="text-muted-foreground">Bulk operations, detailed management, and tool intelligence</p>
+        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="text-center space-y-4 max-w-md">
+              <div className="text-5xl">⚙️</div>
+              <h2 className="text-2xl font-semibold">Upgrade for Advanced Management</h2>
+              <p className="text-muted-foreground">
+                Advanced tools management with bulk operations and inline editing is available on Standard and Premium plans.
+              </p>
+              <Button asChild className="mt-4">
+                <a href="/pricing">View Pricing Plans</a>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleSelectTool = (toolId: string) => {
     const newSelected = new Set(selectedTools);
@@ -102,9 +132,35 @@ export function AdvancedToolsManagement() {
     });
   };
 
+  const selectedToolsArray = Array.from(selectedTools);
+  
   const totalCost = tools
     .filter((t) => selectedTools.size === 0 || selectedTools.has(t.id))
     .reduce((sum, t) => sum + (t.billingAmount || 0), 0);
+
+  const handleEditNote = (toolId: string, notes: string) => {
+    setEditingNotes((prev) => ({
+      ...prev,
+      [toolId]: notes,
+    }));
+  };
+
+  const handleSaveNote = (toolId: string) => {
+    const newNotes = editingNotes[toolId];
+    setTools(
+      tools.map((t) =>
+        t.id === toolId ? { ...t, notes: newNotes } : t
+      )
+    );
+    setEditingNotes((prev) => {
+      const updated = { ...prev };
+      delete updated[toolId];
+      return updated;
+    });
+    toast({
+      description: "Notes updated",
+    });
+  };
 
   return (
     <div className="space-y-6 p-6">
@@ -273,12 +329,55 @@ export function AdvancedToolsManagement() {
                         )}
                       </div>
 
-                      {tool.notes && (
-                        <div>
-                          <p className="text-xs font-medium text-muted-foreground mb-1">Notes</p>
-                          <p className="text-sm">{tool.notes}</p>
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs font-medium text-muted-foreground">Notes</p>
+                          {editingNotes[tool.id] !== undefined && (
+                            <div className="flex gap-1">
+                              <Button
+                                size="xs"
+                                variant="ghost"
+                                onClick={() => handleSaveNote(tool.id)}
+                                data-testid={`button-save-notes-${tool.id}`}
+                              >
+                                <Save className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="xs"
+                                variant="ghost"
+                                onClick={() => {
+                                  const updated = { ...editingNotes };
+                                  delete updated[tool.id];
+                                  setEditingNotes(updated);
+                                }}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
                         </div>
-                      )}
+                        {editingNotes[tool.id] !== undefined ? (
+                          <Textarea
+                            value={editingNotes[tool.id]}
+                            onChange={(e) => handleEditNote(tool.id, e.target.value)}
+                            placeholder="Add notes for this tool..."
+                            className="text-sm h-20"
+                            data-testid={`textarea-notes-${tool.id}`}
+                          />
+                        ) : (
+                          <div
+                            onClick={() => handleEditNote(tool.id, tool.notes || "")}
+                            className="text-sm p-2 rounded border border-dashed cursor-pointer hover:bg-background/50 transition"
+                            data-testid={`notes-edit-${tool.id}`}
+                          >
+                            {tool.notes ? (
+                              <p>{tool.notes}</p>
+                            ) : (
+                              <p className="text-muted-foreground italic">Click to add notes...</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
 
                       {tool.tags.length > 0 && (
                         <div>
@@ -294,16 +393,12 @@ export function AdvancedToolsManagement() {
                       )}
 
                       <div className="flex gap-2 pt-2">
-                        <Button size="sm" variant="outline">
-                          <Edit2 className="h-3 w-3 mr-1" />
-                          Edit
-                        </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => window.open(tool.websiteUrl, "_blank")}
                         >
-                          Open
+                          Open Website
                         </Button>
                       </div>
                     </div>
