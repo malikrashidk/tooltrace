@@ -1,37 +1,196 @@
-import { type User, type InsertUser } from "@shared/schema";
+import type {
+  User,
+  InsertUser,
+  Tool,
+  InsertTool,
+  Subscription,
+  InsertSubscription,
+  Payment,
+  InsertPayment,
+  Receipt,
+  InsertReceipt,
+  ApiKey,
+  InsertApiKey,
+  AuditLog,
+} from "@shared/schema";
 import { randomUUID } from "crypto";
 
-// modify the interface with any CRUD methods
-// you might need
-
 export interface IStorage {
+  // User operations
   getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
+
+  // Tool operations
+  getTool(id: string): Promise<Tool | undefined>;
+  getUserTools(userId: string): Promise<Tool[]>;
+  createTool(tool: InsertTool): Promise<Tool>;
+  updateTool(id: string, updates: Partial<Tool>): Promise<Tool | undefined>;
+  deleteTool(id: string): Promise<boolean>;
+  getUserToolsCount(userId: string): Promise<number>;
+
+  // Subscription operations
+  getUserSubscription(userId: string): Promise<Subscription | undefined>;
+  createSubscription(sub: InsertSubscription): Promise<Subscription>;
+  updateSubscription(id: string, updates: Partial<Subscription>): Promise<Subscription | undefined>;
+
+  // Payment operations
+  createPayment(payment: InsertPayment): Promise<Payment>;
+  getPayment(id: string): Promise<Payment | undefined>;
+  getUserPayments(userId: string): Promise<Payment[]>;
+
+  // Receipt operations
+  createReceipt(receipt: InsertReceipt): Promise<Receipt>;
+  getUserReceipts(userId: string): Promise<Receipt[]>;
+  deleteReceipt(id: string): Promise<boolean>;
+
+  // API Key operations
+  createApiKey(apiKey: InsertApiKey): Promise<ApiKey>;
+  getUserApiKeys(userId: string): Promise<ApiKey[]>;
+  getApiKeyByKey(key: string): Promise<ApiKey | undefined>;
+  deleteApiKey(id: string): Promise<boolean>;
+
+  // Audit Log operations
+  createAuditLog(log: Omit<AuditLog, "id" | "createdAt">): Promise<AuditLog>;
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
-  }
+  private users: Map<string, User & { email: string; password: string }> = new Map();
+  private tools: Map<string, Tool> = new Map();
+  private subscriptions: Map<string, Subscription> = new Map();
+  private payments: Map<string, Payment> = new Map();
+  private receipts: Map<string, Receipt> = new Map();
+  private apiKeys: Map<string, ApiKey> = new Map();
+  private auditLogs: AuditLog[] = [];
 
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find((u) => u.email === email);
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createUser(user: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+    const fullUser = { ...user, id, isAdmin: false, plan: "free", createdAt: new Date(), updatedAt: new Date() } as any;
+    this.users.set(id, fullUser);
+    return fullUser;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updated = { ...user, ...updates, updatedAt: new Date() };
+    this.users.set(id, updated);
+    return updated;
+  }
+
+  async getTool(id: string): Promise<Tool | undefined> {
+    return this.tools.get(id);
+  }
+
+  async getUserTools(userId: string): Promise<Tool[]> {
+    return Array.from(this.tools.values()).filter((t) => t.userId === userId);
+  }
+
+  async createTool(tool: InsertTool): Promise<Tool> {
+    const id = randomUUID();
+    const fullTool = { ...tool, id, createdAt: new Date(), updatedAt: new Date() } as Tool;
+    this.tools.set(id, fullTool);
+    return fullTool;
+  }
+
+  async updateTool(id: string, updates: Partial<Tool>): Promise<Tool | undefined> {
+    const tool = this.tools.get(id);
+    if (!tool) return undefined;
+    const updated = { ...tool, ...updates, updatedAt: new Date() };
+    this.tools.set(id, updated);
+    return updated;
+  }
+
+  async deleteTool(id: string): Promise<boolean> {
+    return this.tools.delete(id);
+  }
+
+  async getUserToolsCount(userId: string): Promise<number> {
+    return Array.from(this.tools.values()).filter((t) => t.userId === userId).length;
+  }
+
+  async getUserSubscription(userId: string): Promise<Subscription | undefined> {
+    return Array.from(this.subscriptions.values()).find((s) => s.userId === userId);
+  }
+
+  async createSubscription(sub: InsertSubscription): Promise<Subscription> {
+    const id = randomUUID();
+    const fullSub = { ...sub, id, createdAt: new Date(), updatedAt: new Date() } as Subscription;
+    this.subscriptions.set(id, fullSub);
+    return fullSub;
+  }
+
+  async updateSubscription(id: string, updates: Partial<Subscription>): Promise<Subscription | undefined> {
+    const sub = this.subscriptions.get(id);
+    if (!sub) return undefined;
+    const updated = { ...sub, ...updates, updatedAt: new Date() };
+    this.subscriptions.set(id, updated);
+    return updated;
+  }
+
+  async createPayment(payment: InsertPayment): Promise<Payment> {
+    const id = randomUUID();
+    const fullPayment = { ...payment, id, createdAt: new Date(), updatedAt: new Date() } as Payment;
+    this.payments.set(id, fullPayment);
+    return fullPayment;
+  }
+
+  async getPayment(id: string): Promise<Payment | undefined> {
+    return this.payments.get(id);
+  }
+
+  async getUserPayments(userId: string): Promise<Payment[]> {
+    return Array.from(this.payments.values()).filter((p) => p.userId === userId);
+  }
+
+  async createReceipt(receipt: InsertReceipt): Promise<Receipt> {
+    const id = randomUUID();
+    const fullReceipt = { ...receipt, id, createdAt: new Date() } as Receipt;
+    this.receipts.set(id, fullReceipt);
+    return fullReceipt;
+  }
+
+  async getUserReceipts(userId: string): Promise<Receipt[]> {
+    return Array.from(this.receipts.values()).filter((r) => r.userId === userId);
+  }
+
+  async deleteReceipt(id: string): Promise<boolean> {
+    return this.receipts.delete(id);
+  }
+
+  async createApiKey(apiKey: InsertApiKey): Promise<ApiKey> {
+    const id = randomUUID();
+    const fullKey = { ...apiKey, id, createdAt: new Date() } as ApiKey;
+    this.apiKeys.set(id, fullKey);
+    return fullKey;
+  }
+
+  async getUserApiKeys(userId: string): Promise<ApiKey[]> {
+    return Array.from(this.apiKeys.values()).filter((k) => k.userId === userId);
+  }
+
+  async getApiKeyByKey(key: string): Promise<ApiKey | undefined> {
+    return Array.from(this.apiKeys.values()).find((k) => k.key === key);
+  }
+
+  async deleteApiKey(id: string): Promise<boolean> {
+    return this.apiKeys.delete(id);
+  }
+
+  async createAuditLog(log: Omit<AuditLog, "id" | "createdAt">): Promise<AuditLog> {
+    const id = randomUUID();
+    const fullLog = { ...log, id, createdAt: new Date() } as AuditLog;
+    this.auditLogs.push(fullLog);
+    return fullLog;
   }
 }
 
