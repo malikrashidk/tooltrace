@@ -13,7 +13,8 @@ import {
   Code2,
   Users,
   FileText,
-  Lock
+  Lock,
+  Sliders
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import {
@@ -51,6 +52,11 @@ const mainNavItems = [
     title: "All Tools",
     url: "/tools",
     icon: Package,
+  },
+  {
+    title: "Advanced Management",
+    url: "/tools-advanced",
+    icon: Sliders,
   },
   {
     title: "Analytics",

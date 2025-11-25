@@ -22,6 +22,7 @@ import { AdminDashboard } from "@/pages/AdminDashboard";
 import { ApiKeysPage } from "@/pages/ApiKeysPage";
 import { TeamCollaborationPage } from "@/pages/TeamCollaborationPage";
 import { ReceiptStoragePage } from "@/pages/ReceiptStoragePage";
+import { AdvancedToolsManagement } from "@/pages/AdvancedToolsManagement";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedApp() {
@@ -43,6 +44,7 @@ function AuthenticatedApp() {
             <Switch>
               <Route path="/" component={Dashboard} />
               <Route path="/tools" component={ToolsPage} />
+              <Route path="/tools-advanced" component={AdvancedToolsManagement} />
               <Route path="/analytics" component={AnalyticsPage} />
               <Route path="/renewals" component={RenewalsPage} />
               <Route path="/low-usage" component={LowUsagePage} />
