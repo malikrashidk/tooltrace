@@ -32,7 +32,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createSubscription({
         userId: user.id,
         plan: "free",
-        toolsLimit: 5,
+        toolsLimit: "5",
       });
 
       await auditLog(user.id, "create", "user", user.id, {}, req);
