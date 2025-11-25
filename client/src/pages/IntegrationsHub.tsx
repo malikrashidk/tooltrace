@@ -16,24 +16,24 @@ export function IntegrationsHub() {
 
   if (!isPremium) {
     return (
-      <div className="space-y-6 p-6">
-        <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-8">
-          <h1 className="text-3xl font-bold">Integrations Hub</h1>
-          <p className="text-muted-foreground mt-1">Connect SaaS Hub to your favorite tools</p>
+      <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
+        <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 sm:p-6 md:p-8">
+          <h1 className="text-2xl sm:text-3xl font-bold">Integrations Hub</h1>
+          <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-1">Connect SaaS Hub to your favorite tools</p>
         </div>
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-20">
-            <div className="text-center space-y-5 max-w-md">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                <Zap className="h-8 w-8 text-primary" />
+          <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16 md:py-20 px-4">
+            <div className="text-center space-y-4 sm:space-y-5 max-w-md">
+              <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                <Zap className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold mb-2">Premium Feature</h2>
-                <p className="text-muted-foreground">
+                <h2 className="text-xl sm:text-2xl font-bold mb-2">Premium Feature</h2>
+                <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
                   Integrations Hub with Slack, Zapier, Make, and webhooks is exclusively available on Premium plan.
                 </p>
               </div>
-              <Button asChild size="lg" className="mt-4">
+              <Button asChild size="lg" className="mt-4 w-full sm:w-auto">
                 <a href="/pricing">Upgrade to Premium</a>
               </Button>
             </div>
@@ -127,16 +127,16 @@ export function IntegrationsHub() {
   ];
 
   return (
-    <div className="space-y-8 p-6">
-      <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-8">
-        <h1 className="text-3xl font-bold">Integrations Hub</h1>
-        <p className="text-muted-foreground mt-1">Connect SaaS Hub to your favorite tools and automate your workflow</p>
+    <div className="space-y-6 md:space-y-8 p-3 sm:p-4 md:p-6">
+      <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 sm:p-6 md:p-8">
+        <h1 className="text-2xl sm:text-3xl font-bold">Integrations Hub</h1>
+        <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-1">Connect SaaS Hub to your favorite tools and automate your workflow</p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         <div>
-          <h2 className="text-2xl font-semibold mb-4">Live Integrations</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-4">Live Integrations</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {integrations.map((integration) => {
               const Icon = integration.icon;
               return (
@@ -159,11 +159,11 @@ export function IntegrationsHub() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <p className="text-sm font-medium mb-2">Features</p>
+                      <p className="text-xs sm:text-sm font-medium mb-2">Features</p>
                       <ul className="space-y-1">
                         {integration.features.map((feature) => (
-                          <li key={feature} className="text-sm text-muted-foreground flex items-center gap-2">
-                            <span className="h-1 w-1 rounded-full bg-primary" />
+                          <li key={feature} className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
+                            <span className="h-1 w-1 rounded-full bg-primary flex-shrink-0" />
                             {feature}
                           </li>
                         ))}
@@ -171,12 +171,12 @@ export function IntegrationsHub() {
                     </div>
                     <div>
                       <p className="text-xs font-medium text-muted-foreground mb-2">Webhook URL</p>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-col sm:flex-row">
                         <input
                           type="text"
                           readOnly
                           value={integration.webhook}
-                          className="flex-1 text-xs px-2 py-1 rounded border bg-muted font-mono"
+                          className="flex-1 text-xs px-2 py-1 rounded border bg-muted font-mono break-all"
                           data-testid={`input-webhook-${integration.id}`}
                         />
                         <Button
@@ -184,6 +184,7 @@ export function IntegrationsHub() {
                           variant="outline"
                           onClick={() => copyToClipboard(integration.webhook, integration.id)}
                           data-testid={`button-copy-webhook-${integration.id}`}
+                          className="flex-shrink-0"
                         >
                           {copiedId === integration.id ? (
                             <Check className="h-4 w-4" />
@@ -205,8 +206,8 @@ export function IntegrationsHub() {
         </div>
 
         <div>
-          <h2 className="text-2xl font-semibold mb-4">Browser Extensions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-4">Browser Extensions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {extensions.map((ext) => (
               <Card key={ext.name}>
                 <CardHeader>

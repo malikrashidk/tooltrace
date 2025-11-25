@@ -171,14 +171,14 @@ export function Dashboard() {
   };
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-8 mb-2">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
+      <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 sm:p-6 md:p-8">
+        <div className="flex flex-col gap-4">
           <div>
-            <h1 className="text-3xl font-bold" data-testid="text-dashboard-title">Dashboard</h1>
-            <p className="text-muted-foreground mt-1">Manage and track your SaaS subscriptions</p>
+            <h1 className="text-2xl sm:text-3xl font-bold" data-testid="text-dashboard-title">Dashboard</h1>
+            <p className="text-sm sm:text-base text-muted-foreground mt-1">Manage and track your SaaS subscriptions</p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 w-full">
             <CSVImportExport tools={tools} onImport={handleImport} />
             <AddToolDialog categories={mockCategories} onSave={handleAddTool} />
           </div>
@@ -194,8 +194,8 @@ export function Dashboard() {
         lowUsageCount={lowUsageTools.length}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="lg:col-span-2 space-y-4 md:space-y-6">
           <SearchFilter
             categories={mockCategories.map((c) => c.name)}
             onSearch={setSearchQuery}
@@ -212,12 +212,12 @@ export function Dashboard() {
             </div>
 
             {filteredTools.length === 0 ? (
-              <div className="text-center py-16 bg-gradient-to-br from-muted/40 to-muted/20 rounded-lg border-2 border-dashed border-muted/50">
-                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-                  <Package className="h-8 w-8 text-primary" />
+              <div className="text-center py-8 sm:py-12 md:py-16 bg-gradient-to-br from-muted/40 to-muted/20 rounded-lg border-2 border-dashed border-muted/50 px-4">
+                <div className="mx-auto w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 sm:mb-6">
+                  <Package className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-primary" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">No tools found</h3>
-                <p className="text-muted-foreground mb-6 max-w-xs mx-auto">
+                <h3 className="text-base sm:text-lg font-semibold mb-2">No tools found</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6 max-w-xs mx-auto">
                   {searchQuery || filters.categories.length > 0
                     ? "Try adjusting your search or filters"
                     : "Get started by adding your first SaaS tool to begin tracking"}
@@ -250,7 +250,7 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           <RenewalsWidget
             renewals={upcomingRenewals}
             title="Upcoming Renewals (30 days)"
