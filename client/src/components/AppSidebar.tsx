@@ -1,0 +1,213 @@
+import { 
+  LayoutDashboard, 
+  Package, 
+  BarChart3, 
+  Settings, 
+  LogOut, 
+  ChevronLeft,
+  Calendar,
+  AlertTriangle,
+  Layers
+} from "lucide-react";
+import { useLocation, Link } from "wouter";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarTrigger,
+  useSidebar,
+} from "@/components/ui/sidebar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/context/AuthContext";
+
+const mainNavItems = [
+  {
+    title: "Dashboard",
+    url: "/",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "All Tools",
+    url: "/tools",
+    icon: Package,
+  },
+  {
+    title: "Analytics",
+    url: "/analytics",
+    icon: BarChart3,
+  },
+  {
+    title: "Renewals",
+    url: "/renewals",
+    icon: Calendar,
+  },
+  {
+    title: "Low Usage",
+    url: "/low-usage",
+    icon: AlertTriangle,
+  },
+];
+
+const settingsNavItems = [
+  {
+    title: "Settings",
+    url: "/settings",
+    icon: Settings,
+  },
+];
+
+export function AppSidebar() {
+  const [location] = useLocation();
+  const { user, logout } = useAuth();
+  const { state } = useSidebar();
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  return (
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="border-b border-sidebar-border">
+        <div className="flex items-center gap-3 px-2 py-2">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+            <Layers className="w-5 h-5 text-primary-foreground" />
+          </div>
+          {state === "expanded" && (
+            <div className="flex flex-col min-w-0">
+              <span className="font-semibold text-sm truncate">SaaS Tools Hub</span>
+              <span className="text-xs text-muted-foreground truncate">for Freelancers</span>
+            </div>
+          )}
+        </div>
+      </SidebarHeader>
+
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {mainNavItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === item.url}
+                    tooltip={item.title}
+                  >
+                    <Link href={item.url} data-testid={`nav-${item.title.toLowerCase().replace(" ", "-")}`}>
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Settings</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {settingsNavItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === item.url}
+                    tooltip={item.title}
+                  >
+                    <Link href={item.url} data-testid={`nav-${item.title.toLowerCase()}`}>
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter className="border-t border-sidebar-border">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton
+                  size="lg"
+                  className="data-[state=open]:bg-sidebar-accent"
+                  data-testid="button-user-menu"
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={undefined} alt={user?.name} />
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                      {user?.name ? getInitials(user.name) : "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  {state === "expanded" && (
+                    <div className="flex flex-col items-start min-w-0 flex-1">
+                      <span className="text-sm font-medium truncate w-full">
+                        {user?.name || "User"}
+                      </span>
+                      <span className="text-xs text-muted-foreground truncate w-full">
+                        {user?.email || "user@example.com"}
+                      </span>
+                    </div>
+                  )}
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                side="top"
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56"
+                align="start"
+              >
+                <DropdownMenuItem asChild>
+                  <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
+                    <Settings className="h-4 w-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={logout}
+                  className="text-destructive cursor-pointer"
+                  data-testid="button-logout"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+    </Sidebar>
+  );
+}
+
+export function AppHeader() {
+  return (
+    <header className="h-14 border-b border-border flex items-center px-4 gap-4 bg-background sticky top-0 z-40">
+      <SidebarTrigger data-testid="button-sidebar-toggle" />
+    </header>
+  );
+}
