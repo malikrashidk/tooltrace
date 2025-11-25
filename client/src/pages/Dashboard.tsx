@@ -172,14 +172,16 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold" data-testid="text-dashboard-title">Dashboard</h1>
-          <p className="text-muted-foreground">Manage and track your SaaS subscriptions</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <CSVImportExport tools={tools} onImport={handleImport} />
-          <AddToolDialog categories={mockCategories} onSave={handleAddTool} />
+      <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-8 mb-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold" data-testid="text-dashboard-title">Dashboard</h1>
+            <p className="text-muted-foreground mt-1">Manage and track your SaaS subscriptions</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <CSVImportExport tools={tools} onImport={handleImport} />
+            <AddToolDialog categories={mockCategories} onSave={handleAddTool} />
+          </div>
         </div>
       </div>
 
@@ -210,22 +212,22 @@ export function Dashboard() {
             </div>
 
             {filteredTools.length === 0 ? (
-              <div className="text-center py-12 bg-muted/30 rounded-lg border border-dashed">
-                <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
-                  <Plus className="h-6 w-6 text-muted-foreground" />
+              <div className="text-center py-16 bg-gradient-to-br from-muted/40 to-muted/20 rounded-lg border-2 border-dashed border-muted/50">
+                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+                  <Package className="h-8 w-8 text-primary" />
                 </div>
-                <h3 className="font-medium mb-1">No tools found</h3>
-                <p className="text-sm text-muted-foreground mb-4">
+                <h3 className="text-lg font-semibold mb-2">No tools found</h3>
+                <p className="text-muted-foreground mb-6 max-w-xs mx-auto">
                   {searchQuery || filters.categories.length > 0
                     ? "Try adjusting your search or filters"
-                    : "Get started by adding your first SaaS tool"}
+                    : "Get started by adding your first SaaS tool to begin tracking"}
                 </p>
                 {!searchQuery && filters.categories.length === 0 && (
                   <AddToolDialog
                     categories={mockCategories}
                     onSave={handleAddTool}
                     trigger={
-                      <Button>
+                      <Button size="lg">
                         <Plus className="h-4 w-4 mr-2" />
                         Add Your First Tool
                       </Button>

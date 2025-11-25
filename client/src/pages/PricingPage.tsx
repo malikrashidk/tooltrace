@@ -93,10 +93,10 @@ export function PricingPage() {
 
   return (
     <div className="space-y-8 p-6">
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-semibold">Simple, Transparent Pricing</h1>
+      <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-8 text-center">
+        <h1 className="text-4xl font-bold mb-2">Simple, Transparent Pricing</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Choose the perfect plan for managing your SaaS subscriptions. Upgrade anytime.
+          Choose the perfect plan for managing your SaaS subscriptions. Upgrade anytime, no hidden fees.
         </p>
       </div>
 
@@ -104,30 +104,32 @@ export function PricingPage() {
         {plans.map((plan) => (
           <Card
             key={plan.id}
-            className={`relative flex flex-col ${
-              plan.popular ? "md:scale-105 ring-2 ring-primary" : ""
+            className={`relative flex flex-col transition-all duration-300 ${
+              plan.popular ? "md:scale-105 ring-2 ring-primary shadow-lg" : ""
             }`}
             data-testid={`pricing-card-${plan.id}`}
           >
             {plan.popular && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
+                <Badge className="bg-primary text-primary-foreground animate-pulse">Most Popular</Badge>
               </div>
             )}
-            <CardHeader className="space-y-2">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                {plan.id === "standard" && <Zap className="h-5 w-5 text-amber-500" />}
-                {plan.id === "premium" && <Crown className="h-5 w-5 text-purple-500" />}
-              </div>
-              <CardDescription>{plan.description}</CardDescription>
-              <div className="space-y-1">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold">${plan.price}</span>
-                  <span className="text-muted-foreground">/month</span>
+            <CardHeader className={`space-y-3 pb-4 ${plan.popular ? "bg-primary/5" : ""}`}>
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                  <CardDescription className="mt-1">{plan.description}</CardDescription>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Up to {plan.tools} {typeof plan.tools === "number" ? "tools" : "tools"}
+                {plan.id === "standard" && <Zap className="h-5 w-5 text-amber-500 flex-shrink-0" />}
+                {plan.id === "premium" && <Crown className="h-5 w-5 text-purple-500 flex-shrink-0" />}
+              </div>
+              <div className="pt-2 border-t border-border/50">
+                <div className="flex items-baseline gap-1 mb-1">
+                  <span className="text-4xl font-bold">${plan.price}</span>
+                  <span className="text-muted-foreground text-sm">/month</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {typeof plan.tools === "number" ? `Up to ${plan.tools} tools` : "Unlimited tools"}
                 </p>
               </div>
             </CardHeader>
@@ -135,6 +137,7 @@ export function PricingPage() {
               <Button
                 onClick={() => handleUpgrade(plan.id)}
                 variant={plan.ctaVariant}
+                size="lg"
                 className="w-full mb-6"
                 disabled={plan.disabled}
                 data-testid={`button-plan-${plan.id}`}
@@ -142,14 +145,16 @@ export function PricingPage() {
                 {plan.cta}
               </Button>
 
-              <div className="space-y-3">
-                <p className="text-xs font-medium text-muted-foreground">FEATURES</p>
-                {plan.features.map((feature) => (
-                  <div key={feature} className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{feature}</span>
-                  </div>
-                ))}
+              <div className="space-y-3 flex-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Features included</p>
+                <div className="space-y-2.5">
+                  {plan.features.map((feature) => (
+                    <div key={feature} className="flex items-start gap-3 group">
+                      <Check className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm leading-snug">{feature}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -157,43 +162,51 @@ export function PricingPage() {
       </div>
 
       {userPlan !== "free" && userToolsCount > 0 && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 max-w-2xl mx-auto text-center">
-          <p className="text-sm text-blue-900 dark:text-blue-300">
-            You're currently using <span className="font-semibold">{userToolsCount}</span> of{" "}
-            {userPlan === "standard" ? "12" : "unlimited"} available tools on the{" "}
-            <span className="font-semibold capitalize">{userPlan}</span> plan.
-          </p>
+        <div className="bg-primary/10 border border-primary/20 rounded-lg p-6 max-w-2xl mx-auto">
+          <div className="text-center">
+            <p className="text-sm font-medium text-foreground mb-1">Current Plan Usage</p>
+            <p className="text-base">
+              You're using <span className="font-bold text-primary">{userToolsCount}</span> of{" "}
+              <span className="font-bold">{userPlan === "standard" ? "12" : "unlimited"}</span> available tools
+            </p>
+            <p className="text-xs text-muted-foreground mt-2 capitalize">
+              {userPlan} Plan
+            </p>
+          </div>
         </div>
       )}
 
-      <div className="max-w-2xl mx-auto grid md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-1">Free Plan</p>
-              <p className="text-2xl font-semibold">5</p>
-              <p className="text-xs text-muted-foreground">tools limit</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-primary/50 bg-primary/5">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-1">Standard Plan</p>
-              <p className="text-2xl font-semibold">12</p>
-              <p className="text-xs text-muted-foreground">tools limit</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-1">Premium Plan</p>
-              <p className="text-2xl font-semibold">∞</p>
-              <p className="text-xs text-muted-foreground">unlimited tools</p>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="max-w-4xl mx-auto">
+        <h2 className="text-2xl font-bold text-center mb-6">Quick Comparison</h2>
+        <div className="grid md:grid-cols-3 gap-4">
+          <Card className="hover-elevate">
+            <CardContent className="pt-8">
+              <div className="text-center space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Free Plan</p>
+                <p className="text-4xl font-bold text-primary">5</p>
+                <p className="text-xs text-muted-foreground">tools limit</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="hover-elevate border-primary/30 bg-primary/5">
+            <CardContent className="pt-8">
+              <div className="text-center space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Standard Plan</p>
+                <p className="text-4xl font-bold text-primary">12</p>
+                <p className="text-xs text-muted-foreground">tools limit</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="hover-elevate">
+            <CardContent className="pt-8">
+              <div className="text-center space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Premium Plan</p>
+                <p className="text-4xl font-bold text-primary">∞</p>
+                <p className="text-xs text-muted-foreground">unlimited tools</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
