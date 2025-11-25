@@ -15,7 +15,9 @@ import {
   FileText,
   Lock,
   Sliders,
-  Zap
+  Zap,
+  HelpCircle,
+  MessageSquare
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import {
@@ -111,6 +113,15 @@ const settingsNavItems = [
     title: "Settings",
     url: "/settings",
     icon: Settings,
+    locked: false,
+  },
+];
+
+const supportNavItems = [
+  {
+    title: "Help & Documentation",
+    url: "/help",
+    icon: HelpCircle,
     locked: false,
   },
 ];
@@ -241,6 +252,28 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         )}
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Support</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {supportNavItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === item.url}
+                    tooltip={item.title}
+                  >
+                    <Link href={item.url} data-testid={`nav-${item.title.toLowerCase().replace(" ", "-")}`}>
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
