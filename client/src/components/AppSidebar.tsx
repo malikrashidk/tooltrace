@@ -9,7 +9,10 @@ import {
   AlertTriangle,
   Layers,
   CreditCard,
-  BarChart2
+  BarChart2,
+  Code2,
+  Users,
+  FileText
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import {
@@ -70,6 +73,21 @@ const settingsNavItems = [
     title: "Pricing",
     url: "/pricing",
     icon: CreditCard,
+  },
+  {
+    title: "Team Collaboration",
+    url: "/team",
+    icon: Users,
+  },
+  {
+    title: "API Keys",
+    url: "/api-keys",
+    icon: Code2,
+  },
+  {
+    title: "Receipts & Invoices",
+    url: "/receipts",
+    icon: FileText,
   },
   {
     title: "Settings",
