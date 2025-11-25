@@ -1,4 +1,5 @@
-import { ExternalLink, MoreVertical, Pencil, Trash2, Clock, Calendar } from "lucide-react";
+import { useState } from "react";
+import { ExternalLink, MoreVertical, Pencil, Trash2, Clock, Calendar, Key, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,15 +10,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
+import { CredentialsDialog } from "@/components/CredentialsDialog";
 import type { Tool } from "@/lib/mockData";
 
 interface ToolCardProps {
   tool: Tool;
   onEdit?: (tool: Tool) => void;
   onDelete?: (tool: Tool) => void;
+  onCredentialsUpdate?: (tool: Tool) => void;
 }
 
-export function ToolCard({ tool, onEdit, onDelete }: ToolCardProps) {
+export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCardProps) {
+  const [showCredentials, setShowCredentials] = useState(false);
+  const { toast } = useToast();
   const getUsageColor = (frequency: string) => {
     switch (frequency) {
       case "daily":
@@ -90,6 +96,10 @@ export function ToolCard({ tool, onEdit, onDelete }: ToolCardProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setShowCredentials(true)} data-testid={`button-credentials-${tool.id}`}>
+                <Key className="h-4 w-4 mr-2" />
+                Manage Login Info
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit?.(tool)} data-testid={`button-edit-tool-${tool.id}`}>
                 <Pencil className="h-4 w-4 mr-2" />
                 Edit
@@ -131,15 +141,39 @@ export function ToolCard({ tool, onEdit, onDelete }: ToolCardProps) {
           </div>
         )}
 
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={() => window.open(tool.websiteUrl, "_blank")}
-          data-testid={`button-go-${tool.id}`}
-        >
-          <ExternalLink className="h-4 w-4 mr-2" />
-          Visit Website
-        </Button>
+        <div className="space-y-2">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => window.open(tool.websiteUrl, "_blank")}
+            data-testid={`button-go-${tool.id}`}
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Visit Website
+          </Button>
+          {tool.credentials?.username && (
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={() => setShowCredentials(true)}
+              data-testid={`button-autofill-${tool.id}`}
+            >
+              <Key className="h-4 w-4 mr-2" />
+              View Login Info
+            </Button>
+          )}
+        </div>
+
+        <CredentialsDialog
+          tool={tool}
+          open={showCredentials}
+          onOpenChange={setShowCredentials}
+          onSave={(updatedTool: Tool) => {
+            onCredentialsUpdate?.(updatedTool);
+            setShowCredentials(false);
+            toast({ description: "Login info saved securely" });
+          }}
+        />
       </CardContent>
     </Card>
   );

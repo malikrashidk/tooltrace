@@ -243,6 +243,10 @@ export function Dashboard() {
                     tool={tool}
                     onEdit={handleEditTool}
                     onDelete={handleDeleteTool}
+                    onCredentialsUpdate={(updatedTool) => {
+                      const updatedTools = tools.map((t) => (t.id === updatedTool.id ? updatedTool : t));
+                      setTools(updatedTools);
+                    }}
                   />
                 ))}
               </div>

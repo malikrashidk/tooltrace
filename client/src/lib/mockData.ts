@@ -1,5 +1,13 @@
 // todo: remove mock functionality - this file contains mock data for the prototype
 
+export interface Credentials {
+  username?: string;
+  email?: string;
+  password?: string;
+  notes?: string;
+  lastUpdated?: string;
+}
+
 export interface Tool {
   id: string;
   name: string;
@@ -15,6 +23,7 @@ export interface Tool {
   nextRenewalDate?: string;
   paymentMethod?: string;
   receipts?: { id: string; name: string; uploadDate: string }[];
+  credentials?: Credentials;
 }
 
 export interface Category {
