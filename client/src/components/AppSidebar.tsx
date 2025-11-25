@@ -7,7 +7,9 @@ import {
   ChevronLeft,
   Calendar,
   AlertTriangle,
-  Layers
+  Layers,
+  CreditCard,
+  BarChart2
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import {
@@ -65,9 +67,22 @@ const mainNavItems = [
 
 const settingsNavItems = [
   {
+    title: "Pricing",
+    url: "/pricing",
+    icon: CreditCard,
+  },
+  {
     title: "Settings",
     url: "/settings",
     icon: Settings,
+  },
+];
+
+const adminNavItems = [
+  {
+    title: "Admin Dashboard",
+    url: "/admin",
+    icon: BarChart2,
   },
 ];
 
@@ -125,7 +140,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Settings</SidebarGroupLabel>
+          <SidebarGroupLabel>Account</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {settingsNavItems.map((item) => (
@@ -135,7 +150,7 @@ export function AppSidebar() {
                     isActive={location === item.url}
                     tooltip={item.title}
                   >
-                    <Link href={item.url} data-testid={`nav-${item.title.toLowerCase()}`}>
+                    <Link href={item.url} data-testid={`nav-${item.title.toLowerCase().replace(" ", "-")}`}>
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
                     </Link>
@@ -145,6 +160,30 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {user?.isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminNavItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === item.url}
+                      tooltip={item.title}
+                    >
+                      <Link href={item.url} data-testid={`nav-${item.title.toLowerCase().replace(" ", "-")}`}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">

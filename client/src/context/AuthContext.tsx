@@ -4,6 +4,9 @@ interface User {
   id: string;
   email: string;
   name: string;
+  plan: "free" | "standard" | "premium";
+  toolsCount?: number;
+  isAdmin?: boolean;
 }
 
 interface AuthContextType {
@@ -25,10 +28,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, _password: string) => {
     // todo: remove mock functionality - replace with real API call
+    // Check if admin login
+    const isAdmin = email === "admin@example.com";
     const mockUser = {
       id: "user-1",
       email,
-      name: email.split("@")[0],
+      name: isAdmin ? "Admin" : email.split("@")[0],
+      plan: isAdmin ? ("premium" as const) : ("free" as const),
+      toolsCount: 0,
+      isAdmin,
     };
     setUser(mockUser);
     localStorage.setItem("user", JSON.stringify(mockUser));
@@ -40,6 +48,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       id: "user-1",
       email,
       name,
+      plan: "free" as const,
+      toolsCount: 0,
+      isAdmin: false,
     };
     setUser(mockUser);
     localStorage.setItem("user", JSON.stringify(mockUser));

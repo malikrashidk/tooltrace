@@ -17,6 +17,8 @@ import { AnalyticsPage } from "@/pages/AnalyticsPage";
 import { RenewalsPage } from "@/pages/RenewalsPage";
 import { LowUsagePage } from "@/pages/LowUsagePage";
 import { SettingsPage } from "@/components/SettingsPage";
+import { PricingPage } from "@/pages/PricingPage";
+import { AdminDashboard } from "@/pages/AdminDashboard";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedApp() {
@@ -41,6 +43,8 @@ function AuthenticatedApp() {
               <Route path="/analytics" component={AnalyticsPage} />
               <Route path="/renewals" component={RenewalsPage} />
               <Route path="/low-usage" component={LowUsagePage} />
+              <Route path="/pricing" component={PricingPage} />
+              <Route path="/admin" component={AdminDashboard} />
               <Route path="/settings" component={SettingsPage} />
               <Route component={NotFound} />
             </Switch>
