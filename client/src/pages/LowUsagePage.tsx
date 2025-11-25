@@ -39,11 +39,12 @@ export function LowUsagePage() {
     });
   };
 
-  const handleCancel = (toolName: string) => {
+  const handleCancel = (websiteUrl: string, toolName: string) => {
     toast({
-      title: "Review subscription",
-      description: `Consider canceling ${toolName} to save money.`,
+      title: "Opening subscription page",
+      description: `Redirecting to ${toolName}'s website to manage your subscription.`,
     });
+    window.open(websiteUrl, "_blank");
   };
 
   return (
@@ -177,7 +178,7 @@ export function LowUsagePage() {
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleCancel(tool.name)}
+                        onClick={() => handleCancel(tool.websiteUrl, tool.name)}
                         data-testid={`button-cancel-${tool.id}`}
                       >
                         <Trash2 className="h-4 w-4 mr-1" />

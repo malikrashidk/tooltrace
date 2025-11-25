@@ -1,16 +1,18 @@
 import { useMemo, useState } from "react";
-import { Calendar, AlertCircle, DollarSign, Filter } from "lucide-react";
+import { Calendar, AlertCircle, DollarSign, Filter, ExternalLink, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import {
   mockTools,
   getUpcomingRenewals,
 } from "@/lib/mockData";
 
 export function RenewalsPage() {
+  const { toast } = useToast();
   // todo: remove mock functionality - replace with real API data
   const tools = mockTools;
   const [selectedPeriod, setSelectedPeriod] = useState<"7" | "30" | "90">("30");
@@ -169,10 +171,10 @@ export function RenewalsPage() {
                       return (
                         <div
                           key={tool.id}
-                          className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg"
+                          className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 bg-muted/50 rounded-lg"
                           data-testid={`renewal-${tool.id}`}
                         >
-                          <Avatar className="h-12 w-12 rounded-lg border border-border">
+                          <Avatar className="h-12 w-12 rounded-lg border border-border flex-shrink-0">
                             <AvatarImage src={tool.logoUrl} alt={tool.name} className="object-contain p-1" />
                             <AvatarFallback className="rounded-lg bg-background text-sm font-medium">
                               {getInitials(tool.name)}
@@ -188,14 +190,14 @@ export function RenewalsPage() {
                               })}
                             </p>
                           </div>
-                          <div className="flex items-center gap-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                             <div className="text-right">
                               <p className="font-mono font-medium">{formatCurrency(tool.billingAmount || 0)}</p>
                               <p className="text-xs text-muted-foreground">
                                 {tool.billingCycle === "yearly" ? "Yearly" : "Monthly"}
                               </p>
                             </div>
-                            <Badge className={`text-xs ${getUrgencyStyle(daysUntil)}`}>
+                            <Badge className={`text-xs w-fit ${getUrgencyStyle(daysUntil)}`}>
                               {daysUntil === 0 ? (
                                 <>
                                   <AlertCircle className="h-3 w-3 mr-1" />
@@ -207,6 +209,38 @@ export function RenewalsPage() {
                                 `${daysUntil} days`
                               )}
                             </Badge>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  toast({
+                                    title: "Opening renewal page",
+                                    description: `Redirecting to ${tool.name}'s website to renew your subscription.`,
+                                  });
+                                  window.open(tool.websiteUrl, "_blank");
+                                }}
+                                data-testid={`button-renew-${tool.id}`}
+                              >
+                                <ExternalLink className="h-4 w-4 mr-1" />
+                                Renew
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                  toast({
+                                    title: "Opening cancellation page",
+                                    description: `Redirecting to ${tool.name}'s website to cancel your subscription.`,
+                                  });
+                                  window.open(tool.websiteUrl, "_blank");
+                                }}
+                                data-testid={`button-cancel-renewal-${tool.id}`}
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Cancel
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       );
