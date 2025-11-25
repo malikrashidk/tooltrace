@@ -12,7 +12,8 @@ import {
   BarChart2,
   Code2,
   Users,
-  FileText
+  FileText,
+  Lock
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import {
@@ -68,45 +69,38 @@ const mainNavItems = [
   },
 ];
 
-const getSettingsNavItems = (isPaidPlan: boolean) => {
-  const baseItems = [
-    {
-      title: "Pricing",
-      url: "/pricing",
-      icon: CreditCard,
-    },
-    {
-      title: "Receipts & Invoices",
-      url: "/receipts",
-      icon: FileText,
-    },
-    {
-      title: "Settings",
-      url: "/settings",
-      icon: Settings,
-    },
-  ];
-
-  const paidItems = [
-    {
-      title: "Team Collaboration",
-      url: "/team",
-      icon: Users,
-    },
-    {
-      title: "API Keys",
-      url: "/api-keys",
-      icon: Code2,
-    },
-  ];
-
-  // Insert paid items after Pricing but before Settings
-  if (isPaidPlan) {
-    baseItems.splice(2, 0, ...paidItems);
-  }
-
-  return baseItems;
-};
+const settingsNavItems = [
+  {
+    title: "Pricing",
+    url: "/pricing",
+    icon: CreditCard,
+    locked: false,
+  },
+  {
+    title: "Receipts & Invoices",
+    url: "/receipts",
+    icon: FileText,
+    locked: false,
+  },
+  {
+    title: "Team Collaboration",
+    url: "/team",
+    icon: Users,
+    locked: true,
+  },
+  {
+    title: "API Keys",
+    url: "/api-keys",
+    icon: Code2,
+    locked: true,
+  },
+  {
+    title: "Settings",
+    url: "/settings",
+    icon: Settings,
+    locked: false,
+  },
+];
 
 const adminNavItems = [
   {
@@ -120,6 +114,12 @@ export function AppSidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
   const isPaidPlan = user?.plan === "standard" || user?.plan === "premium";
+  
+  const getItemStatus = (item: typeof settingsNavItems[0]) => {
+    if (!item.locked) return "available";
+    if (isPaidPlan) return "available";
+    return "locked";
+  };
   const { state } = useSidebar();
 
   const getInitials = (name: string) => {
@@ -174,20 +174,33 @@ export function AppSidebar() {
           <SidebarGroupLabel>Account</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {getSettingsNavItems(isPaidPlan).map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location === item.url}
-                    tooltip={item.title}
-                  >
-                    <Link href={item.url} data-testid={`nav-${item.title.toLowerCase().replace(" ", "-")}`}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {settingsNavItems.map((item) => {
+                const status = getItemStatus(item);
+                const isLocked = status === "locked";
+                
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === item.url}
+                      tooltip={item.title}
+                      className={isLocked ? "opacity-50 hover:opacity-75" : ""}
+                    >
+                      <Link 
+                        href={item.url} 
+                        data-testid={`nav-${item.title.toLowerCase().replace(" ", "-")}`}
+                        className="relative"
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                        {isLocked && (
+                          <Lock className="h-3 w-3 absolute right-2 text-amber-500" />
+                        )}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
