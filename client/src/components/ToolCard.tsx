@@ -50,28 +50,28 @@ export function ToolCard({ tool, onEdit, onDelete }: ToolCardProps) {
   };
 
   return (
-    <Card className="group hover-elevate" data-testid={`card-tool-${tool.id}`}>
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-3 min-w-0">
-            <Avatar className="h-12 w-12 rounded-lg border border-border">
+    <Card className="group hover-elevate transition-all duration-200" data-testid={`card-tool-${tool.id}`}>
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="flex items-center gap-4 min-w-0 flex-1">
+            <Avatar className="h-14 w-14 rounded-lg border-2 border-border/50">
               <AvatarImage src={tool.logoUrl} alt={tool.name} className="object-contain p-1" />
-              <AvatarFallback className="rounded-lg bg-muted text-sm font-medium">
+              <AvatarFallback className="rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 text-sm font-semibold">
                 {getInitials(tool.name)}
               </AvatarFallback>
             </Avatar>
-            <div className="min-w-0">
-              <h3 className="font-medium truncate" data-testid={`text-tool-name-${tool.id}`}>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-base truncate" data-testid={`text-tool-name-${tool.id}`}>
                 {tool.name}
               </h3>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-2 mt-2">
                 {tool.isPaid && tool.billingAmount && (
-                  <span className="text-sm font-mono text-muted-foreground" data-testid={`text-tool-cost-${tool.id}`}>
+                  <span className="text-base font-mono font-bold text-primary" data-testid={`text-tool-cost-${tool.id}`}>
                     {formatCost(tool.billingAmount, tool.billingCycle || "")}
                   </span>
                 )}
                 {!tool.isPaid && (
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge className="text-xs bg-green-100/50 text-green-700 dark:bg-green-900/20 dark:text-green-400">
                     Free
                   </Badge>
                 )}
@@ -107,38 +107,38 @@ export function ToolCard({ tool, onEdit, onDelete }: ToolCardProps) {
         </div>
 
         {tool.notes && (
-          <p className="text-sm text-muted-foreground mt-3 line-clamp-2" data-testid={`text-tool-notes-${tool.id}`}>
+          <p className="text-sm text-muted-foreground mb-3 line-clamp-2 leading-relaxed" data-testid={`text-tool-notes-${tool.id}`}>
             {tool.notes}
           </p>
         )}
 
-        <div className="flex flex-wrap gap-1.5 mt-3">
+        <div className="flex flex-wrap gap-2 mb-4">
           {tool.categories.map((category) => (
-            <Badge key={category} variant="outline" className="text-xs">
+            <Badge key={category} variant="outline" className="text-xs font-medium">
               {category}
             </Badge>
           ))}
-          <Badge className={`text-xs ${getUsageColor(tool.usageFrequency)}`}>
+          <Badge className={`text-xs font-medium ${getUsageColor(tool.usageFrequency)}`}>
             <Clock className="h-3 w-3 mr-1" />
             {tool.usageFrequency}
           </Badge>
         </div>
 
         {tool.isPaid && tool.nextRenewalDate && (
-          <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
-            <Calendar className="h-3 w-3" />
+          <div className="flex items-center gap-2 mb-4 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/10 px-3 py-2 rounded-md">
+            <Calendar className="h-3.5 w-3.5" />
             <span>Renews {new Date(tool.nextRenewalDate).toLocaleDateString()}</span>
           </div>
         )}
 
         <Button
-          variant="secondary"
-          className="w-full mt-4"
+          variant="outline"
+          className="w-full"
           onClick={() => window.open(tool.websiteUrl, "_blank")}
           data-testid={`button-go-${tool.id}`}
         >
           <ExternalLink className="h-4 w-4 mr-2" />
-          Go to {tool.name}
+          Visit Website
         </Button>
       </CardContent>
     </Card>

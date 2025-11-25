@@ -17,19 +17,23 @@ export function IntegrationsHub() {
   if (!isPremium) {
     return (
       <div className="space-y-6 p-6">
-        <div>
-          <h1 className="text-3xl font-semibold">Integrations Hub</h1>
-          <p className="text-muted-foreground">Connect SaaS Hub to your favorite tools</p>
+        <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-8">
+          <h1 className="text-3xl font-bold">Integrations Hub</h1>
+          <p className="text-muted-foreground mt-1">Connect SaaS Hub to your favorite tools</p>
         </div>
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="text-center space-y-4 max-w-md">
-              <div className="text-5xl">🔗</div>
-              <h2 className="text-2xl font-semibold">Premium Feature</h2>
-              <p className="text-muted-foreground">
-                Integrations Hub with Slack, Zapier, Make, and webhooks is exclusively available on Premium plan.
-              </p>
-              <Button asChild className="mt-4">
+          <CardContent className="flex flex-col items-center justify-center py-20">
+            <div className="text-center space-y-5 max-w-md">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                <Zap className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold mb-2">Premium Feature</h2>
+                <p className="text-muted-foreground">
+                  Integrations Hub with Slack, Zapier, Make, and webhooks is exclusively available on Premium plan.
+                </p>
+              </div>
+              <Button asChild size="lg" className="mt-4">
                 <a href="/pricing">Upgrade to Premium</a>
               </Button>
             </div>
@@ -124,9 +128,9 @@ export function IntegrationsHub() {
 
   return (
     <div className="space-y-8 p-6">
-      <div>
-        <h1 className="text-3xl font-semibold">Integrations Hub</h1>
-        <p className="text-muted-foreground">Connect SaaS Hub to your favorite tools and automate your workflow</p>
+      <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-8">
+        <h1 className="text-3xl font-bold">Integrations Hub</h1>
+        <p className="text-muted-foreground mt-1">Connect SaaS Hub to your favorite tools and automate your workflow</p>
       </div>
 
       <div className="space-y-6">

@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatsCards } from "@/components/StatsCards";
 import { ToolCard } from "@/components/ToolCard";
