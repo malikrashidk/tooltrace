@@ -12,11 +12,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import type { Tool } from "@/lib/mockData";
-
-// Lazy load CredentialsDialog to avoid circular dependency
-const CredentialsDialog = lazy(() =>
-  import("@/components/CredentialsDialog").then(mod => ({ default: mod.CredentialsDialog }))
-);
+import { CredentialsDialog } from "@/components/CredentialsDialog";
 
 interface ToolCardProps {
   tool: Tool;
@@ -168,18 +164,16 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
           )}
         </div>
 
-        <Suspense fallback={null}>
-          <CredentialsDialog
-            tool={tool}
-            open={showCredentials}
-            onOpenChange={setShowCredentials}
-            onSave={(updatedTool: Tool) => {
-              onCredentialsUpdate?.(updatedTool);
-              setShowCredentials(false);
-              toast({ description: "Login info saved securely" });
-            }}
-          />
-        </Suspense>
+        <CredentialsDialog
+          tool={tool}
+          open={showCredentials}
+          onOpenChange={setShowCredentials}
+          onSave={(updatedTool: Tool) => {
+            onCredentialsUpdate?.(updatedTool);
+            setShowCredentials(false);
+            toast({ description: "Login info saved securely" });
+          }}
+        />
       </CardContent>
     </Card>
   );

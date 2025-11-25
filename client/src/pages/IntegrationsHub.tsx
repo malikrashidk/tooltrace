@@ -208,18 +208,82 @@ export function IntegrationsHub() {
         <div>
           <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-4">Browser Extensions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            {extensions.map((ext) => (
-              <Card key={ext.name}>
-                <CardHeader>
-                  <CardTitle className="text-lg">{ext.name}</CardTitle>
-                  <CardDescription>{ext.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <span>Chrome & Chromium</span>
+                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Available</Badge>
+                </CardTitle>
+                <CardDescription>Auto-detect and add SaaS tools while browsing</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Our browser extension automatically detects SaaS tools you're using and allows you to add them to your SaaS Hub with one click.
+                </p>
+                <ol className="text-sm space-y-2 list-decimal list-inside text-muted-foreground">
+                  <li>Download the extension code from GitHub</li>
+                  <li>Go to <code className="bg-muted px-2 py-1 rounded text-xs">chrome://extensions</code></li>
+                  <li>Enable "Developer mode" (top right)</li>
+                  <li>Click "Load unpacked" and select the extension folder</li>
+                  <li>Start using the extension!</li>
+                </ol>
+                <Button className="w-full" asChild>
+                  <a href="https://github.com/yourusername/saazhub-extension" target="_blank" rel="noopener noreferrer">
+                    Download from GitHub
+                  </a>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <span>Firefox</span>
                   <Badge variant="secondary">Coming Soon</Badge>
-                </CardContent>
-              </Card>
-            ))}
+                </CardTitle>
+                <CardDescription>Mozilla Firefox support</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Firefox extension coming soon. The extension will work similarly to the Chrome version with full feature parity.
+                </p>
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/30 rounded-md p-3">
+                  <p className="text-xs text-blue-800 dark:text-blue-200">
+                    Subscribe to updates to be notified when Firefox version is available.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
+
+          <Card className="mt-6 bg-gradient-to-r from-primary/5 to-primary/10">
+            <CardHeader>
+              <CardTitle className="text-base">How It Works</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">1</div>
+                <div>
+                  <p className="font-medium">Install Extension</p>
+                  <p className="text-muted-foreground text-xs">Load the extension into your browser</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">2</div>
+                <div>
+                  <p className="font-medium">Browse as Normal</p>
+                  <p className="text-muted-foreground text-xs">The extension automatically detects SaaS tools</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">3</div>
+                <div>
+                  <p className="font-medium">Click to Add</p>
+                  <p className="text-muted-foreground text-xs">Select tools and add them to your SaaS Hub instantly</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <Card>
