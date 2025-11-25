@@ -1,5 +1,5 @@
-import { useState, lazy, Suspense } from "react";
-import { ExternalLink, MoreVertical, Pencil, Trash2, Clock, Calendar, Key, Copy, Check } from "lucide-react";
+import { useState } from "react";
+import { ExternalLink, MoreVertical, Pencil, Trash2, Clock, Calendar, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import type { Tool } from "@/lib/mockData";
-import { CredentialsDialog } from "@/components/CredentialsDialog";
+import { CredentialsDialog } from "./CredentialsDialog";
 
 interface ToolCardProps {
   tool: Tool;
