@@ -9,18 +9,29 @@ export const users = pgTable(
   {
     id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
     email: text("email").notNull().unique(),
-    password: text("password").notNull(),
+    password: text("password"), // Nullable for OAuth-only users
     name: text("name").notNull(),
     plan: text("plan").notNull().default("free"), // free, standard, premium
     isAdmin: boolean("is_admin").notNull().default(false),
     stripeCustomerId: text("stripe_customer_id"),
     stripeSubscriptionId: text("stripe_subscription_id"),
+    // OAuth fields
+    googleId: text("google_id").unique(),
+    facebookId: text("facebook_id").unique(),
+    oauthProvider: text("oauth_provider"), // google, facebook, or null for email/password
+    avatarUrl: text("avatar_url"),
+    // 2FA fields
+    twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
+    twoFactorSecret: text("two_factor_secret"), // TOTP secret (encrypted)
+    twoFactorBackupCodes: text("two_factor_backup_codes").array(), // Hashed backup codes
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => ({
     emailIdx: index("email_idx").on(table.email),
     planIdx: index("plan_idx").on(table.plan),
+    googleIdIdx: index("google_id_idx").on(table.googleId),
+    facebookIdIdx: index("facebook_id_idx").on(table.facebookId),
   })
 );
 
