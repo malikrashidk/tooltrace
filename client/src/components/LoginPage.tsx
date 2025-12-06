@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, Layers, Chrome, Facebook, Shield, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Layers, Shield, Loader2 } from "lucide-react";
+import { SiGoogle, SiFacebook } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -236,7 +237,7 @@ export function LoginPage({ onSwitchToSignup }: LoginPageProps) {
                 data-testid="button-google-signin"
                 onClick={handleGoogleSignIn}
               >
-                <Chrome className="h-4 w-4" />
+                <SiGoogle className="h-4 w-4" style={{ color: '#4285F4' }} />
                 <span className="text-xs">Google</span>
               </Button>
               <Button
@@ -247,7 +248,7 @@ export function LoginPage({ onSwitchToSignup }: LoginPageProps) {
                 data-testid="button-facebook-signin"
                 onClick={handleFacebookSignIn}
               >
-                <Facebook className="h-4 w-4" />
+                <SiFacebook className="h-4 w-4" style={{ color: '#1877F2' }} />
                 <span className="text-xs">Facebook</span>
               </Button>
             </div>
