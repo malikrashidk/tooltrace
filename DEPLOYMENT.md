@@ -243,19 +243,242 @@ docker-compose up -d
 docker network inspect saas-hub-network
 ```
 
-## 12. Updates & Maintenance
+## 12. Updating Your Application
+
+### Method 1: Git-based Updates (Recommended)
+
+This is the easiest and most reliable way to update your deployed application.
+
+**Step 1: Push changes from Replit to Git**
+```bash
+# In Replit, commit and push your changes
+git add .
+git commit -m "Your update description"
+git push origin main
+```
+
+**Step 2: Pull and deploy on VPS**
+```bash
+# SSH into your VPS
+ssh user@your-vps-ip
+
+# Navigate to app directory
+cd /opt/saas-tools-hub
+
+# Pull latest changes
+git pull origin main
+
+# Rebuild and restart services
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+
+# Verify deployment
+docker-compose ps
+docker-compose logs -f app
+```
+
+### Method 2: Manual File Transfer
+
+If you're not using Git, you can manually transfer files.
+
+**From your local machine:**
+```bash
+# Create archive of updated code
+tar -czf app-update.tar.gz \
+    --exclude=node_modules \
+    --exclude=.git \
+    --exclude=dist \
+    .
+
+# Upload to VPS
+scp app-update.tar.gz user@your-vps-ip:/tmp/
+
+# SSH into VPS
+ssh user@your-vps-ip
+```
+
+**On your VPS:**
+```bash
+# Stop services
+cd /opt/saas-tools-hub
+docker-compose down
+
+# Backup current version
+tar -czf /opt/backups/app_backup_$(date +%Y%m%d_%H%M%S).tar.gz .
+
+# Extract new version
+tar -xzf /tmp/app-update.tar.gz
+
+# Rebuild and restart
+docker-compose build --no-cache
+docker-compose up -d
+
+# Clean up
+rm /tmp/app-update.tar.gz
+```
+
+### Method 3: Zero-Downtime Updates
+
+For production environments where you can't afford downtime:
 
 ```bash
 # Pull latest code
 git pull origin main
 
+# Build new image without stopping old one
+docker-compose build
+
+# Use rolling restart
+docker-compose up -d --no-deps --build app
+
+# Verify new version is working
+docker-compose logs -f app
+
+# If successful, clean up old images
+docker image prune -f
+```
+
+### Database Migrations
+
+If your update includes database schema changes:
+
+```bash
+# Always backup database first!
+docker-compose exec -T postgres pg_dump -U postgres saas_tools_hub > /opt/backups/pre_migration_$(date +%Y%m%d).sql
+
+# Run migrations (if using Drizzle)
+docker-compose exec app npm run db:migrate
+
+# Or run manual SQL
+docker-compose exec postgres psql -U postgres -d saas_tools_hub -f /path/to/migration.sql
+
+# Verify changes
+docker-compose exec postgres psql -U postgres -d saas_tools_hub -c "\dt"
+```
+
+### Rollback Procedure
+
+If an update causes issues, you can rollback:
+
+**Git-based rollback:**
+```bash
+# View recent commits
+git log --oneline -n 10
+
+# Rollback to previous commit
+git reset --hard <commit-hash>
+
+# Force push if needed
+git push origin main --force
+
 # Rebuild and restart
 docker-compose down
 docker-compose build --no-cache
 docker-compose up -d
+```
 
-# View changelog
-git log --oneline -n 10
+**Manual rollback:**
+```bash
+# Stop services
+docker-compose down
+
+# Restore from backup
+cd /opt/saas-tools-hub
+rm -rf *
+tar -xzf /opt/backups/app_backup_TIMESTAMP.tar.gz
+
+# Restore database if needed
+docker-compose exec -T postgres psql -U postgres -d saas_tools_hub < /opt/backups/db_backup_TIMESTAMP.sql
+
+# Restart services
+docker-compose up -d
+```
+
+### Update Checklist
+
+Before updating:
+- [ ] Backup database and application files
+- [ ] Review changelog/commit history
+- [ ] Test changes in development environment
+- [ ] Check for breaking changes
+- [ ] Plan maintenance window if needed
+
+During update:
+- [ ] Stop services gracefully
+- [ ] Pull/apply changes
+- [ ] Run database migrations (if any)
+- [ ] Rebuild Docker images
+- [ ] Start services
+- [ ] Monitor logs for errors
+
+After update:
+- [ ] Verify application is running
+- [ ] Test critical functionality
+- [ ] Monitor error logs
+- [ ] Check database connections
+- [ ] Verify external integrations (Stripe, OAuth, etc.)
+- [ ] Keep backup for 24-48 hours before deleting
+
+### Automated Updates (CI/CD)
+
+For advanced setups, consider automated deployments:
+
+**GitHub Actions example (.github/workflows/deploy.yml):**
+```yaml
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/saas-tools-hub
+            git pull origin main
+            docker-compose down
+            docker-compose build --no-cache
+            docker-compose up -d
+```
+
+### Update Best Practices
+
+1. **Always backup first** - Both database and application files
+2. **Test in development** - Never deploy untested changes to production
+3. **Update during low-traffic periods** - Minimize user impact
+4. **Monitor after deployment** - Watch logs for 15-30 minutes
+5. **Keep rollback ready** - Be prepared to revert if issues arise
+6. **Document changes** - Maintain changelog for your team
+7. **Update dependencies regularly** - Security patches and bug fixes
+8. **Use semantic versioning** - Track versions clearly (v1.0.0, v1.1.0, etc.)
+
+### Quick Reference Commands
+
+```bash
+# View current version
+git log -1 --oneline
+
+# Check for updates
+git fetch origin
+git status
+
+# Full update sequence
+git pull && docker-compose down && docker-compose build --no-cache && docker-compose up -d
+
+# View recent logs
+docker-compose logs --tail=100 -f app
+
+# Health check
+curl http://localhost:5000/api/health || echo "App not responding"
 ```
 
 ## Security Checklist
