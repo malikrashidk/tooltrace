@@ -3,7 +3,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Eye, EyeOff, Layers, Shield, Loader2 } from "lucide-react";
-import { SiGoogle, SiFacebook } from "react-icons/si";
+import { SiFacebook } from "react-icons/si";
+import { FcGoogle } from "react-icons/fc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -237,7 +238,7 @@ export function LoginPage({ onSwitchToSignup }: LoginPageProps) {
                 data-testid="button-google-signin"
                 onClick={handleGoogleSignIn}
               >
-                <SiGoogle className="h-4 w-4" style={{ color: '#4285F4' }} />
+                <FcGoogle className="h-4 w-4" />
                 <span className="text-xs">Google</span>
               </Button>
               <Button
