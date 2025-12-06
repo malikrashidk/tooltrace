@@ -19,7 +19,10 @@ export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByGoogleId(googleId: string): Promise<User | undefined>;
+  getUserByFacebookId(facebookId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  createOAuthUser(userData: Partial<User>): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
 
   // Tool operations
@@ -56,7 +59,7 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<string, User & { email: string; password: string }> = new Map();
+  private users: Map<string, User> = new Map();
   private tools: Map<string, Tool> = new Map();
   private subscriptions: Map<string, Subscription> = new Map();
   private payments: Map<string, Payment> = new Map();
@@ -70,6 +73,37 @@ export class MemStorage implements IStorage {
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find((u) => u.email === email);
+  }
+
+  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find((u) => u.googleId === googleId);
+  }
+
+  async getUserByFacebookId(facebookId: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find((u) => u.facebookId === facebookId);
+  }
+
+  async createOAuthUser(userData: Partial<User>): Promise<User> {
+    const id = randomUUID();
+    const fullUser = {
+      id,
+      email: userData.email!,
+      name: userData.name!,
+      password: null,
+      plan: "free",
+      isAdmin: false,
+      googleId: userData.googleId || null,
+      facebookId: userData.facebookId || null,
+      oauthProvider: userData.oauthProvider || null,
+      avatarUrl: userData.avatarUrl || null,
+      twoFactorEnabled: false,
+      twoFactorSecret: null,
+      twoFactorBackupCodes: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as User;
+    this.users.set(id, fullUser as any);
+    return fullUser;
   }
 
   async createUser(user: InsertUser): Promise<User> {

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Save, Bell, Mail, User, Key } from "lucide-react";
+import { Save, Bell, Mail, User, Key, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { TwoFactorSetup } from "./TwoFactorSetup";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -209,6 +210,8 @@ export function SettingsPage() {
             </Form>
           </CardContent>
         </Card>
+
+        <TwoFactorSetup />
 
         <Card>
           <CardHeader>

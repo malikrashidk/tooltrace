@@ -185,7 +185,7 @@ export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
                 className="h-10 gap-2"
                 disabled={isLoading}
                 data-testid="button-google-signup"
-                onClick={() => console.log("Google OAuth coming soon")}
+                onClick={() => window.location.href = "/api/auth/google"}
               >
                 <Chrome className="h-4 w-4" />
                 <span className="text-xs">Google</span>
@@ -196,7 +196,7 @@ export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
                 className="h-10 gap-2"
                 disabled={isLoading}
                 data-testid="button-facebook-signup"
-                onClick={() => console.log("Facebook OAuth coming soon")}
+                onClick={() => window.location.href = "/api/auth/facebook"}
               >
                 <Facebook className="h-4 w-4" />
                 <span className="text-xs">Facebook</span>

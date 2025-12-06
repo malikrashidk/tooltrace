@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, Layers, Chrome, Facebook } from "lucide-react";
+import { Eye, EyeOff, Layers, Chrome, Facebook, Shield, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -24,7 +27,11 @@ interface LoginPageProps {
 export function LoginPage({ onSwitchToSignup }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState("");
+  const [pendingCredentials, setPendingCredentials] = useState<{ email: string; password: string } | null>(null);
   const { login } = useAuth();
+  const { toast } = useToast();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -34,12 +41,99 @@ export function LoginPage({ onSwitchToSignup }: LoginPageProps) {
     },
   });
 
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+    const error = urlParams.get("error");
+    
+    if (token) {
+      localStorage.setItem("token", token);
+      window.location.href = "/";
+    }
+    
+    if (error === "oauth_failed") {
+      toast({
+        title: "Sign-in Failed",
+        description: "Unable to sign in with social account. Please try again.",
+        variant: "destructive",
+      });
+      window.history.replaceState({}, "", "/");
+    }
+  }, [toast]);
+
+  const handleGoogleSignIn = () => {
+    window.location.href = "/api/auth/google";
+  };
+
+  const handleFacebookSignIn = () => {
+    window.location.href = "/api/auth/facebook";
+  };
+
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
-      await login(data.email, data.password);
-    } catch (error) {
-      console.error("Login failed:", error);
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: data.email, password: data.password }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.requiresTwoFactor) {
+        setPendingCredentials({ email: data.email, password: data.password });
+        setRequires2FA(true);
+        return;
+      }
+      
+      if (!response.ok) {
+        throw new Error(result.error || "Login failed");
+      }
+      
+      if (result.token) {
+        localStorage.setItem("token", result.token);
+        window.location.reload();
+      }
+    } catch (error: any) {
+      toast({
+        title: "Login Failed",
+        description: error.message || "Invalid credentials",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handle2FAVerify = async () => {
+    if (!pendingCredentials) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: pendingCredentials.email,
+          password: pendingCredentials.password,
+          twoFactorCode,
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || "Invalid 2FA code");
+      }
+      
+      localStorage.setItem("token", result.token);
+      window.location.reload();
+    } catch (error: any) {
+      toast({
+        title: "Verification Failed",
+        description: error.message || "Invalid code",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -141,7 +235,7 @@ export function LoginPage({ onSwitchToSignup }: LoginPageProps) {
                 className="h-10 gap-2"
                 disabled={isLoading}
                 data-testid="button-google-signin"
-                onClick={() => console.log("Google OAuth coming soon")}
+                onClick={handleGoogleSignIn}
               >
                 <Chrome className="h-4 w-4" />
                 <span className="text-xs">Google</span>
@@ -152,7 +246,7 @@ export function LoginPage({ onSwitchToSignup }: LoginPageProps) {
                 className="h-10 gap-2"
                 disabled={isLoading}
                 data-testid="button-facebook-signin"
-                onClick={() => console.log("Facebook OAuth coming soon")}
+                onClick={handleFacebookSignIn}
               >
                 <Facebook className="h-4 w-4" />
                 <span className="text-xs">Facebook</span>
@@ -210,6 +304,60 @@ export function LoginPage({ onSwitchToSignup }: LoginPageProps) {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={requires2FA} onOpenChange={setRequires2FA}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary" />
+              Two-Factor Authentication
+            </DialogTitle>
+            <DialogDescription>
+              Enter the 6-digit code from your authenticator app or a backup code.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="2fa-code">Verification Code</Label>
+              <Input
+                id="2fa-code"
+                placeholder="Enter 6-digit code"
+                value={twoFactorCode}
+                onChange={(e) => setTwoFactorCode(e.target.value.replace(/[^0-9A-Za-z-]/g, "").slice(0, 9))}
+                maxLength={9}
+                data-testid="input-2fa-login-code"
+              />
+              <p className="text-xs text-muted-foreground">
+                You can also use a backup code (e.g., XXXX-XXXX)
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setRequires2FA(false);
+                setTwoFactorCode("");
+                setPendingCredentials(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handle2FAVerify}
+              disabled={twoFactorCode.length < 6 || isLoading}
+              data-testid="button-verify-2fa-login"
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Verify
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
