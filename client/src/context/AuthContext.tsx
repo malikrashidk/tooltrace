@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
 interface User {
   id: string;
@@ -7,6 +7,8 @@ interface User {
   plan: "free" | "standard" | "premium";
   toolsCount?: number;
   isAdmin?: boolean;
+  twoFactorEnabled?: boolean;
+  avatarUrl?: string | null;
 }
 
 interface AuthContextType {
@@ -15,62 +17,97 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
+  setUser: (user: User | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Demo accounts for testing
-const DEMO_ACCOUNTS = {
-  "admin@demo.com": { name: "Admin User", plan: "premium" as const, isAdmin: true },
-  "free@demo.com": { name: "Free User", plan: "free" as const, isAdmin: false },
-  "standard@demo.com": { name: "Standard User", plan: "standard" as const, isAdmin: false },
-  "premium@demo.com": { name: "Premium User", plan: "premium" as const, isAdmin: false },
-};
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // todo: remove mock functionality - replace with real API calls
   const [user, setUser] = useState<User | null>(() => {
     const stored = localStorage.getItem("user");
-    return stored ? JSON.parse(stored) : null;
+    const token = localStorage.getItem("token");
+    return stored && token ? JSON.parse(stored) : null;
   });
 
-  const login = async (email: string, _password: string) => {
-    // todo: remove mock functionality - replace with real API call
-    const demoAccount = DEMO_ACCOUNTS[email as keyof typeof DEMO_ACCOUNTS];
-    
-    if (!demoAccount) {
-      throw new Error("Invalid email. Use one of the demo accounts.");
+  // Auto-fetch user profile on mount if token exists
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token && !user) {
+      fetchUserProfile();
     }
+  }, []);
 
-    const mockUser = {
-      id: `user-${email.split("@")[0]}`,
-      email,
-      name: demoAccount.name,
-      plan: demoAccount.plan,
-      toolsCount: 0,
-      isAdmin: demoAccount.isAdmin,
-    };
-    setUser(mockUser);
-    localStorage.setItem("user", JSON.stringify(mockUser));
+  const fetchUserProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const response = await fetch("/api/auth/profile", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+        localStorage.setItem("user", JSON.stringify(data.user));
+      } else {
+        // Token invalid, clear auth
+        logout();
+      }
+    } catch (error) {
+      console.error("Failed to fetch user profile:", error);
+      logout();
+    }
   };
 
-  const signup = async (email: string, _password: string, name: string) => {
-    // todo: remove mock functionality - replace with real API call
-    const mockUser = {
-      id: "user-1",
-      email,
-      name,
-      plan: "free" as const,
-      toolsCount: 0,
-      isAdmin: false,
-    };
-    setUser(mockUser);
-    localStorage.setItem("user", JSON.stringify(mockUser));
+  const login = async (email: string, password: string) => {
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Login failed");
+    }
+
+    const data = await response.json();
+    
+    // Check if 2FA is required
+    if (data.requiresTwoFactor) {
+      throw new Error("2FA_REQUIRED");
+    }
+
+    setUser(data.user);
+    localStorage.setItem("user", JSON.stringify(data.user));
+    localStorage.setItem("token", data.token);
+  };
+
+  const signup = async (email: string, password: string, name: string) => {
+    const response = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, name }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Signup failed");
+    }
+
+    const data = await response.json();
+    setUser(data.user);
+    localStorage.setItem("user", JSON.stringify(data.user));
+    localStorage.setItem("token", data.token);
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user");
+    localStorage.removeItem("token");
   };
 
   return (
@@ -81,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         signup,
         logout,
+        setUser,
       }}
     >
       {children}

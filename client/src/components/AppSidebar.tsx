@@ -17,7 +17,8 @@ import {
   Sliders,
   Zap,
   HelpCircle,
-  MessageSquare
+  MessageSquare,
+  StickyNote
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import {
@@ -65,6 +66,11 @@ const mainNavItems = [
     title: "Analytics",
     url: "/analytics",
     icon: BarChart3,
+  },
+  {
+    title: "Notes",
+    url: "/notes",
+    icon: StickyNote,
   },
   {
     title: "Renewals",
@@ -164,8 +170,8 @@ export function AppSidebar() {
           </div>
           {state === "expanded" && (
             <div className="flex flex-col min-w-0">
-              <span className="font-semibold text-sm truncate">SaaS Tools Hub</span>
-              <span className="text-xs text-muted-foreground truncate">for Freelancers</span>
+              <span className="font-semibold text-sm truncate">Tool Trace</span>
+              <span className="text-xs text-muted-foreground truncate">Track & Manage</span>
             </div>
           )}
         </div>

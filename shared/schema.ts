@@ -167,6 +167,24 @@ export const apiKeys = pgTable(
   })
 );
 
+// ============ NOTES TABLE ============
+export const notes = pgTable(
+  "notes",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    content: text("content").notNull(),
+    isPinned: boolean("is_pinned").notNull().default(false),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("notes_user_id_idx").on(table.userId),
+    pinnedIdx: index("notes_pinned_idx").on(table.isPinned),
+  })
+);
+
 // ============ INSERT SCHEMAS ============
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
@@ -202,6 +220,12 @@ export const insertApiKeySchema = createInsertSchema(apiKeys).omit({
   createdAt: true,
 });
 
+export const insertNoteSchema = createInsertSchema(notes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // ============ TYPE EXPORTS ============
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -220,6 +244,9 @@ export type Receipt = typeof receipts.$inferSelect;
 
 export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
 export type ApiKey = typeof apiKeys.$inferSelect;
+
+export type InsertNote = z.infer<typeof insertNoteSchema>;
+export type Note = typeof notes.$inferSelect;
 
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
 export type AuditLog = typeof auditLogs.$inferSelect;

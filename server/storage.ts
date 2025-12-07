@@ -11,6 +11,8 @@ import type {
   InsertReceipt,
   ApiKey,
   InsertApiKey,
+  Note,
+  InsertNote,
   AuditLog,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
@@ -54,6 +56,13 @@ export interface IStorage {
   getApiKeyByKey(key: string): Promise<ApiKey | undefined>;
   deleteApiKey(id: string): Promise<boolean>;
 
+  // Note operations
+  createNote(note: InsertNote): Promise<Note>;
+  getUserNotes(userId: string): Promise<Note[]>;
+  getNote(id: string): Promise<Note | undefined>;
+  updateNote(id: string, updates: Partial<Note>): Promise<Note | undefined>;
+  deleteNote(id: string): Promise<boolean>;
+
   // Audit Log operations
   createAuditLog(log: Omit<AuditLog, "id" | "createdAt">): Promise<AuditLog>;
 }
@@ -65,6 +74,7 @@ export class MemStorage implements IStorage {
   private payments: Map<string, Payment> = new Map();
   private receipts: Map<string, Receipt> = new Map();
   private apiKeys: Map<string, ApiKey> = new Map();
+  private notes: Map<string, Note> = new Map();
   private auditLogs: AuditLog[] = [];
 
   async getUser(id: string): Promise<User | undefined> {
@@ -218,6 +228,40 @@ export class MemStorage implements IStorage {
 
   async deleteApiKey(id: string): Promise<boolean> {
     return this.apiKeys.delete(id);
+  }
+
+  async createNote(note: InsertNote): Promise<Note> {
+    const id = randomUUID();
+    const fullNote = { ...note, id, createdAt: new Date(), updatedAt: new Date() } as Note;
+    this.notes.set(id, fullNote);
+    return fullNote;
+  }
+
+  async getUserNotes(userId: string): Promise<Note[]> {
+    return Array.from(this.notes.values())
+      .filter((n) => n.userId === userId)
+      .sort((a, b) => {
+        if (a.isPinned !== b.isPinned) {
+          return a.isPinned ? -1 : 1;
+        }
+        return b.updatedAt.getTime() - a.updatedAt.getTime();
+      });
+  }
+
+  async getNote(id: string): Promise<Note | undefined> {
+    return this.notes.get(id);
+  }
+
+  async updateNote(id: string, updates: Partial<Note>): Promise<Note | undefined> {
+    const note = this.notes.get(id);
+    if (!note) return undefined;
+    const updated = { ...note, ...updates, updatedAt: new Date() };
+    this.notes.set(id, updated);
+    return updated;
+  }
+
+  async deleteNote(id: string): Promise<boolean> {
+    return this.notes.delete(id);
   }
 
   async createAuditLog(log: Omit<AuditLog, "id" | "createdAt">): Promise<AuditLog> {
