@@ -92,9 +92,10 @@ export function LoginPage({ onSwitchToSignup }: LoginPageProps) {
         throw new Error(result.error || "Login failed");
       }
       
-      if (result.token) {
+      if (result.token && result.user) {
         localStorage.setItem("token", result.token);
-        window.location.reload();
+        localStorage.setItem("user", JSON.stringify(result.user));
+        window.location.href = "/";
       }
     } catch (error: any) {
       toast({

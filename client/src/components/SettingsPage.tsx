@@ -99,13 +99,14 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Settings</h1>
-        <p className="text-muted-foreground">Manage your account and preferences</p>
-      </div>
+    <div className="flex-1 overflow-y-auto">
+      <div className="p-8 max-w-4xl mx-auto space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold">Settings</h1>
+          <p className="text-muted-foreground">Manage your account and preferences</p>
+        </div>
 
-      <div className="grid gap-6 max-w-2xl">
+        <div className="grid gap-6 max-w-3xl">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -317,6 +318,7 @@ export function SettingsPage() {
           </CardContent>
         </Card>
       </div>
+    </div>
     </div>
   );
 }
