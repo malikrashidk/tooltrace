@@ -199,7 +199,7 @@ export function ToolsPage() {
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold">No tools yet</h2>
               <p className="text-muted-foreground max-w-xs">
-                Start by adding your first tool to begin tracking your subscriptions and tools.
+                Start by adding your first tool/website/app to begin tracking your subscriptions and much more.
               </p>
             </div>
             <AddToolDialog categories={mockCategories} onSave={handleAddTool} />
