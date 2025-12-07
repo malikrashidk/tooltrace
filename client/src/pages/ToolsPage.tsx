@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { Plus, Grid3X3, List } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
+import { Plus, Grid3X3, List, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ToolCard } from "@/components/ToolCard";
 import { SearchFilter, type FilterState } from "@/components/SearchFilter";
@@ -34,7 +34,7 @@ type ViewMode = "grid" | "list";
 export function ToolsPage() {
   const { toast } = useToast();
   // todo: remove mock functionality - replace with real API data
-  const [tools, setTools] = useState<Tool[]>(mockTools);
+  const [tools, setTools] = useState<Tool[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<FilterState>({
@@ -47,6 +47,7 @@ export function ToolsPage() {
     open: false,
     tool: null,
   });
+  const addToolDialogRef = useRef<{ openDialog: () => void }>(null);
 
   const filteredTools = useMemo(() => {
     let result = [...tools];
@@ -189,24 +190,41 @@ export function ToolsPage() {
         </div>
       </div>
 
-      <SearchFilter
-        categories={mockCategories.map((c) => c.name)}
-        onSearch={setSearchQuery}
-        onFilterChange={setFilters}
-        activeFilters={filters}
-      />
-
-      {filteredTools.length === 0 ? (
-        <div className="text-center py-12 bg-muted/30 rounded-lg border border-dashed">
-          <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
-            <Plus className="h-6 w-6 text-muted-foreground" />
+      {tools.length === 0 ? (
+        <div className="flex items-center justify-center min-h-[500px]">
+          <div className="text-center space-y-6">
+            <div className="mx-auto w-20 h-20 bg-muted rounded-full flex items-center justify-center">
+              <Package className="h-10 w-10 text-muted-foreground" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-semibold">No tools yet</h2>
+              <p className="text-muted-foreground max-w-xs">
+                Start by adding your first tool to begin tracking your subscriptions and tools.
+              </p>
+            </div>
+            <AddToolDialog categories={mockCategories} onSave={handleAddTool} />
           </div>
-          <h3 className="font-medium mb-1">No tools found</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Try adjusting your search or filters
-          </p>
         </div>
-      ) : viewMode === "grid" ? (
+      ) : (
+        <>
+          <SearchFilter
+            categories={mockCategories.map((c) => c.name)}
+            onSearch={setSearchQuery}
+            onFilterChange={setFilters}
+            activeFilters={filters}
+          />
+
+          {filteredTools.length === 0 ? (
+            <div className="text-center py-12 bg-muted/30 rounded-lg border border-dashed">
+              <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
+                <Plus className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <h3 className="font-medium mb-1">No tools found</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Try adjusting your search or filters
+              </p>
+            </div>
+          ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredTools.map((tool) => (
             <ToolCard
@@ -319,6 +337,8 @@ export function ToolsPage() {
             </TableBody>
           </Table>
         </div>
+          )}
+        </>
       )}
 
       <DeleteConfirmDialog
