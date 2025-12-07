@@ -288,7 +288,7 @@ export function AppSidebar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="flex items-center gap-3 w-full px-2 py-2 rounded-md hover:bg-sidebar-accent"
+                  className="flex items-center justify-start gap-3 w-full px-2 py-2 rounded-md hover:bg-sidebar-accent text-left"
                   data-testid="button-user-menu"
                 >
                   <Avatar className="h-8 w-8 flex-shrink-0">
@@ -298,11 +298,11 @@ export function AppSidebar() {
                     </AvatarFallback>
                   </Avatar>
                   {state === "expanded" && (
-                    <div className="flex flex-col items-start min-w-0 flex-1">
-                      <span className="text-sm font-medium truncate w-full">
+                    <div className="flex flex-col gap-0 min-w-0 flex-1">
+                      <span className="text-sm font-medium truncate leading-tight">
                         {user?.name || "User"}
                       </span>
-                      <span className="text-xs text-muted-foreground truncate w-full">
+                      <span className="text-xs text-muted-foreground truncate leading-tight">
                         {user?.email || "user@example.com"}
                       </span>
                     </div>
