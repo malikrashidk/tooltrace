@@ -19,6 +19,7 @@ import { LowUsagePage } from "@/pages/LowUsagePage";
 import { SettingsPage } from "@/components/SettingsPage";
 import { PricingPage } from "@/pages/PricingPage";
 import { AdminDashboard } from "@/pages/AdminDashboard";
+import { UserManagementPage } from "@/pages/UserManagementPage";
 import { ApiKeysPage } from "@/pages/ApiKeysPage";
 import { TeamCollaborationPage } from "@/pages/TeamCollaborationPage";
 import { ReceiptStoragePage } from "@/pages/ReceiptStoragePage";
@@ -52,6 +53,7 @@ function AuthenticatedApp() {
               <Route path="/low-usage" component={LowUsagePage} />
               <Route path="/pricing" component={PricingPage} />
               <Route path="/admin" component={AdminDashboard} />
+              <Route path="/admin/users" component={UserManagementPage} />
               <Route path="/api-keys" component={ApiKeysPage} />
               <Route path="/team" component={TeamCollaborationPage} />
               <Route path="/receipts" component={ReceiptStoragePage} />

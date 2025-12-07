@@ -23,9 +23,11 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByGoogleId(googleId: string): Promise<User | undefined>;
   getUserByFacebookId(facebookId: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   createOAuthUser(userData: Partial<User>): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
+  deleteUser(id: string): Promise<boolean>;
 
   // Tool operations
   getTool(id: string): Promise<Tool | undefined>;
@@ -129,6 +131,45 @@ export class MemStorage implements IStorage {
     const updated = { ...user, ...updates, updatedAt: new Date() };
     this.users.set(id, updated);
     return updated;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    // Also delete user's tools, subscriptions, payments, receipts, api keys, and notes
+    const tools = Array.from(this.tools.values()).filter((t) => t.userId === id);
+    for (const tool of tools) {
+      this.tools.delete(tool.id);
+    }
+    
+    const subscriptions = Array.from(this.subscriptions.values()).filter((s) => s.userId === id);
+    for (const sub of subscriptions) {
+      this.subscriptions.delete(sub.id);
+    }
+    
+    const payments = Array.from(this.payments.values()).filter((p) => p.userId === id);
+    for (const payment of payments) {
+      this.payments.delete(payment.id);
+    }
+    
+    const receipts = Array.from(this.receipts.values()).filter((r) => r.userId === id);
+    for (const receipt of receipts) {
+      this.receipts.delete(receipt.id);
+    }
+    
+    const apiKeys = Array.from(this.apiKeys.values()).filter((k) => k.userId === id);
+    for (const key of apiKeys) {
+      this.apiKeys.delete(key.id);
+    }
+    
+    const notes = Array.from(this.notes.values()).filter((n) => n.userId === id);
+    for (const note of notes) {
+      this.notes.delete(note.id);
+    }
+    
+    return this.users.delete(id);
   }
 
   async getTool(id: string): Promise<Tool | undefined> {

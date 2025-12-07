@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
-import { Users, DollarSign, TrendingUp, Activity, MoreVertical } from "lucide-react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Users, DollarSign, TrendingUp, Activity, MoreVertical, Settings } from "lucide-react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,52 +37,7 @@ import {
 const COLORS = ["hsl(217, 91%, 60%)", "hsl(142, 76%, 36%)", "hsl(271, 91%, 65%)"];
 
 // todo: remove mock functionality - replace with real API data
-const mockUsers = [
-  {
-    id: "1",
-    email: "john@example.com",
-    name: "John Doe",
-    plan: "premium",
-    status: "active",
-    joinedDate: "2024-06-15",
-    toolsCount: 25,
-    monthlySpend: 450,
-    totalRevenue: 1800,
-  },
-  {
-    id: "2",
-    email: "jane@example.com",
-    name: "Jane Smith",
-    plan: "standard",
-    status: "active",
-    joinedDate: "2024-07-20",
-    toolsCount: 12,
-    monthlySpend: 180,
-    totalRevenue: 720,
-  },
-  {
-    id: "3",
-    email: "bob@example.com",
-    name: "Bob Johnson",
-    plan: "free",
-    status: "active",
-    joinedDate: "2024-08-10",
-    toolsCount: 4,
-    monthlySpend: 0,
-    totalRevenue: 0,
-  },
-  {
-    id: "4",
-    email: "alice@example.com",
-    name: "Alice Williams",
-    plan: "premium",
-    status: "inactive",
-    joinedDate: "2024-05-01",
-    toolsCount: 18,
-    monthlySpend: 300,
-    totalRevenue: 2700,
-  },
-];
+// Removed mock data - using real API
 
 const planDistribution = [
   { name: "Free", value: 45 },
@@ -105,34 +62,36 @@ const userGrowth = [
 ];
 
 export function AdminDashboard() {
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [, setLocation] = useLocation();
 
-  useEffect(() => {
-    // todo: remove mock functionality - implement real admin check
-    setIsAdmin(true);
-  }, []);
+  // Fetch stats
+  const { data: statsResponse, isLoading: statsLoading } = useQuery({
+    queryKey: ["/api/admin/stats"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/stats");
+      if (!res.ok) throw new Error("Failed to fetch stats");
+      return res.json();
+    },
+  });
 
-  if (!isAdmin) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-2">Access Denied</h2>
-          <p className="text-muted-foreground">You don't have access to the admin dashboard.</p>
-        </div>
-      </div>
-    );
-  }
-
-  const totalUsers = mockUsers.length;
-  const activeUsers = mockUsers.filter((u) => u.status === "active").length;
-  const totalRevenue = mockUsers.reduce((sum, u) => sum + u.totalRevenue, 0);
-  const monthlyRecurring = mockUsers.reduce((sum, u) => sum + u.monthlySpend, 0);
+  const stats = statsResponse || { totalUsers: 0, totalRevenue: 0, activeSubscriptions: 0 };
+  const totalUsers = stats.totalUsers || 0;
+  const activeUsers = stats.activeSubscriptions || 0;
+  const totalRevenue = stats.totalRevenue || 0;
+  const monthlyRecurring = (stats.totalRevenue || 0) / 12;
 
   return (
     <div className="space-y-6 p-6">
       <div>
         <h1 className="text-3xl font-semibold">Admin Dashboard</h1>
         <p className="text-muted-foreground">Manage users, subscriptions, and revenue</p>
+      </div>
+
+      <div className="flex gap-2 mb-4">
+        <Button onClick={() => setLocation("/admin/users")} variant="outline" data-testid="button-manage-users">
+          <Users className="h-4 w-4 mr-2" />
+          Manage Users
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -196,7 +155,7 @@ export function AdminDashboard() {
               <div>
                 <p className="text-sm text-muted-foreground">Conversion Rate</p>
                 <p className="text-2xl font-semibold">
-                  {(((totalUsers - mockUsers.filter((u) => u.plan === "free").length) / totalUsers) * 100).toFixed(1)}%
+                  {totalUsers > 0 ? (((activeUsers / totalUsers) * 100).toFixed(1)) : "0"}%
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">To paid plans</p>
               </div>
@@ -293,79 +252,19 @@ export function AdminDashboard() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Users & Subscriptions</CardTitle>
-          <CardDescription>Manage user accounts and subscriptions</CardDescription>
+          <CardTitle>User Management</CardTitle>
+          <CardDescription>Add, edit, or delete users</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Tools</TableHead>
-                  <TableHead className="text-right">Monthly Spend</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {mockUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{user.email}</TableCell>
-                    <TableCell>
-                      <Badge
-                        className={
-                          user.plan === "premium"
-                            ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
-                            : user.plan === "standard"
-                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                            : "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400"
-                        }
-                      >
-                        {user.plan}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{user.toolsCount}</TableCell>
-                    <TableCell className="text-right font-mono">
-                      ${user.monthlySpend.toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={user.status === "active" ? "default" : "secondary"}
-                      >
-                        {user.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => console.log("View user:", user.id)}>
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => console.log("Edit user:", user.id)}>
-                            Edit User
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => console.log("View subscription:", user.id)}>
-                            View Subscription
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <div className="text-center py-6">
+            <p className="text-muted-foreground mb-4">Go to User Management to view and manage all users</p>
+            <Button onClick={() => setLocation("/admin/users")} data-testid="button-manage-users-card">
+              Manage Users
+            </Button>
           </div>
         </CardContent>
       </Card>
+
     </div>
   );
 }
