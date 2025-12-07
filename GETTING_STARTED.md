@@ -10,11 +10,8 @@ npm run dev
 ```
 App runs at: `http://localhost:5000`
 
-### 2. Login with Demo Account
-- **Email:** admin@demo.com
-- **Password:** Demo@123456
-
-Other accounts: free@demo.com, standard@demo.com, premium@demo.com (all use Demo@123456)
+### 2. Create Your Account
+Sign up with your email to get started.
 
 ### 3. Explore Features
 - Add tools and track subscriptions
@@ -100,17 +97,6 @@ POST   /api/stripe/customer-portal     - Manage subscriptions
 ├── STRIPE_SETUP.md             # Stripe integration guide
 └── docker-compose.yml          # Production stack
 ```
-
-## 🔐 Demo Accounts
-
-All use password: **Demo@123456**
-
-| Email | Role | Plan | Tools Limit |
-|-------|------|------|------------|
-| admin@demo.com | Admin | Premium | Unlimited |
-| free@demo.com | User | Free | 5 |
-| standard@demo.com | User | Standard | 12 |
-| premium@demo.com | User | Premium | Unlimited |
 
 ## 🛠️ Common Tasks
 
@@ -235,8 +221,7 @@ Takes ~20 minutes. No additional dependencies needed!
 ## 📈 Next Steps
 
 ### Immediate (Today)
-- [ ] Explore the demo accounts
-- [ ] Add some test tools
+- [ ] Create your account and add some tools
 - [ ] View analytics charts
 - [ ] Try uploading receipts
 

@@ -268,42 +268,6 @@ export function LoginPage({ onSwitchToSignup }: LoginPageProps) {
               </button>
             </p>
           </div>
-
-          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-900/30">
-            <p className="text-xs font-semibold text-blue-900 dark:text-blue-200 mb-3">
-              Demo Accounts for Testing:
-            </p>
-            <div className="space-y-2 text-xs text-blue-800 dark:text-blue-300">
-              <div className="flex justify-between items-center p-2 bg-white dark:bg-blue-950/50 rounded">
-                <div>
-                  <div className="font-medium">Admin</div>
-                  <div className="text-blue-600 dark:text-blue-400">admin@demo.com</div>
-                </div>
-                <div className="text-right text-blue-600 dark:text-blue-400">Demo@123456</div>
-              </div>
-              <div className="flex justify-between items-center p-2 bg-white dark:bg-blue-950/50 rounded">
-                <div>
-                  <div className="font-medium">Free Tier</div>
-                  <div className="text-blue-600 dark:text-blue-400">free@demo.com</div>
-                </div>
-                <div className="text-right text-blue-600 dark:text-blue-400">Demo@123456</div>
-              </div>
-              <div className="flex justify-between items-center p-2 bg-white dark:bg-blue-950/50 rounded">
-                <div>
-                  <div className="font-medium">Standard Tier</div>
-                  <div className="text-blue-600 dark:text-blue-400">standard@demo.com</div>
-                </div>
-                <div className="text-right text-blue-600 dark:text-blue-400">Demo@123456</div>
-              </div>
-              <div className="flex justify-between items-center p-2 bg-white dark:bg-blue-950/50 rounded">
-                <div>
-                  <div className="font-medium">Premium Tier</div>
-                  <div className="text-blue-600 dark:text-blue-400">premium@demo.com</div>
-                </div>
-                <div className="text-right text-blue-600 dark:text-blue-400">Demo@123456</div>
-              </div>
-            </div>
-          </div>
         </CardContent>
       </Card>
 
