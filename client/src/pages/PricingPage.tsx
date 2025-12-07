@@ -17,9 +17,9 @@ export function PricingPage() {
       name: "Free",
       description: "Get started with SaaS tracking",
       price: 0,
-      tools: 5,
+      tools: 8,
       features: [
-        "Up to 5 tools",
+        "Up to 8 tools",
         "Basic tool management",
         "Grid & list view",
         "Email reminders",
@@ -37,9 +37,9 @@ export function PricingPage() {
       name: "Standard",
       description: "For growing freelancers",
       price: 9.99,
-      tools: 12,
+      tools: 15,
       features: [
-        "Up to 12 tools",
+        "Up to 15 tools",
         "Advanced tool management",
         "Bulk operations & inline editing",
         "Budget tracking & alerts",
@@ -167,7 +167,7 @@ export function PricingPage() {
             <p className="text-xs sm:text-sm font-medium text-foreground mb-1">Current Plan Usage</p>
             <p className="text-sm sm:text-base">
               You're using <span className="font-bold text-primary">{userToolsCount}</span> of{" "}
-              <span className="font-bold">{userPlan === "standard" ? "12" : "unlimited"}</span> available tools
+              <span className="font-bold">{userPlan === "standard" ? "15" : "unlimited"}</span> available tools
             </p>
             <p className="text-xs text-muted-foreground mt-2 capitalize">
               {userPlan} Plan
@@ -183,7 +183,7 @@ export function PricingPage() {
             <CardContent className="pt-6 sm:pt-8">
               <div className="text-center space-y-2">
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground">Free Plan</p>
-                <p className="text-3xl sm:text-4xl font-bold text-primary">5</p>
+                <p className="text-3xl sm:text-4xl font-bold text-primary">8</p>
                 <p className="text-xs text-muted-foreground">tools limit</p>
               </div>
             </CardContent>
@@ -192,7 +192,7 @@ export function PricingPage() {
             <CardContent className="pt-6 sm:pt-8">
               <div className="text-center space-y-2">
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground">Standard Plan</p>
-                <p className="text-3xl sm:text-4xl font-bold text-primary">12</p>
+                <p className="text-3xl sm:text-4xl font-bold text-primary">15</p>
                 <p className="text-xs text-muted-foreground">tools limit</p>
               </div>
             </CardContent>
