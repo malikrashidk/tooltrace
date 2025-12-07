@@ -68,7 +68,10 @@ export function AdminDashboard() {
   const { data: statsResponse, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/admin/stats"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/stats");
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/admin/stats", {
+        headers: { "Authorization": `Bearer ${token}` },
+      });
       if (!res.ok) throw new Error("Failed to fetch stats");
       return res.json();
     },
