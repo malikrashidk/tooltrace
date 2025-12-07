@@ -33,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Tool, Category } from "@/lib/mockData";
+import type { Tool } from "@/lib/analytics";
 
 const toolSchema = z.object({
   name: z.string().min(1, "Tool name is required"),
@@ -50,7 +50,7 @@ const toolSchema = z.object({
 type ToolFormData = z.infer<typeof toolSchema>;
 
 interface AddToolDialogProps {
-  categories: Category[];
+  categories: string[];
   onSave: (tool: Partial<Tool>) => void;
   editTool?: Tool | null;
   trigger?: React.ReactNode;
@@ -70,10 +70,14 @@ export function AddToolDialog({ categories, onSave, editTool, trigger }: AddTool
       websiteUrl: editTool?.websiteUrl || "",
       notes: editTool?.notes || "",
       isPaid: editTool?.isPaid || false,
-      usageFrequency: editTool?.usageFrequency || "weekly",
-      billingAmount: editTool?.billingAmount,
-      billingCycle: editTool?.billingCycle || "monthly",
-      nextRenewalDate: editTool?.nextRenewalDate || "",
+      usageFrequency: (editTool?.usageFrequency as "daily" | "weekly" | "rarely") || "weekly",
+      billingAmount: editTool?.billingAmount ? parseFloat(editTool.billingAmount) : undefined,
+      billingCycle: (editTool?.billingCycle as "monthly" | "yearly" | "one-time") || "monthly",
+      nextRenewalDate: editTool?.nextRenewalDate 
+        ? (editTool.nextRenewalDate instanceof Date 
+            ? editTool.nextRenewalDate.toISOString().split('T')[0] 
+            : new Date(editTool.nextRenewalDate).toISOString().split('T')[0])
+        : "",
       paymentMethod: editTool?.paymentMethod || "",
     },
   });
@@ -83,6 +87,8 @@ export function AddToolDialog({ categories, onSave, editTool, trigger }: AddTool
   const onSubmit = (data: ToolFormData) => {
     onSave({
       ...data,
+      billingAmount: data.billingAmount?.toString(),
+      nextRenewalDate: data.nextRenewalDate ? new Date(data.nextRenewalDate) : undefined,
       categories: selectedCategories,
       tags,
       logoUrl: logoPreview || undefined,
@@ -235,13 +241,13 @@ export function AddToolDialog({ categories, onSave, editTool, trigger }: AddTool
                 <div className="flex flex-wrap gap-2">
                   {categories.map((category) => (
                     <Badge
-                      key={category.id}
-                      variant={selectedCategories.includes(category.name) ? "default" : "outline"}
+                      key={category}
+                      variant={selectedCategories.includes(category) ? "default" : "outline"}
                       className="cursor-pointer"
-                      onClick={() => toggleCategory(category.name)}
-                      data-testid={`select-category-${category.name.toLowerCase()}`}
+                      onClick={() => toggleCategory(category)}
+                      data-testid={`select-category-${category.toLowerCase()}`}
                     >
-                      {category.name}
+                      {category}
                     </Badge>
                   ))}
                 </div>

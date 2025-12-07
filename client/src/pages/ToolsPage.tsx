@@ -6,7 +6,8 @@ import { SearchFilter, type FilterState } from "@/components/SearchFilter";
 import { AddToolDialog } from "@/components/AddToolDialog";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { type Tool } from "@/lib/analytics";
 
 import {
@@ -94,7 +95,9 @@ export function ToolsPage() {
     result.sort((a, b) => {
       switch (filters.sortBy) {
         case "cost":
-          return (b.billingAmount || 0) - (a.billingAmount || 0);
+          const amountA = typeof a.billingAmount === 'string' ? parseFloat(a.billingAmount) : (a.billingAmount || 0);
+          const amountB = typeof b.billingAmount === 'string' ? parseFloat(b.billingAmount) : (b.billingAmount || 0);
+          return amountB - amountA;
         case "renewal":
           if (!a.nextRenewalDate) return 1;
           if (!b.nextRenewalDate) return -1;
@@ -110,18 +113,72 @@ export function ToolsPage() {
     return result;
   }, [tools, searchQuery, filters]);
 
+  const addToolMutation = useMutation({
+    mutationFn: async (newTool: Partial<Tool>) => {
+      return await apiRequest("POST", "/api/tools", newTool);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tools"] });
+      toast({
+        title: "Success",
+        description: "Tool added successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add tool",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateToolMutation = useMutation({
+    mutationFn: async (tool: Tool) => {
+      return await apiRequest("PATCH", `/api/tools/${tool.id}`, tool);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tools"] });
+      toast({
+        title: "Success",
+        description: "Tool updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update tool",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteToolMutation = useMutation({
+    mutationFn: async (toolId: string) => {
+      return await apiRequest("DELETE", `/api/tools/${toolId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tools"] });
+      toast({
+        title: "Success",
+        description: "Tool deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete tool",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleAddTool = (newTool: Partial<Tool>) => {
-    // TODO: Implement API call to add tool
-    console.log("Add tool:", newTool);
-    toast({
-      title: "Coming soon",
-      description: "Tool management will be available soon.",
-    });
+    addToolMutation.mutate(newTool);
   };
 
   const handleEditTool = (tool: Tool) => {
-    // TODO: Implement API call to edit tool
-    console.log("Edit tool:", tool);
+    updateToolMutation.mutate(tool);
   };
 
   const handleDeleteTool = (tool: Tool) => {
@@ -130,12 +187,7 @@ export function ToolsPage() {
 
   const confirmDelete = () => {
     if (deleteDialog.tool) {
-      // TODO: Implement API call to delete tool
-      console.log("Delete tool:", deleteDialog.tool);
-      toast({
-        title: "Coming soon",
-        description: "Tool deletion will be available soon.",
-      });
+      deleteToolMutation.mutate(deleteDialog.tool.id);
     }
     setDeleteDialog({ open: false, tool: null });
   };
@@ -252,7 +304,7 @@ export function ToolsPage() {
                   <TableCell>
                     <div className="flex items-center gap-2 sm:gap-3">
                       <Avatar className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg border flex-shrink-0">
-                        <AvatarImage src={tool.logoUrl} alt={tool.name} className="object-contain p-0.5" />
+                        <AvatarImage src={tool.logoUrl || undefined} alt={tool.name} className="object-contain p-0.5" />
                         <AvatarFallback className="rounded-lg text-xs">
                           {getInitials(tool.name)}
                         </AvatarFallback>
@@ -300,7 +352,7 @@ export function ToolsPage() {
                   </TableCell>
                   <TableCell className="text-right font-mono text-xs sm:text-sm whitespace-nowrap">
                     {tool.isPaid && tool.billingAmount
-                      ? formatCurrency(tool.billingAmount)
+                      ? formatCurrency(typeof tool.billingAmount === 'string' ? parseFloat(tool.billingAmount) : tool.billingAmount)
                       : "Free"}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell text-sm text-muted-foreground whitespace-nowrap">
