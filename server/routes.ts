@@ -480,9 +480,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/tools", authMiddleware, async (req, res) => {
     try {
-      const subscription = await storage.getUserSubscription(req.userId!);
+      let subscription = await storage.getUserSubscription(req.userId!);
+      
+      // Auto-create subscription if missing (fallback for edge cases)
       if (!subscription) {
-        return res.status(404).json({ error: "Subscription not found" });
+        const user = await storage.getUser(req.userId!);
+        const plan = user?.plan || "free";
+        const toolsLimit = plan === "premium" ? "999999" : plan === "standard" ? "12" : "5";
+        subscription = await storage.createSubscription({
+          userId: req.userId!,
+          plan,
+          toolsLimit,
+          status: "active",
+        });
       }
 
       const toolsCount = await storage.getUserToolsCount(req.userId!);
