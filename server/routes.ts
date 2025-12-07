@@ -167,6 +167,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Diagnostic endpoint - remove in production
+  app.get("/api/debug/users", async (req, res) => {
+    const adminEmail = "malikrashidk55@gmail.com";
+    const user = await storage.getUserByEmail(adminEmail);
+    console.log("DEBUG: Checking for admin user:", { adminEmail, found: !!user, user: user ? { id: user.id, email: user.email, name: user.name, plan: user.plan } : null });
+    res.json({ 
+      adminEmail,
+      found: !!user,
+      user: user ? { id: user.id, email: user.email, name: user.name, plan: user.plan, hasPassword: !!user.password } : null 
+    });
+  });
+
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { email, password, twoFactorCode } = req.body;
@@ -175,11 +187,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Email and password required" });
       }
 
+      // Get all users to debug
+      const allUsers = await storage.getUser("dummy"); // This will fail but let's see what we have
+      
       const user = await storage.getUserByEmail(email);
-      console.log("Login attempt:", { email, userFound: !!user, userPassword: !!user?.password });
+      console.log("LOGIN ATTEMPT:", { 
+        email, 
+        userFound: !!user, 
+        userName: user?.name,
+        userEmail: user?.email,
+        userPassword: !!user?.password 
+      });
       
       if (!user) {
-        console.log("User not found in storage");
+        console.log("❌ User not found for email:", email);
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
