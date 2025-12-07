@@ -511,8 +511,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const tool = await storage.createTool({
-        ...parsed.data,
-        userId: req.userId!,
+        ...(parsed.data as any),
+        userId: req.userId,
       });
 
       await auditLog(req.userId, "create", "tool", tool.id, {}, req);

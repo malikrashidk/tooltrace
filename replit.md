@@ -11,7 +11,15 @@ Tool Trace is a self-hostable SaaS tool management platform designed for freelan
 - I do not want any changes to be made to the `browser-extension/` folder unless explicitly requested.
 
 ## Recent Changes (December 7, 2025)
-### Mobile Responsiveness - Production Ready
+### Tool CRUD Operations - Fixed & Production Ready
+Resolved critical issues with tool management functionality:
+- **Fixed Subscription Not Found Error**: Added automatic subscription creation fallback in `/api/tools` POST endpoint when subscription is missing (edge case handling)
+- **Fixed Data Type Validation**: Updated `insertToolSchema` to omit `userId` field since it's added server-side, preventing validation errors
+- **Fixed Form Data Conversion**: Corrected `AddToolDialog.tsx` to properly handle `billingAmount` conversion (number → string) and `nextRenewalDate` conversion (string → Date)
+- **Tool Operations Working**: All CRUD operations (Create, Read, Update, Delete) now fully functional with proper API integration
+- **Verified Functionality**: Tested tool creation via UI - successfully creates tools and retrieves them from the database
+
+### Previous: Mobile Responsiveness - Production Ready
 Completed comprehensive mobile-first responsive design implementation across the entire application (320px to 1920px+):
 - **Responsive Typography**: All page titles use `text-2xl sm:text-3xl`, stat cards `text-xl sm:text-2xl`, descriptions `text-xs sm:text-sm md:text-base`
 - **Responsive Spacing**: Consistent padding across all pages `p-3 sm:p-4 md:p-6`, including loading states
