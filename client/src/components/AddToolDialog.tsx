@@ -87,7 +87,7 @@ export function AddToolDialog({ categories, onSave, editTool, trigger }: AddTool
   const onSubmit = (data: ToolFormData) => {
     onSave({
       ...data,
-      billingAmount: data.billingAmount?.toString(),
+      billingAmount: data.billingAmount ? String(data.billingAmount) : undefined,
       nextRenewalDate: data.nextRenewalDate ? new Date(data.nextRenewalDate) : undefined,
       categories: selectedCategories,
       tags,
