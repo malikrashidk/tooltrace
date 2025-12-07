@@ -287,12 +287,11 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent"
+                <button
+                  className="flex items-center gap-3 w-full px-2 py-2 rounded-md hover:bg-sidebar-accent"
                   data-testid="button-user-menu"
                 >
-                  <Avatar className="h-8 w-8">
+                  <Avatar className="h-8 w-8 flex-shrink-0">
                     <AvatarImage src={undefined} alt={user?.name} />
                     <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                       {user?.name ? getInitials(user.name) : "U"}
@@ -308,11 +307,11 @@ export function AppSidebar() {
                       </span>
                     </div>
                   )}
-                </SidebarMenuButton>
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 side="top"
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56"
+                className="w-56"
                 align="start"
               >
                 <DropdownMenuItem asChild>
