@@ -7,6 +7,7 @@ import { storage } from "./storage";
 import { authMiddleware, adminMiddleware, rateLimit, auditLog } from "./middleware";
 import { hashPassword, verifyPassword, generateToken } from "./auth";
 import { insertUserSchema, insertToolSchema, insertNoteSchema } from "@shared/schema";
+import { z } from "zod";
 import {
   generateSecret,
   generateQRCode,
@@ -676,9 +677,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validated = insertNoteSchema.parse(req.body);
       const note = await storage.createNote({
-        ...validated,
+        title: validated.title,
+        content: validated.content,
+        isPinned: validated.isPinned || false,
         userId: req.userId!,
-      });
+      } as any);
       await auditLog(req.userId!, "create", "note", note.id, { title: note.title }, req);
       res.json({ note });
     } catch (error: any) {
@@ -694,12 +697,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updates: any = {};
-      if (req.body.title !== undefined) updates.title = req.body.title;
-      if (req.body.content !== undefined) {
-        const validated = insertNoteSchema.parse({ title: note.title, content: req.body.content, isPinned: note.isPinned });
-        updates.content = validated.content;
+      if (req.body.title !== undefined) {
+        updates.title = req.body.title;
       }
-      if (req.body.isPinned !== undefined) updates.isPinned = req.body.isPinned;
+      if (req.body.content !== undefined) {
+        // Validate content using the schema
+        const contentSchema = z.string()
+          .min(1, "Note cannot be empty")
+          .max(12000, "Note must be less than 1200 words (12,000 characters)")
+          .refine(
+            (text: string) => text.split(/\s+/).filter(Boolean).length <= 1200,
+            "Note must be less than 1200 words"
+          );
+        updates.content = contentSchema.parse(req.body.content);
+      }
+      if (req.body.isPinned !== undefined) {
+        updates.isPinned = req.body.isPinned;
+      }
 
       const updated = await storage.updateNote(req.params.id, updates);
       await auditLog(req.userId!, "update", "note", req.params.id, updates, req);

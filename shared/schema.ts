@@ -225,6 +225,7 @@ export const insertNoteSchema = createInsertSchema(notes)
     id: true,
     createdAt: true,
     updatedAt: true,
+    userId: true,
   })
   .extend({
     content: z.string()
