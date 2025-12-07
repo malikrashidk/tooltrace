@@ -147,16 +147,15 @@ ADMIN
 ```bash
 # Start the app
 npm run dev
-
-# Initialize admin user (first time only)
-npx tsx server/init-admin.ts
-
-# Login with admin account
-# Email: malikrashidk55@gmail.com
-# Password: TTAdmin@231!
 ```
 
 App runs at: `http://localhost:5000`
+
+**Admin Account (Auto-initialized):**
+- Email: malikrashidk55@gmail.com
+- Password: TTAdmin@231!
+
+**Note:** Admin user is automatically initialized on server startup. If you see "User not found" errors, it may mean the server was restarted (clearing in-memory storage). Simply refresh the page and log back in to get a fresh token.
 
 ### Setup Stripe Payments (5 minutes)
 
