@@ -1,6 +1,6 @@
-# SaaS Hub Browser Extension
+# Tool Trace Browser Extension
 
-Auto-detect and add SaaS tools to your SaaS Hub while browsing!
+Auto-detect and add SaaS tools to your Tool Trace dashboard while browsing!
 
 ## Features
 
@@ -24,7 +24,7 @@ Auto-detect and add SaaS tools to your SaaS Hub while browsing!
 
 If the above doesn't work:
 1. Click the extension icon in your toolbar
-2. Verify it shows "Connected to SaaS Hub"
+2. Verify it shows "Connected to Tool Trace"
 3. Visit any SaaS tool website
 4. The extension will detect it automatically
 
@@ -33,7 +33,7 @@ If the above doesn't work:
 1. **Browse Normally**: Visit your favorite SaaS tools
 2. **Click Extension Icon**: Open the popup from your toolbar
 3. **Select Tools**: Check the tools you want to add
-4. **Click "Add Selected"**: Tools are added to your SaaS Hub
+4. **Click "Add Selected"**: Tools are added to your Tool Trace dashboard
 
 ## Supported Tools
 
@@ -95,8 +95,8 @@ KNOWN_SAAS_TOOLS = {
 - Try refreshing the extension by toggling it off/on
 - Check that you're on the correct domain (e.g., github.com, not github.io)
 
-### "Cannot connect to SaaS Hub" error?
-- Ensure SaaS Hub app is running (typically at `http://localhost:5000`)
+### "Cannot connect to Tool Trace" error?
+- Ensure Tool Trace app is running (typically at `http://localhost:5000`)
 - Check browser console for error messages
 - Try refreshing both the extension and the app
 

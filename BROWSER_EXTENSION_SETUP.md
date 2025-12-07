@@ -1,8 +1,8 @@
-# SaaS Hub Browser Extension Setup Guide
+# Tool Trace Browser Extension Setup Guide
 
-## What is the SaaS Hub Browser Extension?
+## What is the Tool Trace Browser Extension?
 
-The SaaS Hub Browser Extension helps you automatically detect and add SaaS tools to your account as you browse. No manual searching needed!
+The Tool Trace Browser Extension helps you automatically detect and add SaaS tools to your account as you browse. No manual searching needed!
 
 ## Installation Steps
 
@@ -24,7 +24,7 @@ The SaaS Hub Browser Extension helps you automatically detect and add SaaS tools
 
 4. **Verify Installation**
    - The extension should appear in your extensions list
-   - You'll see the SaaS Hub icon in your toolbar
+   - You'll see the Tool Trace icon in your toolbar
    - Pin it for easy access (click the pin icon)
 
 ## Using the Extension
@@ -33,15 +33,15 @@ The SaaS Hub Browser Extension helps you automatically detect and add SaaS tools
 
 1. **Browse Your SaaS Tools**: Visit any of your favorite SaaS applications (Figma, GitHub, Notion, etc.)
 
-2. **Open the Extension**: Click the SaaS Hub icon in your browser toolbar
+2. **Open the Extension**: Click the Tool Trace icon in your browser toolbar
 
 3. **Review Detected Tools**: The extension shows all detected SaaS tools from your open tabs
 
 4. **Select Tools**: Check the boxes next to tools you want to add
 
-5. **Add to SaaS Hub**: Click the "Add Selected" button
+5. **Add to Tool Trace**: Click the "Add Selected" button
 
-6. **Sync Complete**: Selected tools are instantly added to your SaaS Hub!
+6. **Sync Complete**: Selected tools are instantly added to your Tool Trace dashboard!
 
 ## Supported SaaS Tools
 
@@ -79,7 +79,7 @@ More tools are being added regularly!
 - Make sure you're on the actual tool site (not a blog or help page)
 
 ### "Failed to add tools" message
-- Ensure SaaS Hub app is running locally
+- Ensure Tool Trace app is running locally
 - Check your browser console for error messages
 - Try refreshing both the extension and the app
 
@@ -119,7 +119,7 @@ Open `browser-extension/popup.js` and find the `KNOWN_SAAS_TOOLS` object. Add yo
 3. Click the extension icon
 4. Select the tools you want to add
 5. Click "Add Selected"
-6. Check your SaaS Hub dashboard to see your tools!
+6. Check your Tool Trace dashboard to see your tools!
 
 ## Need Help?
 
