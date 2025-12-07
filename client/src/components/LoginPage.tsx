@@ -81,6 +81,7 @@ export function LoginPage({ onSwitchToSignup }: LoginPageProps) {
       });
       
       const result = await response.json();
+      console.log("Login response:", { status: response.status, ok: response.ok, result });
       
       if (result.requiresTwoFactor) {
         setPendingCredentials({ email: data.email, password: data.password });
@@ -88,16 +89,15 @@ export function LoginPage({ onSwitchToSignup }: LoginPageProps) {
         return;
       }
       
-      if (!response.ok) {
+      if (!response.ok || !result.token || !result.user) {
         throw new Error(result.error || "Login failed");
       }
       
-      if (result.token && result.user) {
-        localStorage.setItem("token", result.token);
-        localStorage.setItem("user", JSON.stringify(result.user));
-        window.location.href = "/";
-      }
+      localStorage.setItem("token", result.token);
+      localStorage.setItem("user", JSON.stringify(result.user));
+      window.location.href = "/";
     } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         title: "Login Failed",
         description: error.message || "Invalid credentials",
