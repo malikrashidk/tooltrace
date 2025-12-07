@@ -1,20 +1,22 @@
 import { useMemo, useState } from "react";
-import { Calendar, AlertCircle, DollarSign, Filter, ExternalLink, Trash2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Calendar, AlertCircle, DollarSign, ExternalLink, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import {
-  mockTools,
-  getUpcomingRenewals,
-} from "@/lib/mockData";
+import { Skeleton } from "@/components/ui/skeleton";
+import { type Tool, getUpcomingRenewals, formatCurrency } from "@/lib/analytics";
 
 export function RenewalsPage() {
   const { toast } = useToast();
-  // todo: remove mock functionality - replace with real API data
-  const tools = mockTools;
+  
+  const { data: toolsData, isLoading } = useQuery<{ tools: Tool[] }>({
+    queryKey: ["/api/tools"],
+  });
+  
+  const tools = toolsData?.tools || [];
   const [selectedPeriod, setSelectedPeriod] = useState<"7" | "30" | "90">("30");
 
   const renewals7 = useMemo(() => getUpcomingRenewals(tools, 7), [tools]);
@@ -30,8 +32,19 @@ export function RenewalsPage() {
   const currentRenewals = renewalsMap[selectedPeriod];
 
   const totalAmount = currentRenewals.reduce((sum, tool) => {
-    return sum + (tool.billingAmount || 0);
+    return sum + Number(tool.billingAmount || 0);
   }, 0);
+  
+  if (isLoading) {
+    return (
+      <div className="space-y-6 p-6">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-32" />)}
+        </div>
+      </div>
+    );
+  }
 
   const getDaysUntil = (dateStr: string) => {
     const now = new Date();
@@ -57,12 +70,6 @@ export function RenewalsPage() {
       .slice(0, 2);
   };
 
-  const formatCurrency = (amount: number) => {
-    return amount.toLocaleString("en-US", {
-      style: "currency",
-      currency: "USD",
-    });
-  };
 
   const groupByMonth = (renewals: typeof currentRenewals) => {
     const groups: Record<string, typeof currentRenewals> = {};
@@ -99,7 +106,7 @@ export function RenewalsPage() {
                 <p className="text-sm text-muted-foreground">Next 7 Days</p>
                 <p className="text-2xl font-semibold">{renewals7.length}</p>
                 <p className="text-sm font-mono text-muted-foreground">
-                  {formatCurrency(renewals7.reduce((s, t) => s + (t.billingAmount || 0), 0))}
+                  {formatCurrency(renewals7.reduce((s, t) => s + Number(t.billingAmount || 0), 0))}
                 </p>
               </div>
             </div>
@@ -116,7 +123,7 @@ export function RenewalsPage() {
                 <p className="text-sm text-muted-foreground">Next 30 Days</p>
                 <p className="text-2xl font-semibold">{renewals30.length}</p>
                 <p className="text-sm font-mono text-muted-foreground">
-                  {formatCurrency(renewals30.reduce((s, t) => s + (t.billingAmount || 0), 0))}
+                  {formatCurrency(renewals30.reduce((s, t) => s + Number(t.billingAmount || 0), 0))}
                 </p>
               </div>
             </div>
@@ -133,7 +140,7 @@ export function RenewalsPage() {
                 <p className="text-sm text-muted-foreground">Next 90 Days</p>
                 <p className="text-2xl font-semibold">{renewals90.length}</p>
                 <p className="text-sm font-mono text-muted-foreground">
-                  {formatCurrency(renewals90.reduce((s, t) => s + (t.billingAmount || 0), 0))}
+                  {formatCurrency(renewals90.reduce((s, t) => s + Number(t.billingAmount || 0), 0))}
                 </p>
               </div>
             </div>

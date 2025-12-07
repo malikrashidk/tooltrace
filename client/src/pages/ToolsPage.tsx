@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import { Plus, Grid3X3, List, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ToolCard } from "@/components/ToolCard";
@@ -6,11 +6,9 @@ import { SearchFilter, type FilterState } from "@/components/SearchFilter";
 import { AddToolDialog } from "@/components/AddToolDialog";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { useToast } from "@/hooks/use-toast";
-import {
-  mockTools,
-  mockCategories,
-  type Tool,
-} from "@/lib/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { type Tool } from "@/lib/analytics";
+
 import {
   Table,
   TableBody,
@@ -33,8 +31,12 @@ type ViewMode = "grid" | "list";
 
 export function ToolsPage() {
   const { toast } = useToast();
-  // todo: remove mock functionality - replace with real API data
-  const [tools, setTools] = useState<Tool[]>([]);
+  
+  const { data: toolsData } = useQuery<{ tools: Tool[] }>({
+    queryKey: ["/api/tools"],
+  });
+  
+  const tools = toolsData?.tools || [];
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<FilterState>({
@@ -47,7 +49,15 @@ export function ToolsPage() {
     open: false,
     tool: null,
   });
-  const addToolDialogRef = useRef<{ openDialog: () => void }>(null);
+
+  // Get unique categories from tools
+  const categories = useMemo(() => {
+    const cats = new Set<string>();
+    tools.forEach(tool => {
+      tool.categories?.forEach(cat => cats.add(cat));
+    });
+    return Array.from(cats);
+  }, [tools]);
 
   const filteredTools = useMemo(() => {
     let result = [...tools];
@@ -58,20 +68,20 @@ export function ToolsPage() {
         (tool) =>
           tool.name.toLowerCase().includes(query) ||
           tool.notes?.toLowerCase().includes(query) ||
-          tool.categories.some((c) => c.toLowerCase().includes(query)) ||
-          tool.tags.some((t) => t.toLowerCase().includes(query))
+          tool.categories?.some((c) => c.toLowerCase().includes(query)) ||
+          tool.tags?.some((t) => t.toLowerCase().includes(query))
       );
     }
 
     if (filters.categories.length > 0) {
       result = result.filter((tool) =>
-        tool.categories.some((c) => filters.categories.includes(c))
+        tool.categories?.some((c) => filters.categories.includes(c))
       );
     }
 
     if (filters.usageFrequency.length > 0) {
       result = result.filter((tool) =>
-        filters.usageFrequency.includes(tool.usageFrequency)
+        tool.usageFrequency && filters.usageFrequency.includes(tool.usageFrequency)
       );
     }
 
@@ -90,8 +100,8 @@ export function ToolsPage() {
           if (!b.nextRenewalDate) return -1;
           return new Date(a.nextRenewalDate).getTime() - new Date(b.nextRenewalDate).getTime();
         case "usage":
-          const usageOrder = { daily: 0, weekly: 1, rarely: 2 };
-          return usageOrder[a.usageFrequency] - usageOrder[b.usageFrequency];
+          const usageOrder: Record<string, number> = { daily: 0, weekly: 1, rarely: 2 };
+          return (usageOrder[a.usageFrequency || "rarely"] || 2) - (usageOrder[b.usageFrequency || "rarely"] || 2);
         default:
           return a.name.localeCompare(b.name);
       }
@@ -101,29 +111,16 @@ export function ToolsPage() {
   }, [tools, searchQuery, filters]);
 
   const handleAddTool = (newTool: Partial<Tool>) => {
-    const tool: Tool = {
-      id: `tool-${Date.now()}`,
-      name: newTool.name || "",
-      websiteUrl: newTool.websiteUrl || "",
-      notes: newTool.notes || "",
-      isPaid: newTool.isPaid || false,
-      categories: newTool.categories || [],
-      tags: newTool.tags || [],
-      usageFrequency: newTool.usageFrequency || "weekly",
-      logoUrl: newTool.logoUrl,
-      billingAmount: newTool.billingAmount,
-      billingCycle: newTool.billingCycle,
-      nextRenewalDate: newTool.nextRenewalDate,
-      paymentMethod: newTool.paymentMethod,
-    };
-    setTools([...tools, tool]);
+    // TODO: Implement API call to add tool
+    console.log("Add tool:", newTool);
     toast({
-      title: "Tool added",
-      description: `${tool.name} has been added to your collection.`,
+      title: "Coming soon",
+      description: "Tool management will be available soon.",
     });
   };
 
   const handleEditTool = (tool: Tool) => {
+    // TODO: Implement API call to edit tool
     console.log("Edit tool:", tool);
   };
 
@@ -133,10 +130,11 @@ export function ToolsPage() {
 
   const confirmDelete = () => {
     if (deleteDialog.tool) {
-      setTools(tools.filter((t) => t.id !== deleteDialog.tool!.id));
+      // TODO: Implement API call to delete tool
+      console.log("Delete tool:", deleteDialog.tool);
       toast({
-        title: "Tool deleted",
-        description: `${deleteDialog.tool.name} has been removed.`,
+        title: "Coming soon",
+        description: "Tool deletion will be available soon.",
       });
     }
     setDeleteDialog({ open: false, tool: null });
@@ -186,7 +184,7 @@ export function ToolsPage() {
               <List className="h-4 w-4" />
             </Button>
           </div>
-          <AddToolDialog categories={mockCategories} onSave={handleAddTool} />
+          <AddToolDialog categories={categories} onSave={handleAddTool} />
         </div>
       </div>
 
@@ -202,13 +200,13 @@ export function ToolsPage() {
                 Start by adding your first tool/website/app to begin tracking your subscriptions and much more.
               </p>
             </div>
-            <AddToolDialog categories={mockCategories} onSave={handleAddTool} />
+            <AddToolDialog categories={categories} onSave={handleAddTool} />
           </div>
         </div>
       ) : (
         <>
           <SearchFilter
-            categories={mockCategories.map((c) => c.name)}
+            categories={categories}
             onSearch={setSearchQuery}
             onFilterChange={setFilters}
             activeFilters={filters}
@@ -274,14 +272,14 @@ export function ToolsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {tool.categories.slice(0, 2).map((cat) => (
+                      {tool.categories?.slice(0, 2).map((cat) => (
                         <Badge key={cat} variant="outline" className="text-xs">
                           {cat}
                         </Badge>
                       ))}
-                      {tool.categories.length > 2 && (
+                      {(tool.categories?.length || 0) > 2 && (
                         <Badge variant="outline" className="text-xs">
-                          +{tool.categories.length - 2}
+                          +{(tool.categories?.length || 0) - 2}
                         </Badge>
                       )}
                     </div>

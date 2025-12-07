@@ -1,280 +1,160 @@
-import { useState, useMemo } from "react";
-import { Plus, Package } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Package, TrendingUp, DollarSign, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { StatsCards } from "@/components/StatsCards";
-import { ToolCard } from "@/components/ToolCard";
-import { RenewalsWidget } from "@/components/RenewalsWidget";
-import { LowUsageWidget } from "@/components/LowUsageWidget";
-import { CategoryChart } from "@/components/CategoryChart";
-import { SearchFilter, type FilterState } from "@/components/SearchFilter";
-import { AddToolDialog } from "@/components/AddToolDialog";
-import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
-import { CSVImportExport } from "@/components/CSVImportExport";
-import { useToast } from "@/hooks/use-toast";
-import {
-  mockTools,
-  mockCategories,
-  getMonthlySpend,
-  getYearlySpend,
-  getUpcomingRenewals,
-  getLowUsageTools,
-  getCategorySpending,
-  type Tool,
-} from "@/lib/mockData";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useLocation } from "wouter";
+import { Skeleton } from "@/components/ui/skeleton";
+import { type Tool } from "@/lib/analytics";
 
 export function Dashboard() {
-  const { toast } = useToast();
-  // todo: remove mock functionality - replace with real API data
-  const [tools, setTools] = useState<Tool[]>(mockTools);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filters, setFilters] = useState<FilterState>({
-    categories: [],
-    usageFrequency: [],
-    isPaid: "all",
-    sortBy: "name",
-  });
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; tool: Tool | null }>({
-    open: false,
-    tool: null,
+  const [, setLocation] = useLocation();
+  
+  const { data: toolsData, isLoading } = useQuery<{ tools: Tool[] }>({
+    queryKey: ["/api/tools"],
   });
 
-  const monthlySpend = useMemo(() => getMonthlySpend(tools), [tools]);
-  const yearlySpend = useMemo(() => getYearlySpend(tools), [tools]);
-  const upcomingRenewals = useMemo(() => getUpcomingRenewals(tools, 30), [tools]);
-  const lowUsageTools = useMemo(() => getLowUsageTools(tools), [tools]);
-  const categorySpending = useMemo(() => getCategorySpending(tools), [tools]);
+  const tools = toolsData?.tools || [];
+  const paidTools = tools.filter(t => t.isPaid);
+  const monthlySpend = paidTools.reduce((sum, t) => sum + Number(t.billingAmount || 0), 0);
 
-  const paidTools = tools.filter((t) => t.isPaid).length;
-  const freeTools = tools.filter((t) => !t.isPaid).length;
-
-  const filteredTools = useMemo(() => {
-    let result = [...tools];
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (tool) =>
-          tool.name.toLowerCase().includes(query) ||
-          tool.notes?.toLowerCase().includes(query) ||
-          tool.categories.some((c) => c.toLowerCase().includes(query)) ||
-          tool.tags.some((t) => t.toLowerCase().includes(query))
-      );
-    }
-
-    if (filters.categories.length > 0) {
-      result = result.filter((tool) =>
-        tool.categories.some((c) => filters.categories.includes(c))
-      );
-    }
-
-    if (filters.usageFrequency.length > 0) {
-      result = result.filter((tool) =>
-        filters.usageFrequency.includes(tool.usageFrequency)
-      );
-    }
-
-    if (filters.isPaid !== "all") {
-      result = result.filter((tool) =>
-        filters.isPaid === "paid" ? tool.isPaid : !tool.isPaid
-      );
-    }
-
-    result.sort((a, b) => {
-      switch (filters.sortBy) {
-        case "cost":
-          return (b.billingAmount || 0) - (a.billingAmount || 0);
-        case "renewal":
-          if (!a.nextRenewalDate) return 1;
-          if (!b.nextRenewalDate) return -1;
-          return new Date(a.nextRenewalDate).getTime() - new Date(b.nextRenewalDate).getTime();
-        case "usage":
-          const usageOrder = { daily: 0, weekly: 1, rarely: 2 };
-          return usageOrder[a.usageFrequency] - usageOrder[b.usageFrequency];
-        default:
-          return a.name.localeCompare(b.name);
-      }
-    });
-
-    return result;
-  }, [tools, searchQuery, filters]);
-
-  const handleAddTool = (newTool: Partial<Tool>) => {
-    // todo: remove mock functionality - replace with real API call
-    const tool: Tool = {
-      id: `tool-${Date.now()}`,
-      name: newTool.name || "",
-      websiteUrl: newTool.websiteUrl || "",
-      notes: newTool.notes || "",
-      isPaid: newTool.isPaid || false,
-      categories: newTool.categories || [],
-      tags: newTool.tags || [],
-      usageFrequency: newTool.usageFrequency || "weekly",
-      logoUrl: newTool.logoUrl,
-      billingAmount: newTool.billingAmount,
-      billingCycle: newTool.billingCycle,
-      nextRenewalDate: newTool.nextRenewalDate,
-      paymentMethod: newTool.paymentMethod,
-    };
-    setTools([...tools, tool]);
-    toast({
-      title: "Tool added",
-      description: `${tool.name} has been added to your collection.`,
-    });
-  };
-
-  const handleEditTool = (tool: Tool) => {
-    console.log("Edit tool:", tool);
-    toast({
-      title: "Edit mode",
-      description: `Editing ${tool.name}...`,
-    });
-  };
-
-  const handleDeleteTool = (tool: Tool) => {
-    setDeleteDialog({ open: true, tool });
-  };
-
-  const confirmDelete = () => {
-    if (deleteDialog.tool) {
-      // todo: remove mock functionality - replace with real API call
-      setTools(tools.filter((t) => t.id !== deleteDialog.tool!.id));
-      toast({
-        title: "Tool deleted",
-        description: `${deleteDialog.tool.name} has been removed.`,
-      });
-    }
-    setDeleteDialog({ open: false, tool: null });
-  };
-
-  const handleImport = (importedTools: Partial<Tool>[]) => {
-    // todo: remove mock functionality - replace with real API call
-    const newTools = importedTools.map((t, index) => ({
-      id: `imported-${Date.now()}-${index}`,
-      name: t.name || "",
-      websiteUrl: t.websiteUrl || "",
-      notes: t.notes || "",
-      isPaid: t.isPaid || false,
-      categories: t.categories || [],
-      tags: t.tags || [],
-      usageFrequency: t.usageFrequency || "weekly",
-      logoUrl: t.logoUrl,
-      billingAmount: t.billingAmount,
-      billingCycle: t.billingCycle,
-      nextRenewalDate: t.nextRenewalDate,
-      paymentMethod: t.paymentMethod,
-    })) as Tool[];
-    setTools([...tools, ...newTools]);
-    toast({
-      title: "Import complete",
-      description: `${newTools.length} tools have been imported.`,
-    });
-  };
+  if (isLoading) {
+    return (
+      <div className="space-y-6 p-6">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
-      <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 sm:p-6 md:p-8">
-        <div className="flex flex-col gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold" data-testid="text-dashboard-title">Dashboard</h1>
-            <p className="text-sm sm:text-base text-muted-foreground mt-1">Manage and track your SaaS subscriptions</p>
-          </div>
-          <div className="flex flex-wrap gap-2 w-full">
-            <CSVImportExport tools={tools} onImport={handleImport} />
-            <AddToolDialog categories={mockCategories} onSave={handleAddTool} />
-          </div>
-        </div>
+    <div className="space-y-6 p-6">
+      <div>
+        <h1 className="text-3xl font-semibold">Dashboard</h1>
+        <p className="text-muted-foreground">Overview of your tools and subscriptions</p>
       </div>
 
-      <StatsCards
-        monthlySpend={monthlySpend}
-        yearlySpend={yearlySpend}
-        totalTools={tools.length}
-        paidTools={paidTools}
-        freeTools={freeTools}
-        lowUsageCount={lowUsageTools.length}
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        <div className="lg:col-span-2 space-y-4 md:space-y-6">
-          <SearchFilter
-            categories={mockCategories.map((c) => c.name)}
-            onSearch={setSearchQuery}
-            onFilterChange={setFilters}
-            activeFilters={filters}
-          />
-
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium">Your Tools</h2>
-              <span className="text-sm text-muted-foreground">
-                {filteredTools.length} of {tools.length} tools
-              </span>
-            </div>
-
-            {filteredTools.length === 0 ? (
-              <div className="text-center py-8 sm:py-12 md:py-16 bg-gradient-to-br from-muted/40 to-muted/20 rounded-lg border-2 border-dashed border-muted/50 px-4">
-                <div className="mx-auto w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 sm:mb-6">
-                  <Package className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-primary" />
-                </div>
-                <h3 className="text-base sm:text-lg font-semibold mb-2">No tools found</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6 max-w-xs mx-auto">
-                  {searchQuery || filters.categories.length > 0
-                    ? "Try adjusting your search or filters"
-                    : "Get started by adding your first SaaS tool to begin tracking"}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Tools</p>
+                <p className="text-2xl font-semibold" data-testid="text-total-tools">{tools.length}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {paidTools.length} paid
                 </p>
-                {!searchQuery && filters.categories.length === 0 && (
-                  <AddToolDialog
-                    categories={mockCategories}
-                    onSave={handleAddTool}
-                    trigger={
-                      <Button size="lg">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Your First Tool
-                      </Button>
-                    }
-                  />
-                )}
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {filteredTools.map((tool) => (
-                  <ToolCard
-                    key={tool.id}
-                    tool={tool}
-                    onEdit={handleEditTool}
-                    onDelete={handleDeleteTool}
-                    onCredentialsUpdate={(updatedTool) => {
-                      const updatedTools = tools.map((t) => (t.id === updatedTool.id ? updatedTool : t));
-                      setTools(updatedTools);
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="space-y-4 md:space-y-6">
-          <RenewalsWidget
-            renewals={upcomingRenewals}
-            title="Upcoming Renewals (30 days)"
-            onViewAll={() => console.log("View all renewals")}
-          />
-          <LowUsageWidget
-            tools={lowUsageTools}
-            onViewAll={() => console.log("View low usage")}
-            onReviewTool={(tool) => console.log("Review:", tool.name)}
-          />
-          <CategoryChart data={categorySpending} />
-        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-green-100 dark:bg-green-900/30">
+                <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Monthly Spend</p>
+                <p className="text-2xl font-semibold font-mono" data-testid="text-monthly-spend">
+                  ${monthlySpend.toFixed(2)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Current subscriptions</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+                <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Yearly Projection</p>
+                <p className="text-2xl font-semibold font-mono" data-testid="text-yearly-projection">
+                  ${(monthlySpend * 12).toFixed(2)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Estimated annual cost</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      <DeleteConfirmDialog
-        open={deleteDialog.open}
-        onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}
-        toolName={deleteDialog.tool?.name || ""}
-        onConfirm={confirmDelete}
-      />
+      {tools.length === 0 ? (
+        <Card>
+          <CardContent className="pt-6 pb-6 text-center">
+            <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">No tools added yet</h3>
+            <p className="text-muted-foreground mb-4">
+              Start tracking your SaaS tools and subscriptions
+            </p>
+            <Button onClick={() => setLocation("/tools")} data-testid="button-add-first-tool">
+              Add Your First Tool
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Tools</CardTitle>
+            <CardDescription>Your recently added tools</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {tools.slice(0, 5).map((tool) => (
+                <div 
+                  key={tool.id}
+                  className="flex items-center justify-between p-3 border rounded-md hover-elevate cursor-pointer"
+                  onClick={() => setLocation("/tools")}
+                  data-testid={`tool-${tool.id}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-muted">
+                      <Package className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{tool.name}</p>
+                      {tool.notes && (
+                        <p className="text-sm text-muted-foreground">{tool.notes}</p>
+                      )}
+                    </div>
+                  </div>
+                  {tool.isPaid && tool.billingAmount && (
+                    <div className="text-right">
+                      <p className="font-mono font-medium">${Number(tool.billingAmount)}/mo</p>
+                      {tool.nextRenewalDate && (
+                        <p className="text-xs text-muted-foreground">
+                          Renews {new Date(tool.nextRenewalDate).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            {tools.length > 5 && (
+              <Button
+                variant="outline"
+                className="w-full mt-4"
+                onClick={() => setLocation("/tools")}
+                data-testid="button-view-all-tools"
+              >
+                View All Tools ({tools.length})
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
