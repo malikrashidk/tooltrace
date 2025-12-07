@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Save, Bell, Mail, User, Key, Shield } from "lucide-react";
+import { Save, Bell, Mail, User, Key, Shield, Download, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -314,6 +314,44 @@ export function SettingsPage() {
                 Email settings are configured through environment variables on your VPS. 
                 Set SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS in your .env file.
               </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5" />
+              Browser Extension
+            </CardTitle>
+            <CardDescription>Auto-detect and add SaaS tools while browsing</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Install our browser extension to automatically detect SaaS tools as you browse the web. 
+              It makes adding tools to Tool Trace quick and effortless.
+            </p>
+            <div className="flex flex-col gap-3">
+              <a 
+                href="/browser-extension" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                data-testid="button-download-extension"
+              >
+                <Button className="w-full sm:w-auto gap-2">
+                  <Download className="h-4 w-4" />
+                  Download Extension
+                </Button>
+              </a>
+              <a 
+                href="https://github.com/yourusername/tooltrace-extension" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-sm text-primary hover:underline"
+                data-testid="link-extension-docs"
+              >
+                View Installation Instructions →
+              </a>
             </div>
           </CardContent>
         </Card>
