@@ -16,6 +16,7 @@ import type {
   AuditLog,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { sql } from "./db";
 
 export interface IStorage {
   // User operations
@@ -32,7 +33,7 @@ export interface IStorage {
   // Tool operations
   getTool(id: string): Promise<Tool | undefined>;
   getUserTools(userId: string): Promise<Tool[]>;
-  createTool(tool: InsertTool): Promise<Tool>;
+  createTool(tool: InsertTool & { userId: string }): Promise<Tool>;
   updateTool(id: string, updates: Partial<Tool>): Promise<Tool | undefined>;
   deleteTool(id: string): Promise<boolean>;
   getUserToolsCount(userId: string): Promise<number>;
@@ -59,7 +60,7 @@ export interface IStorage {
   deleteApiKey(id: string): Promise<boolean>;
 
   // Note operations
-  createNote(note: InsertNote): Promise<Note>;
+  createNote(note: InsertNote & { userId: string }): Promise<Note>;
   getUserNotes(userId: string): Promise<Note[]>;
   getNote(id: string): Promise<Note | undefined>;
   updateNote(id: string, updates: Partial<Note>): Promise<Note | undefined>;
@@ -313,4 +314,345 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DbStorage implements IStorage {
+  // User operations
+  async getUser(id: string): Promise<User | undefined> {
+    const result = await sql`SELECT * FROM users WHERE id = ${id} LIMIT 1`;
+    return result[0] as User | undefined;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const result = await sql`SELECT * FROM users WHERE email = ${email} LIMIT 1`;
+    return result[0] as User | undefined;
+  }
+
+  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    const result = await sql`SELECT * FROM users WHERE google_id = ${googleId} LIMIT 1`;
+    return result[0] as User | undefined;
+  }
+
+  async getUserByFacebookId(facebookId: string): Promise<User | undefined> {
+    const result = await sql`SELECT * FROM users WHERE facebook_id = ${facebookId} LIMIT 1`;
+    return result[0] as User | undefined;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    const result = await sql`SELECT * FROM users`;
+    return result as User[];
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const result = await sql`
+      INSERT INTO users (email, password, name)
+      VALUES (${user.email}, ${user.password}, ${user.name})
+      RETURNING *
+    `;
+    return result[0] as User;
+  }
+
+  async createOAuthUser(userData: Partial<User>): Promise<User> {
+    const result = await sql`
+      INSERT INTO users (email, name, password, google_id, facebook_id, oauth_provider, avatar_url)
+      VALUES (
+        ${userData.email!},
+        ${userData.name!},
+        NULL,
+        ${userData.googleId || null},
+        ${userData.facebookId || null},
+        ${userData.oauthProvider || null},
+        ${userData.avatarUrl || null}
+      )
+      RETURNING *
+    `;
+    return result[0] as User;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const setClauses: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    Object.entries(updates).forEach(([key, value]) => {
+      const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+      setClauses.push(`${snakeKey} = $${paramIndex}`);
+      values.push(value);
+      paramIndex++;
+    });
+
+    if (setClauses.length === 0) return undefined;
+
+    const query = `UPDATE users SET ${setClauses.join(', ')}, updated_at = NOW() WHERE id = $${paramIndex} RETURNING *`;
+    values.push(id);
+
+    const result = await sql(query, values);
+    return result[0] as User | undefined;
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    const result = await sql`DELETE FROM users WHERE id = ${id} RETURNING id`;
+    return result.length > 0;
+  }
+
+  // Tool operations
+  async getTool(id: string): Promise<Tool | undefined> {
+    const result = await sql`SELECT * FROM tools WHERE id = ${id} LIMIT 1`;
+    return result[0] as Tool | undefined;
+  }
+
+  async getUserTools(userId: string): Promise<Tool[]> {
+    const result = await sql`SELECT * FROM tools WHERE user_id = ${userId}`;
+    return result as Tool[];
+  }
+
+  async createTool(tool: InsertTool & { userId: string }): Promise<Tool> {
+    const result = await sql`
+      INSERT INTO tools (
+        user_id, name, website_url, logo_url, notes, is_paid, 
+        billing_amount, billing_cycle, next_renewal_date, 
+        categories, tags, usage_frequency, payment_method, credentials
+      )
+      VALUES (
+        ${tool.userId}, ${tool.name}, ${tool.websiteUrl}, ${tool.logoUrl || null}, 
+        ${tool.notes || null}, ${tool.isPaid}, ${tool.billingAmount || null}, 
+        ${tool.billingCycle || null}, ${tool.nextRenewalDate || null}, 
+        ${tool.categories || []}, ${tool.tags || []}, ${tool.usageFrequency}, 
+        ${tool.paymentMethod || null}, ${tool.credentials ? JSON.stringify(tool.credentials) : null}
+      )
+      RETURNING *
+    `;
+    return result[0] as Tool;
+  }
+
+  async updateTool(id: string, updates: Partial<Tool>): Promise<Tool | undefined> {
+    const setClauses: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    Object.entries(updates).forEach(([key, value]) => {
+      const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+      if (key === 'credentials' && value !== null && value !== undefined) {
+        setClauses.push(`${snakeKey} = $${paramIndex}::jsonb`);
+        values.push(JSON.stringify(value));
+      } else if ((key === 'categories' || key === 'tags') && value !== null && value !== undefined) {
+        setClauses.push(`${snakeKey} = $${paramIndex}::text[]`);
+        values.push(value);
+      } else {
+        setClauses.push(`${snakeKey} = $${paramIndex}`);
+        values.push(value);
+      }
+      paramIndex++;
+    });
+
+    if (setClauses.length === 0) return undefined;
+
+    const query = `UPDATE tools SET ${setClauses.join(', ')}, updated_at = NOW() WHERE id = $${paramIndex} RETURNING *`;
+    values.push(id);
+
+    const result = await sql(query, values);
+    return result[0] as Tool | undefined;
+  }
+
+  async deleteTool(id: string): Promise<boolean> {
+    const result = await sql`DELETE FROM tools WHERE id = ${id} RETURNING id`;
+    return result.length > 0;
+  }
+
+  async getUserToolsCount(userId: string): Promise<number> {
+    const result = await sql`SELECT COUNT(*) as count FROM tools WHERE user_id = ${userId}`;
+    return parseInt(result[0].count);
+  }
+
+  // Subscription operations
+  async getUserSubscription(userId: string): Promise<Subscription | undefined> {
+    const result = await sql`SELECT * FROM subscriptions WHERE user_id = ${userId} LIMIT 1`;
+    return result[0] as Subscription | undefined;
+  }
+
+  async createSubscription(sub: InsertSubscription): Promise<Subscription> {
+    const result = await sql`
+      INSERT INTO subscriptions (
+        user_id, plan, status, current_tools_count, tools_limit, 
+        start_date, renewal_date, cancelled_at
+      )
+      VALUES (
+        ${sub.userId}, ${sub.plan}, ${sub.status || 'active'}, 
+        ${sub.currentToolsCount || 0}, ${sub.toolsLimit || 8}, 
+        ${sub.startDate || null}, ${sub.renewalDate || null}, ${sub.cancelledAt || null}
+      )
+      RETURNING *
+    `;
+    return result[0] as Subscription;
+  }
+
+  async updateSubscription(id: string, updates: Partial<Subscription>): Promise<Subscription | undefined> {
+    const setClauses: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    Object.entries(updates).forEach(([key, value]) => {
+      const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+      setClauses.push(`${snakeKey} = $${paramIndex}`);
+      values.push(value);
+      paramIndex++;
+    });
+
+    if (setClauses.length === 0) return undefined;
+
+    const query = `UPDATE subscriptions SET ${setClauses.join(', ')}, updated_at = NOW() WHERE id = $${paramIndex} RETURNING *`;
+    values.push(id);
+
+    const result = await sql(query, values);
+    return result[0] as Subscription | undefined;
+  }
+
+  // Payment operations
+  async createPayment(payment: InsertPayment): Promise<Payment> {
+    const result = await sql`
+      INSERT INTO payments (
+        user_id, amount, currency, status, stripe_payment_id, 
+        plan_upgrade, description
+      )
+      VALUES (
+        ${payment.userId}, ${payment.amount}, ${payment.currency || 'USD'}, 
+        ${payment.status || 'pending'}, ${payment.stripePaymentId || null}, 
+        ${payment.planUpgrade || null}, ${payment.description || null}
+      )
+      RETURNING *
+    `;
+    return result[0] as Payment;
+  }
+
+  async getPayment(id: string): Promise<Payment | undefined> {
+    const result = await sql`SELECT * FROM payments WHERE id = ${id} LIMIT 1`;
+    return result[0] as Payment | undefined;
+  }
+
+  async getUserPayments(userId: string): Promise<Payment[]> {
+    const result = await sql`SELECT * FROM payments WHERE user_id = ${userId}`;
+    return result as Payment[];
+  }
+
+  // Receipt operations
+  async createReceipt(receipt: InsertReceipt): Promise<Receipt> {
+    const result = await sql`
+      INSERT INTO receipts (
+        user_id, tool_id, file_name, file_url, upload_date, amount, receipt_date
+      )
+      VALUES (
+        ${receipt.userId}, ${receipt.toolId || null}, ${receipt.fileName}, 
+        ${receipt.fileUrl}, ${receipt.uploadDate || null}, ${receipt.amount || null}, 
+        ${receipt.receiptDate || null}
+      )
+      RETURNING *
+    `;
+    return result[0] as Receipt;
+  }
+
+  async getUserReceipts(userId: string): Promise<Receipt[]> {
+    const result = await sql`SELECT * FROM receipts WHERE user_id = ${userId}`;
+    return result as Receipt[];
+  }
+
+  async deleteReceipt(id: string): Promise<boolean> {
+    const result = await sql`DELETE FROM receipts WHERE id = ${id} RETURNING id`;
+    return result.length > 0;
+  }
+
+  // API Key operations
+  async createApiKey(apiKey: InsertApiKey): Promise<ApiKey> {
+    const result = await sql`
+      INSERT INTO api_keys (
+        user_id, name, key, secret, last_used_at, is_active
+      )
+      VALUES (
+        ${apiKey.userId}, ${apiKey.name}, ${apiKey.key}, ${apiKey.secret}, 
+        ${apiKey.lastUsedAt || null}, ${apiKey.isActive ?? true}
+      )
+      RETURNING *
+    `;
+    return result[0] as ApiKey;
+  }
+
+  async getUserApiKeys(userId: string): Promise<ApiKey[]> {
+    const result = await sql`SELECT * FROM api_keys WHERE user_id = ${userId}`;
+    return result as ApiKey[];
+  }
+
+  async getApiKeyByKey(key: string): Promise<ApiKey | undefined> {
+    const result = await sql`SELECT * FROM api_keys WHERE key = ${key} LIMIT 1`;
+    return result[0] as ApiKey | undefined;
+  }
+
+  async deleteApiKey(id: string): Promise<boolean> {
+    const result = await sql`DELETE FROM api_keys WHERE id = ${id} RETURNING id`;
+    return result.length > 0;
+  }
+
+  // Note operations
+  async createNote(note: InsertNote & { userId: string }): Promise<Note> {
+    const result = await sql`
+      INSERT INTO notes (user_id, title, content, is_pinned)
+      VALUES (${note.userId}, ${note.title}, ${note.content}, ${note.isPinned || false})
+      RETURNING *
+    `;
+    return result[0] as Note;
+  }
+
+  async getUserNotes(userId: string): Promise<Note[]> {
+    const result = await sql`
+      SELECT * FROM notes 
+      WHERE user_id = ${userId} 
+      ORDER BY is_pinned DESC, updated_at DESC
+    `;
+    return result as Note[];
+  }
+
+  async getNote(id: string): Promise<Note | undefined> {
+    const result = await sql`SELECT * FROM notes WHERE id = ${id} LIMIT 1`;
+    return result[0] as Note | undefined;
+  }
+
+  async updateNote(id: string, updates: Partial<Note>): Promise<Note | undefined> {
+    const setClauses: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    Object.entries(updates).forEach(([key, value]) => {
+      const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+      setClauses.push(`${snakeKey} = $${paramIndex}`);
+      values.push(value);
+      paramIndex++;
+    });
+
+    if (setClauses.length === 0) return undefined;
+
+    const query = `UPDATE notes SET ${setClauses.join(', ')}, updated_at = NOW() WHERE id = $${paramIndex} RETURNING *`;
+    values.push(id);
+
+    const result = await sql(query, values);
+    return result[0] as Note | undefined;
+  }
+
+  async deleteNote(id: string): Promise<boolean> {
+    const result = await sql`DELETE FROM notes WHERE id = ${id} RETURNING id`;
+    return result.length > 0;
+  }
+
+  // Audit Log operations
+  async createAuditLog(log: Omit<AuditLog, "id" | "createdAt">): Promise<AuditLog> {
+    const result = await sql`
+      INSERT INTO audit_logs (
+        user_id, action, resource, resource_id, changes, ip_address, user_agent
+      )
+      VALUES (
+        ${log.userId || null}, ${log.action}, ${log.resource}, ${log.resourceId || null}, 
+        ${log.changes ? JSON.stringify(log.changes) : null}, 
+        ${log.ipAddress || null}, ${log.userAgent || null}
+      )
+      RETURNING *
+    `;
+    return result[0] as AuditLog;
+  }
+}
+
+export const storage = new DbStorage();
