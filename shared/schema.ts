@@ -194,6 +194,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export const insertToolSchema = createInsertSchema(tools).omit({
   id: true,
+  userId: true,
   createdAt: true,
   updatedAt: true,
 });
