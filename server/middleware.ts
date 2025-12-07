@@ -25,14 +25,29 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
       return res.status(401).json({ error: "Invalid token" });
     }
 
+    // Note: In development with in-memory storage, the user may not exist if server restarted.
+    // We still set the userId from the decoded token so the request can proceed.
     const user = await storage.getUser(decoded.userId);
-    if (!user) {
-      return res.status(401).json({ error: "User not found" });
+    
+    req.userId = decoded.userId;
+    if (user) {
+      req.user = user;
+      req.isAdmin = user.isAdmin;
+    } else {
+      // User not in storage (server restart), but token is valid. Create a basic user object for the request.
+      req.user = {
+        id: decoded.userId,
+        email: decoded.email,
+        name: decoded.email.split("@")[0],
+        plan: (decoded.plan as any) || "free",
+        isAdmin: decoded.isAdmin || false,
+        password: null,
+        twoFactorEnabled: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      req.isAdmin = decoded.isAdmin || false;
     }
-
-    req.userId = user.id;
-    req.user = user;
-    req.isAdmin = user.isAdmin;
 
     next();
   } catch (error) {

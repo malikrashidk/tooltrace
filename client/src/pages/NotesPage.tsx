@@ -26,7 +26,8 @@ export function NotesPage() {
 
   const createMutation = useMutation({
     mutationFn: async (data: { title: string; content: string; isPinned?: boolean }) => {
-      return apiRequest("POST", "/api/notes", data);
+      const res = await apiRequest("POST", "/api/notes", data);
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notes"] });
@@ -44,7 +45,8 @@ export function NotesPage() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, ...data }: { id: string; title?: string; content?: string; isPinned?: boolean }) => {
-      return apiRequest("PATCH", `/api/notes/${id}`, data);
+      const res = await apiRequest("PATCH", `/api/notes/${id}`, data);
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notes"] });
@@ -63,16 +65,17 @@ export function NotesPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest("DELETE", `/api/notes/${id}`, {});
+      const res = await apiRequest("DELETE", `/api/notes/${id}`, {});
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notes"] });
       toast({ description: "Note deleted successfully" });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         variant: "destructive",
-        description: "Failed to delete note",
+        description: error.message || "Failed to delete note",
       });
     },
   });
