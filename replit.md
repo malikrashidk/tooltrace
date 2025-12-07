@@ -7,12 +7,14 @@ Self-hostable SaaS tool management platform for anyone (freelancers, businesses,
 
 All core features implemented and ready for deployment!
 
-**Latest Updates (December 2024):**
+**Latest Updates (December 7, 2025):**
+- ✅ Fixed critical rate limiting issue - now applies only to /api routes
+- ✅ Login page now loads and works correctly (no more 429 "Too Many Requests" errors)
+- ✅ Verified JWT authentication and admin auto-initialization working
 - ✅ Removed demo accounts - Now uses real authentication API
 - ✅ Created admin user initialization script
 - ✅ Rebranded to "Tool Trace" (from "SaaS Tools Hub for Freelancers")
 - ✅ Added Notes feature for all users (new table + page + API routes)
-- ✅ Created comprehensive VPS setup guide for Stripe & 2FA
 - ✅ Logout functionality confirmed working in sidebar
 - ✅ Plan upgrades preserve user data and tools
 
@@ -187,6 +189,20 @@ docker-compose up -d
 ```
 
 **See:** `DEPLOYMENT.md` for complete VPS deployment guide
+
+## 🐛 Bug Fixes (December 7, 2025)
+
+### Rate Limiting Issue - RESOLVED ✅
+**Problem:** Frontend was returning "429 Too Many Requests" errors on page load, showing blank page
+- Root cause: Rate limiting middleware was applied to ALL routes, including Vite asset requests
+- Solution: Modified `server/routes.ts` to apply rate limiting only to `/api` routes
+- Result: Frontend now loads correctly, no more 429 errors
+
+### LSP Type Error - RESOLVED ✅
+**Problem:** TypeScript compilation error in `server/middleware.ts`
+- Root cause: User type was declared as `any` instead of proper `User` type
+- Solution: Added proper import and type declaration
+- Result: Full type safety restored
 
 ## 📁 Project Structure
 
