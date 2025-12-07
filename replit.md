@@ -11,13 +11,13 @@ Tool Trace is a self-hostable SaaS tool management platform designed for freelan
 - I do not want any changes to be made to the `browser-extension/` folder unless explicitly requested.
 
 ## Recent Changes (December 7, 2025)
-### Tool CRUD Operations - Fixed & Production Ready
-Resolved critical issues with tool management functionality:
-- **Fixed Subscription Not Found Error**: Added automatic subscription creation fallback in `/api/tools` POST endpoint when subscription is missing (edge case handling)
-- **Fixed Data Type Validation**: Updated `insertToolSchema` to omit `userId` field since it's added server-side, preventing validation errors
-- **Fixed Form Data Conversion**: Corrected `AddToolDialog.tsx` to properly handle `billingAmount` conversion (number → string) and `nextRenewalDate` conversion (string → Date)
-- **Tool Operations Working**: All CRUD operations (Create, Read, Update, Delete) now fully functional with proper API integration
-- **Verified Functionality**: Tested tool creation via UI - successfully creates tools and retrieves them from the database
+### Tool Limits & CRUD Operations - Complete & Production Ready
+- **Updated Tool Limits**: Free tier now allows 8 tools (was 5), Standard tier allows 15 tools (was 12), Premium unlimited
+- **Fixed Subscription Not Found Error**: Added automatic subscription creation fallback in `/api/tools` POST endpoint when subscription is missing
+- **Fixed Data Type Validation**: Updated `insertToolSchema` to omit `userId` field since it's added server-side
+- **Fixed Form Data Conversion**: Corrected `AddToolDialog.tsx` to properly handle `billingAmount` (number → string) and `nextRenewalDate` (string → Date)
+- **Tool Limits Applied**: All endpoints validate limits across OAuth registration, email registration, admin plan changes, and Stripe upgrades
+- **All CRUD Operations**: Create, Read, Update, Delete fully functional with proper API integration and limit enforcement
 
 ### Previous: Mobile Responsiveness - Production Ready
 Completed comprehensive mobile-first responsive design implementation across the entire application (320px to 1920px+):
@@ -40,7 +40,7 @@ The frontend is built with React 18, TypeScript, and Vite, utilizing Shadcn/ui a
 - **Database**: PostgreSQL (Neon) managed with Drizzle ORM. The schema includes 7 core tables: `users`, `tools`, `subscriptions`, `payments`, `receipts`, `audit_logs`, and `api_keys`, plus a `notes` table. All tables are indexed for performance.
 - **Authentication**: JWT with a 7-day expiry and PBKDF2 for password hashing (100k iterations, random salt). Supports an admin role with specific access controls.
 - **Security**: Implements rate limiting (100 requests/minute), comprehensive audit logging, Zod for input validation, and client-side AES-GCM encryption for sensitive credentials.
-- **Subscription System**: Supports Free (5 tools), Standard (12 tools + team features), and Premium (unlimited tools + API access) tiers, with database-enforced tool limits.
+- **Subscription System**: Supports Free (8 tools), Standard (15 tools + team features), and Premium (unlimited tools + API access) tiers, with database-enforced tool limits.
 - **Financial Analytics**: Dashboard and Analytics pages provide visual spending analytics based on real financial data.
 - **Notes Feature**: Allows users to create, edit, pin, and delete personal notes associated with their tools.
 

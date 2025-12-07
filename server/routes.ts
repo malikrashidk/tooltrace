@@ -62,7 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 await storage.createSubscription({
                   userId: user!.id,
                   plan: "free",
-                  toolsLimit: "5",
+                  toolsLimit: "8",
                 });
               }
             }
@@ -110,7 +110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 await storage.createSubscription({
                   userId: user!.id,
                   plan: "free",
-                  toolsLimit: "5",
+                  toolsLimit: "8",
                 });
               }
             }
@@ -146,7 +146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createSubscription({
         userId: user.id,
         plan: "free",
-        toolsLimit: "5",
+        toolsLimit: "8",
       });
 
       await auditLog(user.id, "create", "user", user.id, {}, req);
@@ -486,7 +486,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!subscription) {
         const user = await storage.getUser(req.userId!);
         const plan = user?.plan || "free";
-        const toolsLimit = plan === "premium" ? "999999" : plan === "standard" ? "12" : "5";
+        const toolsLimit = plan === "premium" ? "999999" : plan === "standard" ? "15" : "8";
         subscription = await storage.createSubscription({
           userId: req.userId!,
           plan,
@@ -592,7 +592,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: user.id,
         plan: plan || "free",
         status: "active",
-        toolsLimit: String(plan === "standard" ? 12 : plan === "premium" ? 999999 : 5),
+        toolsLimit: String(plan === "standard" ? 15 : plan === "premium" ? 999999 : 8),
       });
 
       await auditLog(req.userId, "create", "user", user.id, { email, name, plan }, req);
@@ -640,7 +640,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (plan) {
         const subscription = await storage.getUserSubscription(req.params.id);
-        const toolsLimit = String(plan === "standard" ? 12 : plan === "premium" ? 999999 : 5);
+        const toolsLimit = String(plan === "standard" ? 15 : plan === "premium" ? 999999 : 8);
         if (subscription) {
           await storage.updateSubscription(subscription.id, { plan, toolsLimit });
         }
