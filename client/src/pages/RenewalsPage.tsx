@@ -37,9 +37,9 @@ export function RenewalsPage() {
   
   if (isLoading) {
     return (
-      <div className="space-y-6 p-6">
+      <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
         <Skeleton className="h-10 w-64" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-32" />)}
         </div>
       </div>
@@ -87,15 +87,15 @@ export function RenewalsPage() {
   const groupedRenewals = groupByMonth(currentRenewals);
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Upcoming Renewals</h1>
-          <p className="text-muted-foreground">Track and manage your subscription renewals</p>
+          <h1 className="text-xl sm:text-2xl font-semibold">Upcoming Renewals</h1>
+          <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Track and manage your subscription renewals</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
         <Card className={selectedPeriod === "7" ? "ring-2 ring-primary" : ""}>
           <CardContent className="pt-6 cursor-pointer" onClick={() => setSelectedPeriod("7")}>
             <div className="flex items-center gap-4">
@@ -104,7 +104,7 @@ export function RenewalsPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Next 7 Days</p>
-                <p className="text-2xl font-semibold">{renewals7.length}</p>
+                <p className="text-xl sm:text-2xl font-semibold">{renewals7.length}</p>
                 <p className="text-sm font-mono text-muted-foreground">
                   {formatCurrency(renewals7.reduce((s, t) => s + Number(t.billingAmount || 0), 0))}
                 </p>
@@ -121,7 +121,7 @@ export function RenewalsPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Next 30 Days</p>
-                <p className="text-2xl font-semibold">{renewals30.length}</p>
+                <p className="text-xl sm:text-2xl font-semibold">{renewals30.length}</p>
                 <p className="text-sm font-mono text-muted-foreground">
                   {formatCurrency(renewals30.reduce((s, t) => s + Number(t.billingAmount || 0), 0))}
                 </p>
@@ -138,7 +138,7 @@ export function RenewalsPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Next 90 Days</p>
-                <p className="text-2xl font-semibold">{renewals90.length}</p>
+                <p className="text-xl sm:text-2xl font-semibold">{renewals90.length}</p>
                 <p className="text-sm font-mono text-muted-foreground">
                   {formatCurrency(renewals90.reduce((s, t) => s + Number(t.billingAmount || 0), 0))}
                 </p>

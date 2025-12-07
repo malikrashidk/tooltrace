@@ -27,10 +27,10 @@ export function AdminDashboard() {
   const monthlyRecurring = (stats.totalRevenue || 0) / 12;
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
       <div>
-        <h1 className="text-3xl font-semibold">Admin Dashboard</h1>
-        <p className="text-muted-foreground">Manage users, subscriptions, and revenue</p>
+        <h1 className="text-2xl sm:text-3xl font-semibold">Admin Dashboard</h1>
+        <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Manage users, subscriptions, and revenue</p>
       </div>
 
       <div className="flex gap-2 mb-4">
@@ -40,7 +40,7 @@ export function AdminDashboard() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
@@ -49,7 +49,7 @@ export function AdminDashboard() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Users</p>
-                <p className="text-2xl font-semibold">{totalUsers}</p>
+                <p className="text-xl sm:text-2xl font-semibold">{totalUsers}</p>
                 <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                   {activeUsers} active
                 </p>
@@ -66,7 +66,7 @@ export function AdminDashboard() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Revenue</p>
-                <p className="text-2xl font-semibold font-mono">
+                <p className="text-xl sm:text-2xl font-semibold font-mono">
                   ${totalRevenue.toLocaleString()}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">All time</p>
@@ -83,7 +83,7 @@ export function AdminDashboard() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">MRR</p>
-                <p className="text-2xl font-semibold font-mono">
+                <p className="text-xl sm:text-2xl font-semibold font-mono">
                   ${monthlyRecurring.toLocaleString()}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">Monthly recurring</p>
@@ -100,7 +100,7 @@ export function AdminDashboard() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Conversion Rate</p>
-                <p className="text-2xl font-semibold">
+                <p className="text-xl sm:text-2xl font-semibold">
                   {totalUsers > 0 ? (((activeUsers / totalUsers) * 100).toFixed(1)) : "0"}%
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">To paid plans</p>

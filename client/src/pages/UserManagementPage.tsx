@@ -165,11 +165,11 @@ export function UserManagementPage() {
   };
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold">User Management</h1>
-          <p className="text-muted-foreground">Add, edit, and delete users</p>
+          <h1 className="text-2xl sm:text-3xl font-semibold">User Management</h1>
+          <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Add, edit, and delete users</p>
         </div>
         <Button onClick={() => setShowAddDialog(true)} data-testid="button-add-user">
           <Plus className="h-4 w-4 mr-2" />
@@ -190,43 +190,80 @@ export function UserManagementPage() {
           ) : users.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">No users yet</div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Plan</TableHead>
-                    <TableHead>Joined</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((user: User) => (
-                    <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <Badge className={getPlanColor(user.plan)}>
-                          {user.plan.charAt(0).toUpperCase() + user.plan.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-right">
+            <>
+              {/* Mobile card view */}
+              <div className="md:hidden space-y-3">
+                {users.map((user: User) => (
+                  <Card key={user.id} data-testid={`card-user-${user.id}`}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <p className="font-medium">{user.name}</p>
+                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                        </div>
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => handleDeleteUser(user)}
                           data-testid={`button-delete-user-${user.id}`}
                         >
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
-                      </TableCell>
+                      </div>
+                      <div className="flex items-center justify-between pt-3 border-t">
+                        <div className="flex items-center gap-2">
+                          <Badge className={getPlanColor(user.plan)}>
+                            {user.plan.charAt(0).toUpperCase() + user.plan.slice(1)}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(user.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Desktop table view */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Plan</TableHead>
+                      <TableHead>Joined</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map((user: User) => (
+                      <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
+                        <TableCell className="font-medium">{user.name}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Badge className={getPlanColor(user.plan)}>
+                            {user.plan.charAt(0).toUpperCase() + user.plan.slice(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteUser(user)}
+                            data-testid={`button-delete-user-${user.id}`}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

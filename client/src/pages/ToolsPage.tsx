@@ -157,11 +157,11 @@ export function ToolsPage() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">All Tools</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl font-semibold">All Tools</h1>
+          <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
             {tools.length} tools in your collection
           </p>
         </div>
@@ -195,8 +195,8 @@ export function ToolsPage() {
               <Package className="h-10 w-10 text-muted-foreground" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-semibold">No tools yet</h2>
-              <p className="text-muted-foreground max-w-xs">
+              <h2 className="text-xl sm:text-2xl font-semibold">No tools yet</h2>
+              <p className="text-xs sm:text-sm md:text-base text-muted-foreground max-w-xs">
                 Start by adding your first tool/website/app to begin tracking your subscriptions and much more.
               </p>
             </div>
@@ -234,15 +234,15 @@ export function ToolsPage() {
           ))}
         </div>
       ) : (
-        <div className="border rounded-lg">
+        <div className="border rounded-lg overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Tool</TableHead>
-                <TableHead>Categories</TableHead>
-                <TableHead>Usage</TableHead>
-                <TableHead className="text-right">Cost</TableHead>
-                <TableHead>Renewal</TableHead>
+                <TableHead className="w-[140px] sm:w-[200px]">Tool</TableHead>
+                <TableHead className="hidden md:table-cell">Categories</TableHead>
+                <TableHead className="hidden md:table-cell">Usage</TableHead>
+                <TableHead className="text-right w-[80px] sm:w-[100px]">Cost</TableHead>
+                <TableHead className="hidden sm:table-cell w-[100px] sm:w-[120px]">Renewal</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -250,27 +250,27 @@ export function ToolsPage() {
               {filteredTools.map((tool) => (
                 <TableRow key={tool.id} data-testid={`table-row-${tool.id}`}>
                   <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8 rounded-lg border">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <Avatar className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg border flex-shrink-0">
                         <AvatarImage src={tool.logoUrl} alt={tool.name} className="object-contain p-0.5" />
                         <AvatarFallback className="rounded-lg text-xs">
                           {getInitials(tool.name)}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <p className="font-medium">{tool.name}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm sm:text-base break-words">{tool.name}</p>
                         <a
                           href={tool.websiteUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
+                          className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 mt-0.5"
                         >
                           Visit <ExternalLink className="h-3 w-3" />
                         </a>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">
                     <div className="flex flex-wrap gap-1">
                       {tool.categories?.slice(0, 2).map((cat) => (
                         <Badge key={cat} variant="outline" className="text-xs">
@@ -284,7 +284,7 @@ export function ToolsPage() {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">
                     <Badge
                       variant="secondary"
                       className={`text-xs ${
@@ -298,12 +298,12 @@ export function ToolsPage() {
                       {tool.usageFrequency}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right font-mono">
+                  <TableCell className="text-right font-mono text-xs sm:text-sm whitespace-nowrap">
                     {tool.isPaid && tool.billingAmount
                       ? formatCurrency(tool.billingAmount)
                       : "Free"}
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
+                  <TableCell className="hidden sm:table-cell text-sm text-muted-foreground whitespace-nowrap">
                     {tool.nextRenewalDate
                       ? new Date(tool.nextRenewalDate).toLocaleDateString()
                       : "-"}
@@ -311,7 +311,7 @@ export function ToolsPage() {
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>

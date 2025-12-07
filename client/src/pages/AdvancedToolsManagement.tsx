@@ -11,24 +11,24 @@ export function AdvancedToolsManagement() {
 
   if (!isPaidPlan) {
     return (
-      <div className="space-y-6 p-6">
+      <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
         <div>
-          <h1 className="text-3xl font-semibold">Advanced Tools Management</h1>
-          <p className="text-muted-foreground">Bulk operations, detailed management, and tool intelligence</p>
+          <h1 className="text-2xl sm:text-3xl font-semibold">Advanced Tools Management</h1>
+          <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Bulk operations, detailed management, and tool intelligence</p>
         </div>
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
+          <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16 px-4">
             <div className="text-center space-y-4 max-w-md">
               <div className="mx-auto w-20 h-20 bg-muted rounded-full flex items-center justify-center">
                 <Wrench className="h-10 w-10 text-muted-foreground" />
               </div>
-              <h2 className="text-2xl font-semibold">Upgrade for Advanced Management</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-xl sm:text-2xl font-semibold">Upgrade for Advanced Management</h2>
+              <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
                 Advanced tools management with bulk operations and inline editing is available on Standard and Premium plans.
               </p>
               <Button 
                 onClick={() => setLocation("/pricing")}
-                className="mt-4"
+                className="mt-4 w-full sm:w-auto"
                 data-testid="button-upgrade"
               >
                 View Pricing Plans
@@ -41,21 +41,21 @@ export function AdvancedToolsManagement() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
       <div>
-        <h1 className="text-3xl font-semibold">Advanced Tools Management</h1>
-        <p className="text-muted-foreground">Bulk operations and tool intelligence</p>
+        <h1 className="text-2xl sm:text-3xl font-semibold">Advanced Tools Management</h1>
+        <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Bulk operations and tool intelligence</p>
       </div>
 
       <Card>
-        <CardContent className="flex flex-col items-center justify-center py-16">
+        <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16 px-4">
           <div className="text-center space-y-6 max-w-md">
             <div className="mx-auto w-20 h-20 bg-muted rounded-full flex items-center justify-center">
               <Wrench className="h-10 w-10 text-muted-foreground" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-semibold">Coming Soon</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-xl sm:text-2xl font-semibold">Coming Soon</h2>
+              <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
                 Advanced bulk operations and tool intelligence coming soon
               </p>
             </div>

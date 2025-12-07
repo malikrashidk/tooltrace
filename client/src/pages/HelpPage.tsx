@@ -2,14 +2,14 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, ChevronUp, Book, Lightbulb, Video, Mail } from "lucide-react";
+import { ChevronDown, ChevronUp, Book, Lightbulb, Video, Mail, Rocket, Settings, BarChart3, Lock, Users, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
 const helpSections = [
   {
     title: "Getting Started",
-    icon: "🚀",
+    icon: Rocket,
     topics: [
       {
         title: "Dashboard Overview",
@@ -46,7 +46,7 @@ const helpSections = [
   },
   {
     title: "Managing Tools",
-    icon: "⚙️",
+    icon: Settings,
     topics: [
       {
         title: "Save Login Credentials",
@@ -83,7 +83,7 @@ const helpSections = [
   },
   {
     title: "Financial Analytics",
-    icon: "📊",
+    icon: BarChart3,
     topics: [
       {
         title: "Analytics Dashboard",
@@ -119,7 +119,7 @@ const helpSections = [
   },
   {
     title: "Security & Privacy",
-    icon: "🔒",
+    icon: Lock,
     topics: [
       {
         title: "Data Encryption",
@@ -155,7 +155,7 @@ const helpSections = [
   },
   {
     title: "Team & Collaboration",
-    icon: "👥",
+    icon: Users,
     topics: [
       {
         title: "Invite Team Members",
@@ -180,7 +180,7 @@ const helpSections = [
   },
   {
     title: "Advanced Features",
-    icon: "✨",
+    icon: Sparkles,
     topics: [
       {
         title: "CSV Import/Export",
@@ -281,11 +281,15 @@ export function HelpPage() {
         {/* Help Sections */}
         <Tabs defaultValue="0" className="space-y-6">
           <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 w-full">
-            {helpSections.map((section, idx) => (
-              <TabsTrigger key={idx} value={idx.toString()} className="text-xs sm:text-sm">
-                {section.icon}
-              </TabsTrigger>
-            ))}
+            {helpSections.map((section, idx) => {
+              const IconComponent = section.icon;
+              return (
+                <TabsTrigger key={idx} value={idx.toString()} className="text-xs sm:text-sm gap-1">
+                  <IconComponent className="h-4 w-4" />
+                  <span className="hidden md:inline">{section.title}</span>
+                </TabsTrigger>
+              );
+            })}
           </TabsList>
 
           {helpSections.map((section, sectionIdx) => (

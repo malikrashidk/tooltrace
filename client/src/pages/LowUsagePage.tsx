@@ -13,7 +13,7 @@ export function LowUsagePage() {
   
   if (isLoading) {
     return (
-      <div className="space-y-6 p-6">
+      <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
         <Skeleton className="h-10 w-64" />
         <Skeleton className="h-32 w-full" />
       </div>
@@ -21,17 +21,17 @@ export function LowUsagePage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
       <div>
-        <h1 className="text-2xl font-semibold">Low Usage Subscriptions</h1>
-        <p className="text-muted-foreground">Identify tools you're paying for but rarely using</p>
+        <h1 className="text-xl sm:text-2xl font-semibold">Low Usage Subscriptions</h1>
+        <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Identify tools you're paying for but rarely using</p>
       </div>
 
       <Card>
         <CardContent className="pt-6 pb-6 text-center">
           <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-lg font-semibold mb-2">Usage Tracking Coming Soon</h3>
-          <p className="text-muted-foreground">
+          <h3 className="text-base sm:text-lg font-semibold mb-2">Usage Tracking Coming Soon</h3>
+          <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
             We're building smart usage tracking to help you identify underutilized subscriptions
           </p>
         </CardContent>

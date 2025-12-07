@@ -19,9 +19,9 @@ export function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 p-6">
+      <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
         <Skeleton className="h-10 w-64" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-32" />
           ))}
@@ -31,13 +31,13 @@ export function Dashboard() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
       <div>
-        <h1 className="text-3xl font-semibold">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your tools and subscriptions</p>
+        <h1 className="text-2xl sm:text-3xl font-semibold">Dashboard</h1>
+        <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Overview of your tools and subscriptions</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
@@ -46,7 +46,7 @@ export function Dashboard() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Tools</p>
-                <p className="text-2xl font-semibold" data-testid="text-total-tools">{tools.length}</p>
+                <p className="text-xl sm:text-2xl font-semibold" data-testid="text-total-tools">{tools.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {paidTools.length} paid
                 </p>
@@ -63,7 +63,7 @@ export function Dashboard() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Monthly Spend</p>
-                <p className="text-2xl font-semibold font-mono" data-testid="text-monthly-spend">
+                <p className="text-xl sm:text-2xl font-semibold font-mono" data-testid="text-monthly-spend">
                   ${monthlySpend.toFixed(2)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">Current subscriptions</p>
@@ -80,7 +80,7 @@ export function Dashboard() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Yearly Projection</p>
-                <p className="text-2xl font-semibold font-mono" data-testid="text-yearly-projection">
+                <p className="text-xl sm:text-2xl font-semibold font-mono" data-testid="text-yearly-projection">
                   ${(monthlySpend * 12).toFixed(2)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">Estimated annual cost</p>
@@ -94,8 +94,8 @@ export function Dashboard() {
         <Card>
           <CardContent className="pt-6 pb-6 text-center">
             <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No tools added yet</h3>
-            <p className="text-muted-foreground mb-4">
+            <h3 className="text-base sm:text-lg font-semibold mb-2">No tools added yet</h3>
+            <p className="text-xs sm:text-sm md:text-base text-muted-foreground mb-4">
               Start tracking your SaaS tools and subscriptions
             </p>
             <Button onClick={() => setLocation("/tools")} data-testid="button-add-first-tool">
