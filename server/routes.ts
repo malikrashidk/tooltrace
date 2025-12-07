@@ -176,15 +176,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const user = await storage.getUserByEmail(email);
+      console.log("Login attempt:", { email, userFound: !!user, userPassword: !!user?.password });
+      
       if (!user) {
+        console.log("User not found in storage");
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
       if (!user.password) {
+        console.log("User has no password (OAuth only)");
         return res.status(401).json({ error: "Please use Google or Facebook to sign in" });
       }
 
       const isValid = await verifyPassword(password, user.password);
+      console.log("Password verification:", { isValid });
       if (!isValid) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
