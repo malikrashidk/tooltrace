@@ -572,8 +572,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email,
         password: hashedPassword,
         name,
-        plan: plan || "free",
       });
+      
+      // Set user plan after creation
+      await storage.updateUser(user.id, { plan: plan || "free" });
 
       await storage.createSubscription({
         userId: user.id,
