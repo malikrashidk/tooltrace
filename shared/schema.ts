@@ -220,11 +220,21 @@ export const insertApiKeySchema = createInsertSchema(apiKeys).omit({
   createdAt: true,
 });
 
-export const insertNoteSchema = createInsertSchema(notes).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertNoteSchema = createInsertSchema(notes)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    content: z.string()
+      .min(1, "Note cannot be empty")
+      .max(12000, "Note must be less than 1200 words (12,000 characters)")
+      .refine(
+        (text) => text.split(/\s+/).filter(Boolean).length <= 1200,
+        "Note must be less than 1200 words"
+      ),
+  });
 
 // ============ TYPE EXPORTS ============
 export type InsertUser = z.infer<typeof insertUserSchema>;

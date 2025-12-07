@@ -6,7 +6,7 @@ import { Strategy as FacebookStrategy } from "passport-facebook";
 import { storage } from "./storage";
 import { authMiddleware, adminMiddleware, rateLimit, auditLog } from "./middleware";
 import { hashPassword, verifyPassword, generateToken } from "./auth";
-import { insertUserSchema, insertToolSchema } from "@shared/schema";
+import { insertUserSchema, insertToolSchema, insertNoteSchema } from "@shared/schema";
 import {
   generateSecret,
   generateQRCode,
@@ -659,6 +659,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch stats" });
+    }
+  });
+
+  // ============ NOTES ROUTES ============
+  app.get("/api/notes", authMiddleware, async (req, res) => {
+    try {
+      const notes = await storage.getUserNotes(req.userId!);
+      res.json({ notes });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch notes" });
+    }
+  });
+
+  app.post("/api/notes", authMiddleware, async (req, res) => {
+    try {
+      const validated = insertNoteSchema.parse(req.body);
+      const note = await storage.createNote({
+        ...validated,
+        userId: req.userId!,
+      });
+      await auditLog(req.userId!, "create", "note", note.id, { title: note.title }, req);
+      res.json({ note });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to create note" });
+    }
+  });
+
+  app.patch("/api/notes/:id", authMiddleware, async (req, res) => {
+    try {
+      const note = await storage.getNote(req.params.id);
+      if (!note || note.userId !== req.userId!) {
+        return res.status(404).json({ error: "Note not found" });
+      }
+
+      const updates: any = {};
+      if (req.body.title !== undefined) updates.title = req.body.title;
+      if (req.body.content !== undefined) {
+        const validated = insertNoteSchema.parse({ title: note.title, content: req.body.content, isPinned: note.isPinned });
+        updates.content = validated.content;
+      }
+      if (req.body.isPinned !== undefined) updates.isPinned = req.body.isPinned;
+
+      const updated = await storage.updateNote(req.params.id, updates);
+      await auditLog(req.userId!, "update", "note", req.params.id, updates, req);
+      res.json({ note: updated });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to update note" });
+    }
+  });
+
+  app.delete("/api/notes/:id", authMiddleware, async (req, res) => {
+    try {
+      const note = await storage.getNote(req.params.id);
+      if (!note || note.userId !== req.userId!) {
+        return res.status(404).json({ error: "Note not found" });
+      }
+
+      await storage.deleteNote(req.params.id);
+      await auditLog(req.userId!, "delete", "note", req.params.id, { title: note.title }, req);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete note" });
     }
   });
 

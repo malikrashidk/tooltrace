@@ -15,6 +15,7 @@ import { Dashboard } from "@/pages/Dashboard";
 import { ToolsPage } from "@/pages/ToolsPage";
 import { AnalyticsPage } from "@/pages/AnalyticsPage";
 import { RenewalsPage } from "@/pages/RenewalsPage";
+import { NotesPage } from "@/pages/NotesPage";
 import { LowUsagePage } from "@/pages/LowUsagePage";
 import { SettingsPage } from "@/components/SettingsPage";
 import { PricingPage } from "@/pages/PricingPage";
@@ -50,6 +51,7 @@ function AuthenticatedApp() {
               <Route path="/tools-advanced" component={AdvancedToolsManagement} />
               <Route path="/analytics" component={AnalyticsPage} />
               <Route path="/renewals" component={RenewalsPage} />
+              <Route path="/notes" component={NotesPage} />
               <Route path="/low-usage" component={LowUsagePage} />
               <Route path="/pricing" component={PricingPage} />
               <Route path="/admin" component={AdminDashboard} />
