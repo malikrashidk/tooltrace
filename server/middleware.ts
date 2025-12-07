@@ -1,12 +1,13 @@
 import type { Request, Response, NextFunction } from "express";
 import { extractTokenFromHeader, verifyToken } from "./auth";
 import { storage } from "./storage";
+import type { User } from "@shared/schema";
 
 declare global {
   namespace Express {
     interface Request {
       userId?: string;
-      user?: any;
+      user?: User;
       isAdmin?: boolean;
     }
   }

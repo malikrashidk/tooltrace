@@ -16,8 +16,8 @@ import {
 } from "./twoFactor";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Apply global middleware
-  app.use(rateLimit(100, 60000)); // 100 requests per minute
+  // Apply rate limiting only to API routes
+  app.use("/api", rateLimit(100, 60000)); // 100 API requests per minute
   app.use(passport.initialize());
 
   // ============ OAUTH CONFIGURATION ============
