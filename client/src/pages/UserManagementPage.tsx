@@ -62,7 +62,10 @@ export function UserManagementPage() {
   const { data: usersResponse, isLoading } = useQuery({
     queryKey: ["/api/admin/users"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/users");
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/admin/users", {
+        headers: { "Authorization": `Bearer ${token}` },
+      });
       if (!res.ok) throw new Error("Failed to fetch users");
       return res.json();
     },
@@ -73,9 +76,10 @@ export function UserManagementPage() {
   // Create user mutation
   const createUserMutation = useMutation({
     mutationFn: async (data: any) => {
+      const token = localStorage.getItem("token");
       const res = await fetch("/api/admin/users", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify(data),
       });
       if (!res.ok) {
@@ -102,7 +106,11 @@ export function UserManagementPage() {
   // Delete user mutation
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const res = await fetch(`/api/admin/users/${userId}`, { method: "DELETE" });
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` },
+      });
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Failed to delete user");
