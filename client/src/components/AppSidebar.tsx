@@ -333,16 +333,6 @@ export function AppSidebar() {
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
-          <SidebarMenuItem>
-            <button
-              onClick={logout}
-              className="flex items-center gap-2 px-2 py-2 text-sm text-destructive hover-elevate rounded-md w-full text-left"
-              data-testid="button-logout-direct"
-            >
-              <LogOut className="h-4 w-4" />
-              {state === "expanded" && <span>Log out</span>}
-            </button>
-          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
