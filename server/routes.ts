@@ -623,32 +623,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
       }
 
-      // Log raw body for debugging
-      console.log("[POST /api/tools] Raw body:", JSON.stringify(req.body));
-      
       const parsed = insertToolSchema.safeParse(req.body);
       if (!parsed.success) {
         console.error("[POST /api/tools] Validation error:", parsed.error.errors);
         return res.status(400).json({ error: parsed.error.errors });
       }
-      
-      console.log("[POST /api/tools] Parsed data:", JSON.stringify(parsed.data));
-
-      // Clean data before passing to storage - ensure empty strings become null/undefined
-      const cleanedData = {
-        ...parsed.data,
-        billingAmount: (parsed.data.billingAmount !== null && parsed.data.billingAmount !== undefined && parsed.data.billingAmount !== "" && String(parsed.data.billingAmount).trim() !== "") 
-          ? parsed.data.billingAmount 
-          : null,
-        nextRenewalDate: parsed.data.nextRenewalDate || undefined,
-        billingCycle: (parsed.data.billingCycle && parsed.data.billingCycle.trim() !== "") ? parsed.data.billingCycle : null,
-        paymentMethod: (parsed.data.paymentMethod && parsed.data.paymentMethod.trim() !== "") ? parsed.data.paymentMethod : null,
-      };
-      
-      console.log("[POST /api/tools] Cleaned data:", JSON.stringify(cleanedData));
 
       const tool = await storage.createTool({
-        ...(cleanedData as any),
+        ...(parsed.data as any),
         userId: req.userId,
       });
 
