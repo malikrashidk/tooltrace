@@ -569,7 +569,9 @@ export class DbStorage implements IStorage {
 
   async createTool(tool: InsertTool & { userId: string }): Promise<Tool> {
     // Ensure empty strings are converted to null
-    const billingAmount = tool.billingAmount && tool.billingAmount !== "" ? tool.billingAmount : null;
+    console.log("[DEBUG createTool] Received billingAmount:", JSON.stringify(tool.billingAmount), "Type:", typeof tool.billingAmount);
+    const billingAmount = (tool.billingAmount && tool.billingAmount !== "" && tool.billingAmount !== "undefined") ? tool.billingAmount : null;
+    console.log("[DEBUG createTool] Using billingAmount:", billingAmount);
     const result = await sql`
       INSERT INTO tools (
         user_id, name, website_url, logo_url, notes, is_paid, 
