@@ -15,8 +15,9 @@ import type {
   InsertNote,
   AuditLog,
 } from "@shared/schema";
+import { tools } from "@shared/schema";
 import { randomUUID } from "crypto";
-import { sql } from "./db";
+import { sql, db } from "./db";
 
 // Helper to convert snake_case database rows to camelCase TypeScript objects
 function mapUser(row: any): User | undefined {
@@ -599,84 +600,45 @@ export class DbStorage implements IStorage {
 
   async createTool(tool: InsertTool & { userId: string }): Promise<Tool> {
     try {
-      // Build query dynamically to only include non-empty fields
-      const params: any[] = [
-        tool.userId,
-        tool.name,
-        tool.websiteUrl,
-        tool.isPaid,
-        tool.categories || [],
-        tool.tags || [],
-        tool.usageFrequency,
-      ];
+      // Use Drizzle ORM for proper type handling
+      const insertData: any = {
+        userId: tool.userId,
+        name: tool.name,
+        websiteUrl: tool.websiteUrl,
+        isPaid: tool.isPaid,
+        categories: tool.categories || [],
+        tags: tool.tags || [],
+        usageFrequency: tool.usageFrequency,
+      };
 
-      let fields = [
-        "user_id", "name", "website_url", "is_paid", "categories", "tags", "usage_frequency"
-      ];
-      let values = ["$1", "$2", "$3", "$4", "$5", "$6", "$7"];
-      let paramCount = 7;
-
-      // Only add optional fields if they have values
-      if (tool.logoUrl && String(tool.logoUrl).trim() !== "") {
-        paramCount++;
-        params.push(tool.logoUrl);
-        fields.push("logo_url");
-        values.push(`$${paramCount}`);
+      // Only add optional fields if they have actual values (not empty strings)
+      if (tool.logoUrl && String(tool.logoUrl).trim()) {
+        insertData.logoUrl = tool.logoUrl;
       }
-
-      if (tool.notes && String(tool.notes).trim() !== "") {
-        paramCount++;
-        params.push(tool.notes);
-        fields.push("notes");
-        values.push(`$${paramCount}`);
+      if (tool.notes && String(tool.notes).trim()) {
+        insertData.notes = tool.notes;
       }
-
-      if (tool.billingAmount && String(tool.billingAmount).trim() !== "") {
-        paramCount++;
-        params.push(tool.billingAmount);
-        fields.push("billing_amount");
-        values.push(`$${paramCount}`);
+      if (tool.billingAmount && String(tool.billingAmount).trim()) {
+        insertData.billingAmount = tool.billingAmount;
       }
-
-      if (tool.billingCycle && String(tool.billingCycle).trim() !== "") {
-        paramCount++;
-        params.push(tool.billingCycle);
-        fields.push("billing_cycle");
-        values.push(`$${paramCount}`);
+      if (tool.billingCycle && String(tool.billingCycle).trim()) {
+        insertData.billingCycle = tool.billingCycle;
       }
-
       if (tool.nextRenewalDate) {
-        paramCount++;
-        params.push(tool.nextRenewalDate);
-        fields.push("next_renewal_date");
-        values.push(`$${paramCount}`);
+        insertData.nextRenewalDate = tool.nextRenewalDate;
       }
-
-      if (tool.paymentMethod && String(tool.paymentMethod).trim() !== "") {
-        paramCount++;
-        params.push(tool.paymentMethod);
-        fields.push("payment_method");
-        values.push(`$${paramCount}`);
+      if (tool.paymentMethod && String(tool.paymentMethod).trim()) {
+        insertData.paymentMethod = tool.paymentMethod;
       }
-
       if (tool.credentials) {
-        paramCount++;
-        params.push(JSON.stringify(tool.credentials));
-        fields.push("credentials");
-        values.push(`$${paramCount}`);
+        insertData.credentials = tool.credentials;
       }
 
-      const query = `
-        INSERT INTO tools (${fields.join(", ")})
-        VALUES (${values.join(", ")})
-        RETURNING *
-      `;
-
-      const result = await sql(query, params);
-      if (!result || !Array.isArray(result) || result.length === 0) {
+      const result = await db.insert(tools).values(insertData).returning();
+      if (!result || result.length === 0) {
         throw new Error("Failed to create tool - no result returned");
       }
-      return mapTool(result[0])!;
+      return result[0];
     } catch (error) {
       console.error("[DbStorage.createTool] Error:", error);
       throw error;
