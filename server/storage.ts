@@ -599,15 +599,35 @@ export class DbStorage implements IStorage {
 
   async createTool(tool: InsertTool & { userId: string }): Promise<Tool> {
     try {
-      // Ensure empty strings and null values are handled correctly
-      const billingAmount = (tool.billingAmount && tool.billingAmount !== "" && tool.billingAmount !== "undefined") ? tool.billingAmount : null;
+      // Ensure empty strings and null values are handled correctly - be very explicit
+      let billingAmount: string | null = null;
+      if (tool.billingAmount !== null && tool.billingAmount !== undefined && tool.billingAmount !== "" && String(tool.billingAmount).trim() !== "") {
+        billingAmount = String(tool.billingAmount);
+      }
       
       // Convert Date objects to ISO strings for database insertion
-      const nextRenewalDate = tool.nextRenewalDate 
-        ? (tool.nextRenewalDate instanceof Date 
-            ? tool.nextRenewalDate.toISOString() 
-            : tool.nextRenewalDate)
-        : null;
+      let nextRenewalDate: string | null = null;
+      if (tool.nextRenewalDate) {
+        nextRenewalDate = tool.nextRenewalDate instanceof Date 
+          ? tool.nextRenewalDate.toISOString() 
+          : String(tool.nextRenewalDate);
+      }
+      
+      // Handle billingCycle - must be null if empty
+      let billingCycle: string | null = null;
+      if (tool.billingCycle && tool.billingCycle.trim() !== "") {
+        billingCycle = tool.billingCycle;
+      }
+      
+      // Handle paymentMethod - must be null if empty
+      let paymentMethod: string | null = null;
+      if (tool.paymentMethod && tool.paymentMethod.trim() !== "") {
+        paymentMethod = tool.paymentMethod;
+      }
+      
+      console.log("[DbStorage.createTool] billingAmount:", billingAmount, "type:", typeof billingAmount);
+      console.log("[DbStorage.createTool] billingCycle:", billingCycle);
+      console.log("[DbStorage.createTool] nextRenewalDate:", nextRenewalDate);
       
       const result = await sql`
         INSERT INTO tools (
@@ -618,9 +638,9 @@ export class DbStorage implements IStorage {
         VALUES (
           ${tool.userId}, ${tool.name}, ${tool.websiteUrl}, ${tool.logoUrl || null}, 
           ${tool.notes || null}, ${tool.isPaid}, ${billingAmount}, 
-          ${tool.billingCycle || null}, ${nextRenewalDate}, 
+          ${billingCycle}, ${nextRenewalDate}, 
           ${tool.categories || []}, ${tool.tags || []}, ${tool.usageFrequency}, 
-          ${tool.paymentMethod || null}, ${tool.credentials ? JSON.stringify(tool.credentials) : null}
+          ${paymentMethod}, ${tool.credentials ? JSON.stringify(tool.credentials) : null}
         )
         RETURNING *
       `;
