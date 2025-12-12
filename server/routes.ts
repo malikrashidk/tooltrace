@@ -1,9 +1,12 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import crypto from "crypto";
+import path from "path";
+import fs from "fs";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as FacebookStrategy } from "passport-facebook";
+import archiver from "archiver";
 import { storage } from "./storage";
 import { authMiddleware, adminMiddleware, rateLimit, auditLog } from "./middleware";
 import { hashPassword, verifyPassword, generateToken } from "./auth";
@@ -1132,6 +1135,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
+  // ============ BROWSER EXTENSION DOWNLOAD ============
+  
+  app.get("/api/extension/download", async (req, res) => {
+    try {
+      const extensionPath = path.join(process.cwd(), "browser-extension");
+      
+      // Check if browser-extension folder exists
+      if (!fs.existsSync(extensionPath)) {
+        return res.status(404).json({ error: "Extension files not found" });
+      }
+
+      // Set headers for zip download
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', 'attachment; filename="tooltrace-extension.zip"');
+
+      // Create zip archive
+      const archive = archiver('zip', { zlib: { level: 9 } });
+      
+      archive.on('error', (err: any) => {
+        console.error("Archive error:", err);
+        res.status(500).json({ error: "Failed to create extension archive" });
+      });
+
+      // Pipe archive to response
+      archive.pipe(res);
+
+      // Add browser-extension folder contents to archive
+      archive.directory(extensionPath, false);
+
+      // Finalize archive
+      await archive.finalize();
+    } catch (error) {
+      console.error("Extension download error:", error);
+      res.status(500).json({ error: "Failed to download extension" });
     }
   });
 

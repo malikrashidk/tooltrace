@@ -221,15 +221,16 @@ export function IntegrationsHub() {
                   Our browser extension automatically detects SaaS tools you're using and allows you to add them to your SaaS Hub with one click.
                 </p>
                 <ol className="text-sm space-y-2 list-decimal list-inside text-muted-foreground">
-                  <li>Download the extension code from GitHub</li>
+                  <li>Download the extension zip file</li>
+                  <li>Extract the zip file to a folder</li>
                   <li>Go to <code className="bg-muted px-2 py-1 rounded text-xs">chrome://extensions</code></li>
                   <li>Enable "Developer mode" (top right)</li>
-                  <li>Click "Load unpacked" and select the extension folder</li>
+                  <li>Click "Load unpacked" and select the extracted folder</li>
                   <li>Start using the extension!</li>
                 </ol>
                 <Button className="w-full" asChild>
-                  <a href="https://github.com/yourusername/saazhub-extension" target="_blank" rel="noopener noreferrer">
-                    Download from GitHub
+                  <a href="/api/extension/download" download="tooltrace-extension.zip" data-testid="button-download-extension">
+                    Download Extension
                   </a>
                 </Button>
               </CardContent>
