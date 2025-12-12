@@ -599,6 +599,17 @@ export class DbStorage implements IStorage {
 
   async createTool(tool: InsertTool & { userId: string }): Promise<Tool> {
     try {
+      // CRITICAL: Pre-process all optional fields to ensure they're truly null before SQL query
+      // This prevents undefined from becoming empty string in template literals
+      const cleanBillingAmount = (!tool.billingAmount || String(tool.billingAmount).trim() === "") ? null : tool.billingAmount;
+      const cleanBillingCycle = (!tool.billingCycle || String(tool.billingCycle).trim() === "") ? null : tool.billingCycle;
+      const cleanPaymentMethod = (!tool.paymentMethod || String(tool.paymentMethod).trim() === "") ? null : tool.paymentMethod;
+      const cleanNotes = (!tool.notes || String(tool.notes).trim() === "") ? null : tool.notes;
+      const cleanLogoUrl = (!tool.logoUrl || String(tool.logoUrl).trim() === "") ? null : tool.logoUrl;
+      const cleanNextRenewalDate = (!tool.nextRenewalDate) ? null : tool.nextRenewalDate;
+      
+      console.log("[DbStorage.createTool] Cleaned values:", { cleanBillingAmount, cleanBillingCycle, cleanPaymentMethod });
+      
       const result = await sql`
         INSERT INTO tools (
           user_id, name, website_url, logo_url, notes, is_paid, 
@@ -609,16 +620,16 @@ export class DbStorage implements IStorage {
           ${tool.userId}, 
           ${tool.name}, 
           ${tool.websiteUrl}, 
-          ${tool.logoUrl === undefined || tool.logoUrl === null ? null : tool.logoUrl}, 
-          ${tool.notes === undefined || tool.notes === null ? null : tool.notes}, 
+          ${cleanLogoUrl}, 
+          ${cleanNotes}, 
           ${tool.isPaid}, 
-          ${tool.billingAmount === undefined || tool.billingAmount === null ? null : tool.billingAmount}, 
-          ${tool.billingCycle === undefined || tool.billingCycle === null ? null : tool.billingCycle}, 
-          ${tool.nextRenewalDate === undefined || tool.nextRenewalDate === null ? null : tool.nextRenewalDate}, 
+          ${cleanBillingAmount}, 
+          ${cleanBillingCycle}, 
+          ${cleanNextRenewalDate}, 
           ${tool.categories || []}, 
           ${tool.tags || []}, 
           ${tool.usageFrequency}, 
-          ${tool.paymentMethod === undefined || tool.paymentMethod === null ? null : tool.paymentMethod}, 
+          ${cleanPaymentMethod}, 
           ${tool.credentials ? JSON.stringify(tool.credentials) : null}
         )
         RETURNING *
