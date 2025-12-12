@@ -507,6 +507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const parsed = insertToolSchema.safeParse(req.body);
       if (!parsed.success) {
+        console.error("[POST /api/tools] Validation error:", parsed.error.errors);
         return res.status(400).json({ error: parsed.error.errors });
       }
 
@@ -519,6 +520,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json({ tool });
     } catch (error) {
+      console.error("[POST /api/tools] Error:", error);
       res.status(500).json({ error: "Failed to create tool" });
     }
   });
