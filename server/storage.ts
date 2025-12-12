@@ -599,41 +599,35 @@ export class DbStorage implements IStorage {
 
   async createTool(tool: InsertTool & { userId: string }): Promise<Tool> {
     try {
-      // CRITICAL: Pre-process all optional fields to ensure they're truly null before SQL query
-      // This prevents undefined from becoming empty string in template literals
-      const cleanBillingAmount = (!tool.billingAmount || String(tool.billingAmount).trim() === "") ? null : tool.billingAmount;
-      const cleanBillingCycle = (!tool.billingCycle || String(tool.billingCycle).trim() === "") ? null : tool.billingCycle;
-      const cleanPaymentMethod = (!tool.paymentMethod || String(tool.paymentMethod).trim() === "") ? null : tool.paymentMethod;
-      const cleanNotes = (!tool.notes || String(tool.notes).trim() === "") ? null : tool.notes;
-      const cleanLogoUrl = (!tool.logoUrl || String(tool.logoUrl).trim() === "") ? null : tool.logoUrl;
-      const cleanNextRenewalDate = (!tool.nextRenewalDate) ? null : tool.nextRenewalDate;
-      
-      console.log("[DbStorage.createTool] Cleaned values:", { cleanBillingAmount, cleanBillingCycle, cleanPaymentMethod });
-      
-      const result = await sql`
+      // Use raw parameterized query to avoid Neon driver issues with null in template literals
+      const params = [
+        tool.userId,
+        tool.name,
+        tool.websiteUrl,
+        tool.logoUrl || null,
+        tool.notes || null,
+        tool.isPaid,
+        (!tool.billingAmount || String(tool.billingAmount).trim() === "") ? null : tool.billingAmount,
+        (!tool.billingCycle || String(tool.billingCycle).trim() === "") ? null : tool.billingCycle,
+        tool.nextRenewalDate || null,
+        tool.categories || [],
+        tool.tags || [],
+        tool.usageFrequency,
+        (!tool.paymentMethod || String(tool.paymentMethod).trim() === "") ? null : tool.paymentMethod,
+        tool.credentials ? JSON.stringify(tool.credentials) : null,
+      ];
+
+      const query = `
         INSERT INTO tools (
           user_id, name, website_url, logo_url, notes, is_paid, 
           billing_amount, billing_cycle, next_renewal_date, 
           categories, tags, usage_frequency, payment_method, credentials
         )
-        VALUES (
-          ${tool.userId}, 
-          ${tool.name}, 
-          ${tool.websiteUrl}, 
-          ${cleanLogoUrl}, 
-          ${cleanNotes}, 
-          ${tool.isPaid}, 
-          ${cleanBillingAmount}, 
-          ${cleanBillingCycle}, 
-          ${cleanNextRenewalDate}, 
-          ${tool.categories || []}, 
-          ${tool.tags || []}, 
-          ${tool.usageFrequency}, 
-          ${cleanPaymentMethod}, 
-          ${tool.credentials ? JSON.stringify(tool.credentials) : null}
-        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
         RETURNING *
       `;
+
+      const result = await sql(query, params);
       if (!result || !Array.isArray(result) || result.length === 0) {
         throw new Error("Failed to create tool - no result returned");
       }
