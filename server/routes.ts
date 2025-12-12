@@ -505,28 +505,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
       }
 
-      // Log incoming data for debugging
-      console.log("[POST /api/tools] Request body:", JSON.stringify(req.body));
-      
       const parsed = insertToolSchema.safeParse(req.body);
       if (!parsed.success) {
         console.error("[POST /api/tools] Validation error:", parsed.error.errors);
         return res.status(400).json({ error: parsed.error.errors });
       }
 
-      // Sanitize the parsed data - convert empty strings to null/undefined
-      const toolData = {
-        ...parsed.data,
-        billingAmount: parsed.data.billingAmount && parsed.data.billingAmount !== "" ? parsed.data.billingAmount : null,
-        billingCycle: parsed.data.billingCycle && parsed.data.billingCycle !== "" ? parsed.data.billingCycle : null,
-        paymentMethod: parsed.data.paymentMethod && parsed.data.paymentMethod !== "" ? parsed.data.paymentMethod : null,
-        notes: parsed.data.notes && parsed.data.notes !== "" ? parsed.data.notes : null,
-      };
-
-      console.log("[POST /api/tools] Sanitized data billingAmount:", toolData.billingAmount);
-
       const tool = await storage.createTool({
-        ...(toolData as any),
+        ...(parsed.data as any),
         userId: req.userId,
       });
 

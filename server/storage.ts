@@ -16,7 +16,7 @@ import type {
   AuditLog,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
-import { sql, safeQuery } from "./db";
+import { sql } from "./db";
 
 // Helper to convert snake_case database rows to camelCase TypeScript objects
 function mapUser(row: any): User | undefined {
@@ -547,7 +547,7 @@ export class DbStorage implements IStorage {
   // Tool operations
   async getTool(id: string): Promise<Tool | undefined> {
     try {
-      const result = await safeQuery(() => sql`SELECT * FROM tools WHERE id = ${id} LIMIT 1`);
+      const result = await sql`SELECT * FROM tools WHERE id = ${id} LIMIT 1`;
       if (!result || !Array.isArray(result) || result.length === 0) return undefined;
       return mapTool(result[0]);
     } catch (error) {
@@ -558,9 +558,9 @@ export class DbStorage implements IStorage {
 
   async getUserTools(userId: string): Promise<Tool[]> {
     try {
-      const result = await safeQuery(() => sql`SELECT * FROM tools WHERE user_id = ${userId}`);
+      const result = await sql`SELECT * FROM tools WHERE user_id = ${userId}`;
       if (!result || !Array.isArray(result)) return [];
-      return result.map((row: any) => mapTool(row)).filter((t): t is Tool => t !== undefined);
+      return result.map((row: any) => mapTool(row)!);
     } catch (error) {
       console.error("[DbStorage.getUserTools] Error:", error);
       return [];
