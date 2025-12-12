@@ -18,6 +18,143 @@ import type {
 import { randomUUID } from "crypto";
 import { sql } from "./db";
 
+// Helper to convert snake_case database rows to camelCase TypeScript objects
+function mapUser(row: any): User | undefined {
+  if (!row) return undefined;
+  return {
+    id: row.id,
+    email: row.email,
+    password: row.password,
+    name: row.name,
+    plan: row.plan,
+    isAdmin: row.is_admin,
+    stripeCustomerId: row.stripe_customer_id,
+    stripeSubscriptionId: row.stripe_subscription_id,
+    googleId: row.google_id,
+    facebookId: row.facebook_id,
+    oauthProvider: row.oauth_provider,
+    avatarUrl: row.avatar_url,
+    twoFactorEnabled: row.two_factor_enabled,
+    twoFactorSecret: row.two_factor_secret,
+    twoFactorBackupCodes: row.two_factor_backup_codes,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapTool(row: any): Tool | undefined {
+  if (!row) return undefined;
+  return {
+    id: row.id,
+    userId: row.user_id,
+    name: row.name,
+    websiteUrl: row.website_url,
+    logoUrl: row.logo_url,
+    notes: row.notes,
+    isPaid: row.is_paid,
+    billingAmount: row.billing_amount,
+    billingCycle: row.billing_cycle,
+    nextRenewalDate: row.next_renewal_date,
+    categories: row.categories,
+    tags: row.tags,
+    usageFrequency: row.usage_frequency,
+    paymentMethod: row.payment_method,
+    credentials: row.credentials,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapSubscription(row: any): Subscription | undefined {
+  if (!row) return undefined;
+  return {
+    id: row.id,
+    userId: row.user_id,
+    plan: row.plan,
+    status: row.status,
+    currentToolsCount: row.current_tools_count,
+    toolsLimit: row.tools_limit,
+    startDate: row.start_date,
+    renewalDate: row.renewal_date,
+    cancelledAt: row.cancelled_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapNote(row: any): Note | undefined {
+  if (!row) return undefined;
+  return {
+    id: row.id,
+    userId: row.user_id,
+    title: row.title,
+    content: row.content,
+    isPinned: row.is_pinned,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapApiKey(row: any): ApiKey | undefined {
+  if (!row) return undefined;
+  return {
+    id: row.id,
+    userId: row.user_id,
+    name: row.name,
+    key: row.key,
+    secret: row.secret,
+    lastUsedAt: row.last_used_at,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+  };
+}
+
+function mapPayment(row: any): Payment | undefined {
+  if (!row) return undefined;
+  return {
+    id: row.id,
+    userId: row.user_id,
+    amount: row.amount,
+    currency: row.currency,
+    status: row.status,
+    stripePaymentId: row.stripe_payment_id,
+    planUpgrade: row.plan_upgrade,
+    description: row.description,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapReceipt(row: any): Receipt | undefined {
+  if (!row) return undefined;
+  return {
+    id: row.id,
+    userId: row.user_id,
+    toolId: row.tool_id,
+    fileName: row.file_name,
+    fileUrl: row.file_url,
+    uploadDate: row.upload_date,
+    amount: row.amount,
+    receiptDate: row.receipt_date,
+    createdAt: row.created_at,
+  };
+}
+
+function mapAuditLog(row: any): AuditLog | undefined {
+  if (!row) return undefined;
+  return {
+    id: row.id,
+    userId: row.user_id,
+    action: row.action,
+    resource: row.resource,
+    resourceId: row.resource_id,
+    changes: row.changes,
+    ipAddress: row.ip_address,
+    userAgent: row.user_agent,
+    createdAt: row.created_at,
+  };
+}
+
 export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
@@ -317,28 +454,45 @@ export class MemStorage implements IStorage {
 export class DbStorage implements IStorage {
   // User operations
   async getUser(id: string): Promise<User | undefined> {
-    const result = await sql`SELECT * FROM users WHERE id = ${id} LIMIT 1`;
-    return result[0] as User | undefined;
+    if (!id) return undefined;
+    try {
+      const result = await sql`SELECT * FROM users WHERE id = ${id}::uuid LIMIT 1`;
+      if (!result || !Array.isArray(result) || result.length === 0) return undefined;
+      return mapUser(result[0]);
+    } catch (error: any) {
+      // Don't log UUID validation errors as they're expected when token has old user ID
+      if (!error?.message?.includes('invalid input syntax for type uuid')) {
+        console.error("[DbStorage.getUser] Error fetching user:", id, error);
+      }
+      return undefined;
+    }
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const result = await sql`SELECT * FROM users WHERE email = ${email} LIMIT 1`;
-    return result[0] as User | undefined;
+    if (!email) return undefined;
+    try {
+      const result = await sql`SELECT * FROM users WHERE email = ${email} LIMIT 1`;
+      if (!result || !Array.isArray(result) || result.length === 0) return undefined;
+      return mapUser(result[0]);
+    } catch (error) {
+      console.error("[DbStorage.getUserByEmail] Error:", email, error);
+      return undefined;
+    }
   }
 
   async getUserByGoogleId(googleId: string): Promise<User | undefined> {
     const result = await sql`SELECT * FROM users WHERE google_id = ${googleId} LIMIT 1`;
-    return result[0] as User | undefined;
+    return mapUser(result[0]);
   }
 
   async getUserByFacebookId(facebookId: string): Promise<User | undefined> {
     const result = await sql`SELECT * FROM users WHERE facebook_id = ${facebookId} LIMIT 1`;
-    return result[0] as User | undefined;
+    return mapUser(result[0]);
   }
 
   async getAllUsers(): Promise<User[]> {
     const result = await sql`SELECT * FROM users`;
-    return result as User[];
+    return result.map((row: any) => mapUser(row)!);
   }
 
   async createUser(user: InsertUser): Promise<User> {
@@ -347,7 +501,7 @@ export class DbStorage implements IStorage {
       VALUES (${user.email}, ${user.password}, ${user.name})
       RETURNING *
     `;
-    return result[0] as User;
+    return mapUser(result[0])!;
   }
 
   async createOAuthUser(userData: Partial<User>): Promise<User> {
@@ -364,7 +518,7 @@ export class DbStorage implements IStorage {
       )
       RETURNING *
     `;
-    return result[0] as User;
+    return mapUser(result[0])!;
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
@@ -385,7 +539,7 @@ export class DbStorage implements IStorage {
     values.push(id);
 
     const result = await sql(query, values);
-    return result[0] as User | undefined;
+    return mapUser(result[0]);
   }
 
   async deleteUser(id: string): Promise<boolean> {
@@ -396,12 +550,12 @@ export class DbStorage implements IStorage {
   // Tool operations
   async getTool(id: string): Promise<Tool | undefined> {
     const result = await sql`SELECT * FROM tools WHERE id = ${id} LIMIT 1`;
-    return result[0] as Tool | undefined;
+    return mapTool(result[0]);
   }
 
   async getUserTools(userId: string): Promise<Tool[]> {
     const result = await sql`SELECT * FROM tools WHERE user_id = ${userId}`;
-    return result as Tool[];
+    return result.map((row: any) => mapTool(row)!);
   }
 
   async createTool(tool: InsertTool & { userId: string }): Promise<Tool> {
@@ -420,7 +574,7 @@ export class DbStorage implements IStorage {
       )
       RETURNING *
     `;
-    return result[0] as Tool;
+    return mapTool(result[0])!;
   }
 
   async updateTool(id: string, updates: Partial<Tool>): Promise<Tool | undefined> {
@@ -449,7 +603,7 @@ export class DbStorage implements IStorage {
     values.push(id);
 
     const result = await sql(query, values);
-    return result[0] as Tool | undefined;
+    return mapTool(result[0]);
   }
 
   async deleteTool(id: string): Promise<boolean> {
@@ -465,7 +619,7 @@ export class DbStorage implements IStorage {
   // Subscription operations
   async getUserSubscription(userId: string): Promise<Subscription | undefined> {
     const result = await sql`SELECT * FROM subscriptions WHERE user_id = ${userId} LIMIT 1`;
-    return result[0] as Subscription | undefined;
+    return mapSubscription(result[0]);
   }
 
   async createSubscription(sub: InsertSubscription): Promise<Subscription> {
@@ -481,7 +635,7 @@ export class DbStorage implements IStorage {
       )
       RETURNING *
     `;
-    return result[0] as Subscription;
+    return mapSubscription(result[0])!;
   }
 
   async updateSubscription(id: string, updates: Partial<Subscription>): Promise<Subscription | undefined> {
@@ -502,7 +656,7 @@ export class DbStorage implements IStorage {
     values.push(id);
 
     const result = await sql(query, values);
-    return result[0] as Subscription | undefined;
+    return mapSubscription(result[0]);
   }
 
   // Payment operations
@@ -519,17 +673,17 @@ export class DbStorage implements IStorage {
       )
       RETURNING *
     `;
-    return result[0] as Payment;
+    return mapPayment(result[0])!;
   }
 
   async getPayment(id: string): Promise<Payment | undefined> {
     const result = await sql`SELECT * FROM payments WHERE id = ${id} LIMIT 1`;
-    return result[0] as Payment | undefined;
+    return mapPayment(result[0]);
   }
 
   async getUserPayments(userId: string): Promise<Payment[]> {
     const result = await sql`SELECT * FROM payments WHERE user_id = ${userId}`;
-    return result as Payment[];
+    return result.map((row: any) => mapPayment(row)!);
   }
 
   // Receipt operations
@@ -545,12 +699,12 @@ export class DbStorage implements IStorage {
       )
       RETURNING *
     `;
-    return result[0] as Receipt;
+    return mapReceipt(result[0])!;
   }
 
   async getUserReceipts(userId: string): Promise<Receipt[]> {
     const result = await sql`SELECT * FROM receipts WHERE user_id = ${userId}`;
-    return result as Receipt[];
+    return result.map((row: any) => mapReceipt(row)!);
   }
 
   async deleteReceipt(id: string): Promise<boolean> {
@@ -570,17 +724,17 @@ export class DbStorage implements IStorage {
       )
       RETURNING *
     `;
-    return result[0] as ApiKey;
+    return mapApiKey(result[0])!;
   }
 
   async getUserApiKeys(userId: string): Promise<ApiKey[]> {
     const result = await sql`SELECT * FROM api_keys WHERE user_id = ${userId}`;
-    return result as ApiKey[];
+    return result.map((row: any) => mapApiKey(row)!);
   }
 
   async getApiKeyByKey(key: string): Promise<ApiKey | undefined> {
     const result = await sql`SELECT * FROM api_keys WHERE key = ${key} LIMIT 1`;
-    return result[0] as ApiKey | undefined;
+    return mapApiKey(result[0]);
   }
 
   async deleteApiKey(id: string): Promise<boolean> {
@@ -595,7 +749,7 @@ export class DbStorage implements IStorage {
       VALUES (${note.userId}, ${note.title}, ${note.content}, ${note.isPinned || false})
       RETURNING *
     `;
-    return result[0] as Note;
+    return mapNote(result[0])!;
   }
 
   async getUserNotes(userId: string): Promise<Note[]> {
@@ -604,12 +758,12 @@ export class DbStorage implements IStorage {
       WHERE user_id = ${userId} 
       ORDER BY is_pinned DESC, updated_at DESC
     `;
-    return result as Note[];
+    return result.map((row: any) => mapNote(row)!);
   }
 
   async getNote(id: string): Promise<Note | undefined> {
     const result = await sql`SELECT * FROM notes WHERE id = ${id} LIMIT 1`;
-    return result[0] as Note | undefined;
+    return mapNote(result[0]);
   }
 
   async updateNote(id: string, updates: Partial<Note>): Promise<Note | undefined> {
@@ -630,7 +784,7 @@ export class DbStorage implements IStorage {
     values.push(id);
 
     const result = await sql(query, values);
-    return result[0] as Note | undefined;
+    return mapNote(result[0]);
   }
 
   async deleteNote(id: string): Promise<boolean> {
@@ -651,7 +805,7 @@ export class DbStorage implements IStorage {
       )
       RETURNING *
     `;
-    return result[0] as AuditLog;
+    return mapAuditLog(result[0])!;
   }
 }
 

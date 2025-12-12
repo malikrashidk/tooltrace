@@ -1,5 +1,6 @@
 import { storage } from "./storage";
 import { hashPassword } from "./auth";
+import { sql } from "./db";
 
 /**
  * Initialize Admin User
@@ -16,11 +17,17 @@ async function initializeAdmin() {
     // Check if admin already exists
     const existingUser = await storage.getUserByEmail(ADMIN_EMAIL);
     if (existingUser) {
+      // Ensure admin user has correct flags set
+      if (!existingUser.isAdmin || existingUser.plan !== "premium") {
+        console.log("🔄 Fixing admin user permissions...");
+        await sql`UPDATE users SET is_admin = true, plan = 'premium', updated_at = NOW() WHERE email = ${ADMIN_EMAIL}`;
+        console.log("✅ Admin permissions fixed");
+      }
       console.log("✅ Admin user already exists");
       console.log(`   Email: ${ADMIN_EMAIL}`);
       console.log(`   Name: ${existingUser.name}`);
-      console.log(`   Plan: ${existingUser.plan}`);
-      console.log(`   Is Admin: ${existingUser.isAdmin}`);
+      console.log(`   Plan: premium`);
+      console.log(`   Is Admin: true`);
       return;
     }
 

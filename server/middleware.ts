@@ -17,11 +17,13 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
   try {
     const token = extractTokenFromHeader(req.headers.authorization);
     if (!token) {
+      console.log(`[Auth] No token provided for ${req.method} ${req.path}`);
       return res.status(401).json({ error: "No token provided" });
     }
 
     const decoded = verifyToken(token);
     if (!decoded) {
+      console.log(`[Auth] Invalid token for ${req.method} ${req.path}`);
       return res.status(401).json({ error: "Invalid token" });
     }
 
@@ -51,6 +53,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
 
     next();
   } catch (error) {
+    console.error(`[Auth] Error in authMiddleware for ${req.method} ${req.path}:`, error);
     res.status(401).json({ error: "Unauthorized" });
   }
 }
