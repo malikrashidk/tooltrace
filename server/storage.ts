@@ -599,31 +599,76 @@ export class DbStorage implements IStorage {
 
   async createTool(tool: InsertTool & { userId: string }): Promise<Tool> {
     try {
-      // Use raw parameterized query to avoid Neon driver issues with null in template literals
-      const params = [
+      // Build query dynamically to only include non-empty fields
+      const params: any[] = [
         tool.userId,
         tool.name,
         tool.websiteUrl,
-        tool.logoUrl || null,
-        tool.notes || null,
         tool.isPaid,
-        (!tool.billingAmount || String(tool.billingAmount).trim() === "") ? null : tool.billingAmount,
-        (!tool.billingCycle || String(tool.billingCycle).trim() === "") ? null : tool.billingCycle,
-        tool.nextRenewalDate || null,
         tool.categories || [],
         tool.tags || [],
         tool.usageFrequency,
-        (!tool.paymentMethod || String(tool.paymentMethod).trim() === "") ? null : tool.paymentMethod,
-        tool.credentials ? JSON.stringify(tool.credentials) : null,
       ];
 
+      let fields = [
+        "user_id", "name", "website_url", "is_paid", "categories", "tags", "usage_frequency"
+      ];
+      let values = ["$1", "$2", "$3", "$4", "$5", "$6", "$7"];
+      let paramCount = 7;
+
+      // Only add optional fields if they have values
+      if (tool.logoUrl && String(tool.logoUrl).trim() !== "") {
+        paramCount++;
+        params.push(tool.logoUrl);
+        fields.push("logo_url");
+        values.push(`$${paramCount}`);
+      }
+
+      if (tool.notes && String(tool.notes).trim() !== "") {
+        paramCount++;
+        params.push(tool.notes);
+        fields.push("notes");
+        values.push(`$${paramCount}`);
+      }
+
+      if (tool.billingAmount && String(tool.billingAmount).trim() !== "") {
+        paramCount++;
+        params.push(tool.billingAmount);
+        fields.push("billing_amount");
+        values.push(`$${paramCount}`);
+      }
+
+      if (tool.billingCycle && String(tool.billingCycle).trim() !== "") {
+        paramCount++;
+        params.push(tool.billingCycle);
+        fields.push("billing_cycle");
+        values.push(`$${paramCount}`);
+      }
+
+      if (tool.nextRenewalDate) {
+        paramCount++;
+        params.push(tool.nextRenewalDate);
+        fields.push("next_renewal_date");
+        values.push(`$${paramCount}`);
+      }
+
+      if (tool.paymentMethod && String(tool.paymentMethod).trim() !== "") {
+        paramCount++;
+        params.push(tool.paymentMethod);
+        fields.push("payment_method");
+        values.push(`$${paramCount}`);
+      }
+
+      if (tool.credentials) {
+        paramCount++;
+        params.push(JSON.stringify(tool.credentials));
+        fields.push("credentials");
+        values.push(`$${paramCount}`);
+      }
+
       const query = `
-        INSERT INTO tools (
-          user_id, name, website_url, logo_url, notes, is_paid, 
-          billing_amount, billing_cycle, next_renewal_date, 
-          categories, tags, usage_frequency, payment_method, credentials
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        INSERT INTO tools (${fields.join(", ")})
+        VALUES (${values.join(", ")})
         RETURNING *
       `;
 
