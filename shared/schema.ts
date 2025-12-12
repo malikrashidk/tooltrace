@@ -204,11 +204,17 @@ export const insertToolSchema = createInsertSchema(tools)
   })
   .extend({
     // Accept string dates from form and convert to Date
-    nextRenewalDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
-    // Accept string or number for billing amount, convert to string for DB storage
-    billingAmount: z.union([z.number(), z.string()]).optional()
-      .refine(val => !val || val !== "", "billingAmount cannot be empty string")
-      .transform(val => val && val !== "" ? String(val) : undefined),
+    nextRenewalDate: z.string().optional().transform(val => val && val.trim() ? new Date(val) : undefined),
+    // Accept string or number for billing amount, only pass if valid
+    billingAmount: z.union([z.number(), z.string()]).nullable().optional()
+      .refine(val => val === null || val === undefined || val !== "", "billingAmount cannot be empty string")
+      .transform(val => {
+        if (val === null || val === undefined || val === "") return null;
+        return String(val);
+      }),
+    billingCycle: z.string().nullable().optional().transform(val => val && val.trim() ? val : null),
+    paymentMethod: z.string().nullable().optional().transform(val => val && val.trim() ? val : null),
+    notes: z.string().nullable().optional().transform(val => val && val.trim() ? val : null),
   });
 
 export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({

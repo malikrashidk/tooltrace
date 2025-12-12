@@ -874,6 +874,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ RECEIPT ROUTES (Paid Members Only) ============
+  
+  // Middleware to check if user has paid plan
+  const paidPlanMiddleware = async (req: any, res: any, next: any) => {
+    try {
+      const user = await storage.getUser(req.userId!);
+      if (!user || (user.plan !== "standard" && user.plan !== "premium")) {
+        return res.status(403).json({ error: "Receipt storage is only available for Standard and Premium plans" });
+      }
+      next();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to verify subscription" });
+    }
+  };
+
+  app.get("/api/receipts", authMiddleware, paidPlanMiddleware, async (req, res) => {
+    try {
+      const receipts = await storage.getUserReceipts(req.userId!);
+      res.json({ receipts });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch receipts" });
+    }
+  });
+
+  app.post("/api/receipts", authMiddleware, paidPlanMiddleware, async (req, res) => {
+    try {
+      const { fileName, fileData, toolId, amount, receiptDate } = req.body;
+      
+      if (!fileName || !fileData) {
+        return res.status(400).json({ error: "File name and file data are required" });
+      }
+
+      // Validate file type (PDF, PNG, JPG, JPEG)
+      const allowedExtensions = ['.pdf', '.png', '.jpg', '.jpeg'];
+      const fileExtension = fileName.toLowerCase().substring(fileName.lastIndexOf('.'));
+      if (!allowedExtensions.includes(fileExtension)) {
+        return res.status(400).json({ error: "Only PDF, PNG, JPG, and JPEG files are allowed" });
+      }
+
+      // Validate file size (max 5MB as base64 string)
+      const maxSizeBytes = 5 * 1024 * 1024; // 5MB
+      const base64Size = (fileData.length * 3) / 4;
+      if (base64Size > maxSizeBytes) {
+        return res.status(400).json({ error: "File size must be less than 5MB" });
+      }
+
+      // Store the file data as a base64 data URL
+      const receipt = await storage.createReceipt({
+        userId: req.userId!,
+        toolId: toolId || null,
+        fileName,
+        fileUrl: fileData, // Store base64 data directly
+        amount: amount ? String(amount) : null,
+        receiptDate: receiptDate ? new Date(receiptDate) : null,
+      } as any);
+
+      await auditLog(req.userId!, "create", "receipt", receipt.id, { fileName }, req);
+      res.json({ receipt });
+    } catch (error: any) {
+      console.error("Receipt upload error:", error);
+      res.status(400).json({ error: error.message || "Failed to upload receipt" });
+    }
+  });
+
+  app.delete("/api/receipts/:id", authMiddleware, paidPlanMiddleware, async (req, res) => {
+    try {
+      const receipts = await storage.getUserReceipts(req.userId!);
+      const receipt = receipts.find(r => r.id === req.params.id);
+      
+      if (!receipt) {
+        return res.status(404).json({ error: "Receipt not found" });
+      }
+
+      await storage.deleteReceipt(req.params.id);
+      await auditLog(req.userId!, "delete", "receipt", req.params.id, { fileName: receipt.fileName }, req);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete receipt" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
