@@ -568,29 +568,40 @@ export class DbStorage implements IStorage {
   }
 
   async createTool(tool: InsertTool & { userId: string }): Promise<Tool> {
-    // Ensure empty strings are converted to null
-    console.log("[DEBUG createTool] Received billingAmount:", JSON.stringify(tool.billingAmount), "Type:", typeof tool.billingAmount);
-    const billingAmount = (tool.billingAmount && tool.billingAmount !== "" && tool.billingAmount !== "undefined") ? tool.billingAmount : null;
-    console.log("[DEBUG createTool] Using billingAmount:", billingAmount);
-    const result = await sql`
-      INSERT INTO tools (
-        user_id, name, website_url, logo_url, notes, is_paid, 
-        billing_amount, billing_cycle, next_renewal_date, 
-        categories, tags, usage_frequency, payment_method, credentials
-      )
-      VALUES (
-        ${tool.userId}, ${tool.name}, ${tool.websiteUrl}, ${tool.logoUrl || null}, 
-        ${tool.notes || null}, ${tool.isPaid}, ${billingAmount}, 
-        ${tool.billingCycle || null}, ${tool.nextRenewalDate || null}, 
-        ${tool.categories || []}, ${tool.tags || []}, ${tool.usageFrequency}, 
-        ${tool.paymentMethod || null}, ${tool.credentials ? JSON.stringify(tool.credentials) : null}
-      )
-      RETURNING *
-    `;
-    if (!result || !Array.isArray(result) || result.length === 0) {
-      throw new Error("Failed to create tool - no result returned");
+    try {
+      // Ensure empty strings and null values are handled correctly
+      const billingAmount = (tool.billingAmount && tool.billingAmount !== "" && tool.billingAmount !== "undefined") ? tool.billingAmount : null;
+      
+      // Convert Date objects to ISO strings for database insertion
+      const nextRenewalDate = tool.nextRenewalDate 
+        ? (tool.nextRenewalDate instanceof Date 
+            ? tool.nextRenewalDate.toISOString() 
+            : tool.nextRenewalDate)
+        : null;
+      
+      const result = await sql`
+        INSERT INTO tools (
+          user_id, name, website_url, logo_url, notes, is_paid, 
+          billing_amount, billing_cycle, next_renewal_date, 
+          categories, tags, usage_frequency, payment_method, credentials
+        )
+        VALUES (
+          ${tool.userId}, ${tool.name}, ${tool.websiteUrl}, ${tool.logoUrl || null}, 
+          ${tool.notes || null}, ${tool.isPaid}, ${billingAmount}, 
+          ${tool.billingCycle || null}, ${nextRenewalDate}, 
+          ${tool.categories || []}, ${tool.tags || []}, ${tool.usageFrequency}, 
+          ${tool.paymentMethod || null}, ${tool.credentials ? JSON.stringify(tool.credentials) : null}
+        )
+        RETURNING *
+      `;
+      if (!result || !Array.isArray(result) || result.length === 0) {
+        throw new Error("Failed to create tool - no result returned");
+      }
+      return mapTool(result[0])!;
+    } catch (error) {
+      console.error("[DbStorage.createTool] Error:", error);
+      throw error;
     }
-    return mapTool(result[0])!;
   }
 
   async updateTool(id: string, updates: Partial<Tool>): Promise<Tool | undefined> {

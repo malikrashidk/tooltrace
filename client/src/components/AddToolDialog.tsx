@@ -85,11 +85,14 @@ export function AddToolDialog({ categories, onSave, editTool, trigger }: AddTool
   const isPaid = form.watch("isPaid");
 
   const onSubmit = (data: ToolFormData) => {
+    // Ensure empty strings and zero values are not sent
     const billingAmount = data.billingAmount && data.billingAmount > 0 ? String(data.billingAmount) : undefined;
+    const nextRenewalDate = data.nextRenewalDate && data.nextRenewalDate.trim() ? data.nextRenewalDate : undefined;
+    
     onSave({
       ...data,
       billingAmount,
-      nextRenewalDate: data.nextRenewalDate ? new Date(data.nextRenewalDate) : undefined,
+      nextRenewalDate,
       categories: selectedCategories,
       tags,
       logoUrl: logoPreview || undefined,

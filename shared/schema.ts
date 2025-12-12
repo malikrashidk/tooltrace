@@ -192,12 +192,21 @@ export const insertUserSchema = createInsertSchema(users).pick({
   name: true,
 });
 
-export const insertToolSchema = createInsertSchema(tools).omit({
-  id: true,
-  userId: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertToolSchema = createInsertSchema(tools)
+  .omit({
+    id: true,
+    userId: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    // Accept string dates from form and convert to Date
+    nextRenewalDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
+    // Accept string or number for billing amount, convert to string for DB storage
+    billingAmount: z.union([z.number(), z.string()]).optional()
+      .refine(val => !val || val !== "", "billingAmount cannot be empty string")
+      .transform(val => val && val !== "" ? String(val) : undefined),
+  });
 
 export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
   id: true,
