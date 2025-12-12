@@ -568,6 +568,8 @@ export class DbStorage implements IStorage {
   }
 
   async createTool(tool: InsertTool & { userId: string }): Promise<Tool> {
+    // Ensure empty strings are converted to null
+    const billingAmount = tool.billingAmount && tool.billingAmount !== "" ? tool.billingAmount : null;
     const result = await sql`
       INSERT INTO tools (
         user_id, name, website_url, logo_url, notes, is_paid, 
@@ -576,7 +578,7 @@ export class DbStorage implements IStorage {
       )
       VALUES (
         ${tool.userId}, ${tool.name}, ${tool.websiteUrl}, ${tool.logoUrl || null}, 
-        ${tool.notes || null}, ${tool.isPaid}, ${tool.billingAmount || null}, 
+        ${tool.notes || null}, ${tool.isPaid}, ${billingAmount}, 
         ${tool.billingCycle || null}, ${tool.nextRenewalDate || null}, 
         ${tool.categories || []}, ${tool.tags || []}, ${tool.usageFrequency}, 
         ${tool.paymentMethod || null}, ${tool.credentials ? JSON.stringify(tool.credentials) : null}
