@@ -255,6 +255,7 @@ export function ApiKeysPage() {
           <CardDescription>Available endpoints for integrations</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+          <p className="text-sm font-medium mb-2">Read Operations</p>
           <div className="grid gap-2 text-sm">
             <div className="flex items-center justify-between p-2 bg-muted rounded-md">
               <code>GET /api/v1/tools</code>
@@ -271,6 +272,29 @@ export function ApiKeysPage() {
             <div className="flex items-center justify-between p-2 bg-muted rounded-md">
               <code>GET /api/v1/analytics/spending</code>
               <span className="text-muted-foreground">Spending analytics</span>
+            </div>
+            <div className="flex items-center justify-between p-2 bg-muted rounded-md">
+              <code>GET /api/v1/webhooks/renewal-triggers</code>
+              <span className="text-muted-foreground">Automation triggers</span>
+            </div>
+            <div className="flex items-center justify-between p-2 bg-muted rounded-md">
+              <code>GET /api/v1/test</code>
+              <span className="text-muted-foreground">Test API key</span>
+            </div>
+          </div>
+          <p className="text-sm font-medium mt-4 mb-2">Write Operations</p>
+          <div className="grid gap-2 text-sm">
+            <div className="flex items-center justify-between p-2 bg-muted rounded-md">
+              <code>POST /api/v1/tools</code>
+              <span className="text-muted-foreground">Create a tool</span>
+            </div>
+            <div className="flex items-center justify-between p-2 bg-muted rounded-md">
+              <code>PATCH /api/v1/tools/:id</code>
+              <span className="text-muted-foreground">Update a tool</span>
+            </div>
+            <div className="flex items-center justify-between p-2 bg-muted rounded-md">
+              <code>DELETE /api/v1/tools/:id</code>
+              <span className="text-muted-foreground">Delete a tool</span>
             </div>
           </div>
         </CardContent>

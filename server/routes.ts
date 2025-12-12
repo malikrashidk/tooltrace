@@ -1034,7 +1034,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ============ EXTERNAL API ENDPOINTS (for Pabbly/Make integrations) ============
   
-  // Middleware to verify API key for external access
+  // Middleware to verify API key for external access AND check paid plan
   const apiKeyAuthMiddleware = async (req: any, res: any, next: any) => {
     try {
       const authHeader = req.headers.authorization;
@@ -1047,6 +1047,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!apiKey || !apiKey.isActive) {
         return res.status(401).json({ error: "Invalid or inactive API key" });
+      }
+
+      // Verify user still has a paid plan (API access requires Standard or Premium)
+      const user = await storage.getUser(apiKey.userId);
+      if (!user || (user.plan !== "standard" && user.plan !== "premium")) {
+        return res.status(403).json({ error: "API access requires an active Standard or Premium subscription" });
       }
 
       // Store user ID from API key for route handlers
@@ -1173,6 +1179,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Extension download error:", error);
       res.status(500).json({ error: "Failed to download extension" });
     }
+  });
+
+  // ============ WEBHOOK ENDPOINTS FOR AUTOMATION (Zapier/Make/Pabbly) ============
+  
+  // Webhook: Create a new tool
+  app.post("/api/v1/tools", apiKeyAuthMiddleware, async (req, res) => {
+    try {
+      const { name, websiteUrl, isPaid, billingAmount, billingCycle, categories, usageFrequency, nextRenewalDate, notes } = req.body;
+      
+      if (!name || !websiteUrl) {
+        return res.status(400).json({ error: "Name and websiteUrl are required" });
+      }
+
+      const tool = await storage.createTool({
+        userId: req.userId!,
+        name,
+        websiteUrl,
+        isPaid: isPaid || false,
+        billingAmount: billingAmount || null,
+        billingCycle: billingCycle || null,
+        categories: categories || [],
+        usageFrequency: usageFrequency || "daily",
+        nextRenewalDate: nextRenewalDate ? new Date(nextRenewalDate) : null,
+        notes: notes || null,
+        logoUrl: null,
+        paymentMethod: null,
+        tags: [],
+        credentials: null,
+      });
+
+      await auditLog(req.userId!, "create", "tool", tool.id, { name: tool.name, source: "api" }, req);
+      res.status(201).json({ tool, message: "Tool created successfully" });
+    } catch (error: any) {
+      console.error("API tool creation error:", error);
+      res.status(400).json({ error: error.message || "Failed to create tool" });
+    }
+  });
+
+  // Webhook: Update a tool
+  app.patch("/api/v1/tools/:id", apiKeyAuthMiddleware, async (req, res) => {
+    try {
+      const tools = await storage.getUserTools(req.userId!);
+      const existingTool = tools.find(t => t.id === req.params.id);
+      
+      if (!existingTool) {
+        return res.status(404).json({ error: "Tool not found" });
+      }
+
+      const updates = req.body;
+      if (updates.nextRenewalDate) {
+        updates.nextRenewalDate = new Date(updates.nextRenewalDate);
+      }
+
+      const updatedTool = await storage.updateTool(req.params.id, updates);
+      await auditLog(req.userId!, "update", "tool", req.params.id, { source: "api", changes: Object.keys(updates) }, req);
+      
+      res.json({ tool: updatedTool, message: "Tool updated successfully" });
+    } catch (error: any) {
+      console.error("API tool update error:", error);
+      res.status(400).json({ error: error.message || "Failed to update tool" });
+    }
+  });
+
+  // Webhook: Delete a tool
+  app.delete("/api/v1/tools/:id", apiKeyAuthMiddleware, async (req, res) => {
+    try {
+      const tools = await storage.getUserTools(req.userId!);
+      const existingTool = tools.find(t => t.id === req.params.id);
+      
+      if (!existingTool) {
+        return res.status(404).json({ error: "Tool not found" });
+      }
+
+      await storage.deleteTool(req.params.id);
+      await auditLog(req.userId!, "delete", "tool", req.params.id, { name: existingTool.name, source: "api" }, req);
+      
+      res.json({ success: true, message: "Tool deleted successfully" });
+    } catch (error: any) {
+      console.error("API tool deletion error:", error);
+      res.status(400).json({ error: error.message || "Failed to delete tool" });
+    }
+  });
+
+  // Webhook: Get renewal reminders (for automation triggers)
+  app.get("/api/v1/webhooks/renewal-triggers", apiKeyAuthMiddleware, async (req, res) => {
+    try {
+      const days = parseInt(req.query.days as string) || 7;
+      const tools = await storage.getUserTools(req.userId!);
+      const today = new Date();
+      const futureDate = new Date(today.getTime() + days * 24 * 60 * 60 * 1000);
+      
+      const upcomingRenewals = tools
+        .filter(tool => {
+          if (!tool.nextRenewalDate || !tool.isPaid) return false;
+          const renewalDate = new Date(tool.nextRenewalDate);
+          return renewalDate >= today && renewalDate <= futureDate;
+        })
+        .map(tool => ({
+          toolId: tool.id,
+          toolName: tool.name,
+          renewalDate: tool.nextRenewalDate,
+          amount: tool.billingAmount,
+          billingCycle: tool.billingCycle,
+          daysUntilRenewal: Math.ceil((new Date(tool.nextRenewalDate!).getTime() - today.getTime()) / (24 * 60 * 60 * 1000)),
+        }));
+      
+      res.json({ 
+        renewals: upcomingRenewals, 
+        count: upcomingRenewals.length,
+        queryDays: days,
+        generatedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch renewal triggers" });
+    }
+  });
+
+  // Webhook: Test endpoint to verify API key
+  app.get("/api/v1/test", apiKeyAuthMiddleware, async (req, res) => {
+    res.json({ 
+      success: true, 
+      message: "API key is valid",
+      userId: req.userId,
+      timestamp: new Date().toISOString()
+    });
   });
 
   const httpServer = createServer(app);

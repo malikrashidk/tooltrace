@@ -115,7 +115,7 @@ export function AdvancedToolsManagement() {
 
   const tools = toolsData?.tools || [];
   
-  const allCategories = [...new Set(tools.flatMap(t => t.categories || []))];
+  const allCategories = Array.from(new Set(tools.flatMap(t => t.categories || [])));
   
   const filteredTools = tools.filter(tool => {
     const matchesSearch = tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

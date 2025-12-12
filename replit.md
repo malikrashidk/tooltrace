@@ -10,7 +10,16 @@ Tool Trace is a self-hostable SaaS tool management platform designed for freelan
 - Focus on delivering production-ready, clean, and type-safe code.
 - I do not want any changes to be made to the `browser-extension/` folder unless explicitly requested.
 
-## Recent Changes (December 7, 2025)
+## Recent Changes (December 12, 2025)
+### Features Implementation Session
+- **Forgot/Reset Password**: Complete implementation with secure token generation, email-like flow (tokens stored in DB), ForgotPasswordPage and ResetPasswordPage components, proper null handling in updateUser for token clearing
+- **Receipt Storage (Paid Feature)**: Full CRUD implementation with base64 file storage, linked to tools, paid-plan middleware protection, file type validation (PDF, PNG, JPG, JPEG), 5MB limit
+- **API Keys (Paid Feature)**: Full CRUD with key/secret generation, paid-plan middleware protection, max 5 keys per user
+- **External API v1 Endpoints**: For Pabbly/Make integration - `/api/v1/tools`, `/api/v1/tools/:id`, `/api/v1/renewals`, `/api/v1/analytics/spending` - protected by API key auth + paid plan verification
+- **Browser Extension Download**: Added `/api/extension/download` endpoint that serves browser-extension folder as a zip file, updated IntegrationsHub with proper download link
+- **Security Improvements**: Added paid plan verification to external API endpoints, ensuring downgraded users can't use API keys
+
+## Previous Changes (December 7, 2025)
 ### Tool Limits & CRUD Operations - Complete & Production Ready
 - **Updated Tool Limits**: Free tier now allows 8 tools (was 5), Standard tier allows 15 tools (was 12), Premium unlimited
 - **Fixed Subscription Not Found Error**: Added automatic subscription creation fallback in `/api/tools` POST endpoint when subscription is missing
