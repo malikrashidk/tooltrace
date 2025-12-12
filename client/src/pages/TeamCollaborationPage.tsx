@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Users, Lock, Plus, Mail, Shield, UserMinus, Crown } from "lucide-react";
+import { Users, Lock, Plus, Mail, Shield, UserMinus, Crown, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -100,8 +100,8 @@ export function TeamCollaborationPage() {
     }
 
     toast({ 
-      title: "Invitation Sent", 
-      description: `An invitation has been sent to ${inviteEmail}` 
+      title: "Coming Soon", 
+      description: "Team invitations will be available in a future update. We'll notify you when this feature is ready." 
     });
     setInviteDialogOpen(false);
     setInviteEmail("");
@@ -145,15 +145,34 @@ export function TeamCollaborationPage() {
           <h1 className="text-2xl sm:text-3xl font-semibold">Team Collaboration</h1>
           <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Manage your team and permissions</p>
         </div>
-        <Button 
-          onClick={() => setInviteDialogOpen(true)}
-          className="w-full sm:w-auto"
-          data-testid="button-invite-member"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Invite Team Member
-        </Button>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-xs bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400">
+            Coming Soon
+          </Badge>
+          <Button 
+            onClick={() => setInviteDialogOpen(true)}
+            className="w-full sm:w-auto"
+            data-testid="button-invite-member"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Invite Team Member
+          </Button>
+        </div>
       </div>
+
+      <Card className="bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-900/30">
+        <CardContent className="py-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-medium text-yellow-800 dark:text-yellow-200">Preview Feature</p>
+              <p className="text-yellow-700 dark:text-yellow-300 mt-1">
+                Team collaboration is coming soon. You can explore the interface and we'll notify you when team invitations are available.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
