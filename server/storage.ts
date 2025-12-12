@@ -456,14 +456,11 @@ export class DbStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
     if (!id) return undefined;
     try {
-      const result = await sql`SELECT * FROM users WHERE id = ${id}::uuid LIMIT 1`;
+      const result = await sql`SELECT * FROM users WHERE id = ${id} LIMIT 1`;
       if (!result || !Array.isArray(result) || result.length === 0) return undefined;
       return mapUser(result[0]);
     } catch (error: any) {
-      // Don't log UUID validation errors as they're expected when token has old user ID
-      if (!error?.message?.includes('invalid input syntax for type uuid')) {
-        console.error("[DbStorage.getUser] Error fetching user:", id, error);
-      }
+      console.error("[DbStorage.getUser] Error fetching user:", id, error);
       return undefined;
     }
   }
