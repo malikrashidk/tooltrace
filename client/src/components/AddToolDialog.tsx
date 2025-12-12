@@ -98,7 +98,7 @@ export function AddToolDialog({ categories, onSave, editTool, trigger }: AddTool
       billingCycle,
       paymentMethod,
       notes,
-      nextRenewalDate,
+      nextRenewalDate: nextRenewalDate ? new Date(nextRenewalDate) : null,
       categories: selectedCategories,
       tags,
       logoUrl: logoPreview || undefined,

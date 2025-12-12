@@ -955,6 +955,186 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ API KEYS ROUTES (Paid Members Only) ============
+
+  app.get("/api/api-keys", authMiddleware, paidPlanMiddleware, async (req, res) => {
+    try {
+      const apiKeys = await storage.getUserApiKeys(req.userId!);
+      // Don't return the secret, only show it once when created
+      const safeApiKeys = apiKeys.map(key => ({
+        ...key,
+        secret: "••••••••", // Hide secret
+      }));
+      res.json({ apiKeys: safeApiKeys });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch API keys" });
+    }
+  });
+
+  app.post("/api/api-keys", authMiddleware, paidPlanMiddleware, async (req, res) => {
+    try {
+      const { name } = req.body;
+      
+      if (!name || typeof name !== "string" || name.trim().length === 0) {
+        return res.status(400).json({ error: "API key name is required" });
+      }
+
+      // Check limit (max 5 API keys per user)
+      const existingKeys = await storage.getUserApiKeys(req.userId!);
+      if (existingKeys.length >= 5) {
+        return res.status(400).json({ error: "Maximum 5 API keys allowed per user" });
+      }
+
+      // Generate key and secret
+      const key = `tt_${crypto.randomBytes(16).toString('hex')}`;
+      const secret = crypto.randomBytes(32).toString('hex');
+
+      const apiKey = await storage.createApiKey({
+        userId: req.userId!,
+        name: name.trim(),
+        key,
+        secret,
+      } as any);
+
+      await auditLog(req.userId!, "create", "api_key", apiKey.id, { name: apiKey.name }, req);
+      
+      // Return full key and secret only on creation
+      res.json({ 
+        apiKey: {
+          ...apiKey,
+          // Note: this is the only time secret is visible
+        },
+        message: "Save the key and secret now. The secret will not be shown again."
+      });
+    } catch (error: any) {
+      console.error("API key creation error:", error);
+      res.status(400).json({ error: error.message || "Failed to create API key" });
+    }
+  });
+
+  app.delete("/api/api-keys/:id", authMiddleware, paidPlanMiddleware, async (req, res) => {
+    try {
+      const apiKeys = await storage.getUserApiKeys(req.userId!);
+      const apiKey = apiKeys.find(k => k.id === req.params.id);
+      
+      if (!apiKey) {
+        return res.status(404).json({ error: "API key not found" });
+      }
+
+      await storage.deleteApiKey(req.params.id);
+      await auditLog(req.userId!, "delete", "api_key", req.params.id, { name: apiKey.name }, req);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete API key" });
+    }
+  });
+
+  // ============ EXTERNAL API ENDPOINTS (for Pabbly/Make integrations) ============
+  
+  // Middleware to verify API key for external access
+  const apiKeyAuthMiddleware = async (req: any, res: any, next: any) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: "Missing or invalid API key" });
+      }
+
+      const key = authHeader.substring(7);
+      const apiKey = await storage.getApiKeyByKey(key);
+      
+      if (!apiKey || !apiKey.isActive) {
+        return res.status(401).json({ error: "Invalid or inactive API key" });
+      }
+
+      // Store user ID from API key for route handlers
+      req.userId = apiKey.userId;
+      req.apiKeyId = apiKey.id;
+      next();
+    } catch (error) {
+      res.status(500).json({ error: "API authentication failed" });
+    }
+  };
+
+  // External API: Get all tools
+  app.get("/api/v1/tools", apiKeyAuthMiddleware, async (req, res) => {
+    try {
+      const tools = await storage.getUserTools(req.userId!);
+      res.json({ tools, count: tools.length });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch tools" });
+    }
+  });
+
+  // External API: Get tool by ID
+  app.get("/api/v1/tools/:id", apiKeyAuthMiddleware, async (req, res) => {
+    try {
+      const tool = await storage.getTool(req.params.id);
+      if (!tool || tool.userId !== req.userId!) {
+        return res.status(404).json({ error: "Tool not found" });
+      }
+      res.json({ tool });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch tool" });
+    }
+  });
+
+  // External API: Get upcoming renewals
+  app.get("/api/v1/renewals", apiKeyAuthMiddleware, async (req, res) => {
+    try {
+      const tools = await storage.getUserTools(req.userId!);
+      const today = new Date();
+      const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+      
+      const upcomingRenewals = tools
+        .filter(tool => {
+          if (!tool.nextRenewalDate) return false;
+          const renewalDate = new Date(tool.nextRenewalDate);
+          return renewalDate >= today && renewalDate <= thirtyDaysFromNow;
+        })
+        .sort((a, b) => new Date(a.nextRenewalDate!).getTime() - new Date(b.nextRenewalDate!).getTime());
+      
+      res.json({ renewals: upcomingRenewals, count: upcomingRenewals.length });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch renewals" });
+    }
+  });
+
+  // External API: Get spending analytics
+  app.get("/api/v1/analytics/spending", apiKeyAuthMiddleware, async (req, res) => {
+    try {
+      const tools = await storage.getUserTools(req.userId!);
+      
+      const monthlyTotal = tools.reduce((sum, tool) => {
+        if (tool.billingAmount && tool.billingCycle === "monthly") {
+          return sum + parseFloat(tool.billingAmount);
+        }
+        if (tool.billingAmount && tool.billingCycle === "yearly") {
+          return sum + parseFloat(tool.billingAmount) / 12;
+        }
+        return sum;
+      }, 0);
+
+      const yearlyTotal = monthlyTotal * 12;
+      const byCategory = tools.reduce((acc: Record<string, number>, tool) => {
+        const category = tool.categories?.[0] || "Uncategorized";
+        const monthly = tool.billingCycle === "yearly" 
+          ? parseFloat(tool.billingAmount || "0") / 12 
+          : parseFloat(tool.billingAmount || "0");
+        acc[category] = (acc[category] || 0) + monthly;
+        return acc;
+      }, {});
+
+      res.json({ 
+        monthlyTotal: monthlyTotal.toFixed(2),
+        yearlyTotal: yearlyTotal.toFixed(2),
+        toolCount: tools.length,
+        byCategory
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
