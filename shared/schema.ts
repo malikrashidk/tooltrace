@@ -203,8 +203,8 @@ export const insertToolSchema = createInsertSchema(tools)
     updatedAt: true,
   })
   .extend({
-    // Accept string dates from form and convert to Date
-    nextRenewalDate: z.string().optional().transform(val => val && val.trim() ? new Date(val) : undefined),
+    // Accept string dates from form and convert to Date - allow null or undefined
+    nextRenewalDate: z.string().nullable().optional().transform(val => val && val.trim() ? new Date(val) : undefined),
     // Accept string or number for billing amount, only pass if valid
     billingAmount: z.union([z.number(), z.string()]).nullable().optional()
       .refine(val => val === null || val === undefined || val !== "", "billingAmount cannot be empty string")

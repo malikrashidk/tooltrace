@@ -1201,7 +1201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         billingCycle: billingCycle || null,
         categories: categories || [],
         usageFrequency: usageFrequency || "daily",
-        nextRenewalDate: nextRenewalDate ? new Date(nextRenewalDate) : null,
+        nextRenewalDate: nextRenewalDate ? new Date(nextRenewalDate) : undefined,
         notes: notes || null,
         logoUrl: null,
         paymentMethod: null,
