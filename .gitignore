@@ -4,3 +4,10 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+# Replit / IDE noise
+attached_assets/
+*watcher*.txt
+.replit
+
+# OS junk
+.DS_Store
