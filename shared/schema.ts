@@ -203,19 +203,37 @@ export const insertToolSchema = createInsertSchema(tools)
     updatedAt: true,
   })
   .extend({
-    // Accept string dates from form and convert to Date
-    nextRenewalDate: z.union([z.string(), z.date()]).optional().transform(val => {
-      if (!val) return undefined;
-      return typeof val === "string" && val.trim() ? new Date(val) : (val instanceof Date ? val : undefined);
-    }),
-    // Accept string or number for billing amount, coerce to string or undefined
-    billingAmount: z.union([z.number(), z.string()]).optional().transform(val => {
-      if (val === undefined || val === null || val === "") return undefined;
-      return String(val).trim() || undefined;
-    }),
-    billingCycle: z.string().optional().transform(val => val && val.trim() ? val : undefined),
-    paymentMethod: z.string().optional().transform(val => val && val.trim() ? val : undefined),
-    notes: z.string().optional().transform(val => val && val.trim() ? val : undefined),
+    nextRenewalDate: z.union([z.string(), z.date(), z.null()]).optional()
+      .transform(val => {
+        if (!val || val === null) return undefined;
+        if (val instanceof Date) return val;
+        if (typeof val === "string" && val.trim()) return new Date(val);
+        return undefined;
+      }),
+    billingAmount: z.union([z.number(), z.string(), z.null()]).optional()
+      .transform(val => {
+        if (!val || val === null) return undefined;
+        const str = String(val).trim();
+        return str ? str : undefined;
+      }),
+    billingCycle: z.union([z.string(), z.null()]).optional()
+      .transform(val => {
+        if (val === null || val === undefined) return undefined;
+        const str = String(val).trim();
+        return str ? str : undefined;
+      }),
+    paymentMethod: z.union([z.string(), z.null()]).optional()
+      .transform(val => {
+        if (val === null || val === undefined) return undefined;
+        const str = String(val).trim();
+        return str ? str : undefined;
+      }),
+    notes: z.union([z.string(), z.null()]).optional()
+      .transform(val => {
+        if (val === null || val === undefined) return undefined;
+        const str = String(val).trim();
+        return str ? str : undefined;
+      }),
   });
 
 export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
