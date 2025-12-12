@@ -18,6 +18,7 @@ import type {
 import { tools } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { sql, db } from "./db";
+import { eq, desc } from "drizzle-orm";
 
 // Helper to convert snake_case database rows to camelCase TypeScript objects
 function mapUser(row: any): User | undefined {
@@ -584,16 +585,17 @@ export class DbStorage implements IStorage {
 
   async getUserTools(userId: string): Promise<Tool[]> {
     try {
-      // Use raw query with explicit array handling to avoid Neon null pointer errors
-      const result = await sql`SELECT * FROM tools WHERE user_id = ${userId} ORDER BY created_at DESC`;
-      // Handle null/undefined results from Neon driver
-      if (!result) return [];
-      if (!Array.isArray(result)) return [];
-      if (result.length === 0) return [];
-      return result.map((row: any) => mapTool(row)).filter((t): t is Tool => t !== undefined);
+      // Use Drizzle ORM select for proper type handling and consistency
+      const result = await db.select().from(tools).where(eq(tools.userId, userId)).orderBy(desc(tools.createdAt));
+      
+      // Debug logging
+      if (result.length > 0) {
+        console.log("[DbStorage.getUserTools] First tool isPaid:", result[0].isPaid, "billingAmount:", result[0].billingAmount);
+      }
+      
+      return result;
     } catch (error) {
-      // Neon serverless driver can throw on empty results - this is expected
-      console.error("[DbStorage.getUserTools] Error (may be expected for empty results):", error);
+      console.error("[DbStorage.getUserTools] Error:", error);
       return [];
     }
   }
