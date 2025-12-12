@@ -634,11 +634,30 @@ export class DbStorage implements IStorage {
         insertData.credentials = tool.credentials;
       }
 
+      console.log("[DbStorage.createTool] Insert data:", insertData);
+
       const result = await db.insert(tools).values(insertData).returning();
-      if (!result || result.length === 0) {
-        throw new Error("Failed to create tool - no result returned");
+      
+      console.log("[DbStorage.createTool] Raw result:", result);
+
+      // Drizzle returns array, handle empty/null edge cases
+      if (result && Array.isArray(result) && result.length > 0) {
+        return result[0];
       }
-      return result[0];
+
+      // If no result from RETURNING, fetch the most recently created tool for this user
+      const createdTools = await sql`
+        SELECT * FROM tools 
+        WHERE name = ${tool.name} AND user_id = ${tool.userId}
+        ORDER BY created_at DESC
+        LIMIT 1
+      `;
+      
+      if (createdTools && createdTools.length > 0) {
+        return mapTool(createdTools[0])!;
+      }
+
+      throw new Error("Failed to create tool - no result returned");
     } catch (error) {
       console.error("[DbStorage.createTool] Error:", error);
       throw error;
