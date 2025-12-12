@@ -546,13 +546,25 @@ export class DbStorage implements IStorage {
 
   // Tool operations
   async getTool(id: string): Promise<Tool | undefined> {
-    const result = await sql`SELECT * FROM tools WHERE id = ${id} LIMIT 1`;
-    return mapTool(result[0]);
+    try {
+      const result = await sql`SELECT * FROM tools WHERE id = ${id} LIMIT 1`;
+      if (!result || !Array.isArray(result) || result.length === 0) return undefined;
+      return mapTool(result[0]);
+    } catch (error) {
+      console.error("[DbStorage.getTool] Error:", error);
+      return undefined;
+    }
   }
 
   async getUserTools(userId: string): Promise<Tool[]> {
-    const result = await sql`SELECT * FROM tools WHERE user_id = ${userId}`;
-    return result.map((row: any) => mapTool(row)!);
+    try {
+      const result = await sql`SELECT * FROM tools WHERE user_id = ${userId}`;
+      if (!result || !Array.isArray(result)) return [];
+      return result.map((row: any) => mapTool(row)!);
+    } catch (error) {
+      console.error("[DbStorage.getUserTools] Error:", error);
+      return [];
+    }
   }
 
   async createTool(tool: InsertTool & { userId: string }): Promise<Tool> {
@@ -571,6 +583,9 @@ export class DbStorage implements IStorage {
       )
       RETURNING *
     `;
+    if (!result || !Array.isArray(result) || result.length === 0) {
+      throw new Error("Failed to create tool - no result returned");
+    }
     return mapTool(result[0])!;
   }
 
@@ -609,14 +624,26 @@ export class DbStorage implements IStorage {
   }
 
   async getUserToolsCount(userId: string): Promise<number> {
-    const result = await sql`SELECT COUNT(*) as count FROM tools WHERE user_id = ${userId}`;
-    return parseInt(result[0].count);
+    try {
+      const result = await sql`SELECT COUNT(*) as count FROM tools WHERE user_id = ${userId}`;
+      if (!result || !Array.isArray(result) || result.length === 0) return 0;
+      return parseInt(result[0].count) || 0;
+    } catch (error) {
+      console.error("[DbStorage.getUserToolsCount] Error:", error);
+      return 0;
+    }
   }
 
   // Subscription operations
   async getUserSubscription(userId: string): Promise<Subscription | undefined> {
-    const result = await sql`SELECT * FROM subscriptions WHERE user_id = ${userId} LIMIT 1`;
-    return mapSubscription(result[0]);
+    try {
+      const result = await sql`SELECT * FROM subscriptions WHERE user_id = ${userId} LIMIT 1`;
+      if (!result || !Array.isArray(result) || result.length === 0) return undefined;
+      return mapSubscription(result[0]);
+    } catch (error) {
+      console.error("[DbStorage.getUserSubscription] Error:", error);
+      return undefined;
+    }
   }
 
   async createSubscription(sub: InsertSubscription): Promise<Subscription> {
@@ -632,6 +659,9 @@ export class DbStorage implements IStorage {
       )
       RETURNING *
     `;
+    if (!result || !Array.isArray(result) || result.length === 0) {
+      throw new Error("Failed to create subscription");
+    }
     return mapSubscription(result[0])!;
   }
 
