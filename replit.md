@@ -11,7 +11,14 @@ Tool Trace is a self-hostable SaaS tool management platform designed for freelan
 - I do not want any changes to be made to the `browser-extension/` folder unless explicitly requested.
 
 ## Recent Changes (December 12, 2025)
-### Features Implementation Session
+### Features Implementation Session - Part 2
+- **API Keys Page (Fully Functional)**: Complete UI with key generation, copy to clipboard, delete with confirmation, shows all available API endpoints for integrations
+- **Low Usage Page**: Displays rarely-used paid tools with potential savings calculations, usage distribution breakdown, spending by usage frequency
+- **Advanced Tools Management**: Bulk operations (select all, filter, bulk delete, bulk usage update), advanced filtering by category/usage/paid status
+- **Team Collaboration (Premium Preview)**: UI for team management with "Coming Soon" indicators, role permissions display, invite dialog (backend coming in future update)
+- **Webhook Routes for Automation**: Added POST/PATCH/DELETE `/api/v1/tools` endpoints for Pabbly/Make/Zapier, renewal triggers endpoint, API test endpoint
+
+### Features Implementation Session - Part 1
 - **Forgot/Reset Password**: Complete implementation with secure token generation, email-like flow (tokens stored in DB), ForgotPasswordPage and ResetPasswordPage components, proper null handling in updateUser for token clearing
 - **Receipt Storage (Paid Feature)**: Full CRUD implementation with base64 file storage, linked to tools, paid-plan middleware protection, file type validation (PDF, PNG, JPG, JPEG), 5MB limit
 - **API Keys (Paid Feature)**: Full CRUD with key/secret generation, paid-plan middleware protection, max 5 keys per user
