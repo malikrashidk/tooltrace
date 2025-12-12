@@ -24,9 +24,10 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 interface LoginPageProps {
   onSwitchToSignup?: () => void;
+  onForgotPassword?: () => void;
 }
 
-export function LoginPage({ onSwitchToSignup }: LoginPageProps) {
+export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [requires2FA, setRequires2FA] = useState(false);
@@ -212,6 +213,20 @@ export function LoginPage({ onSwitchToSignup }: LoginPageProps) {
                   </FormItem>
                 )}
               />
+              
+              {onForgotPassword && (
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={onForgotPassword}
+                    className="text-sm text-primary hover:underline"
+                    data-testid="link-forgot-password"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
+              
               <Button
                 type="submit"
                 className="w-full h-10 font-semibold"

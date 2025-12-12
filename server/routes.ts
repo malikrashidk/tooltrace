@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import crypto from "crypto";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as FacebookStrategy } from "passport-facebook";
@@ -232,6 +233,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  // ============ PASSWORD RESET ROUTES ============
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      
+      // Always return success to prevent email enumeration
+      if (!user) {
+        return res.json({ message: "If an account exists with this email, a password reset link has been sent." });
+      }
+
+      // OAuth users cannot reset password
+      if (user.oauthProvider && !user.password) {
+        return res.json({ message: "If an account exists with this email, a password reset link has been sent." });
+      }
+
+      // Generate reset token
+      const resetToken = crypto.randomBytes(32).toString("hex");
+      const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+
+      await storage.updateUser(user.id, {
+        resetToken,
+        resetTokenExpiry,
+      });
+
+      // In a self-hosted environment, log the reset URL (in production, you'd send an email)
+      const resetUrl = `${req.protocol}://${req.get("host")}/reset-password?token=${resetToken}`;
+      console.log(`\n📧 Password Reset Request for ${email}`);
+      console.log(`   Reset URL: ${resetUrl}`);
+      console.log(`   Token expires: ${resetTokenExpiry.toISOString()}\n`);
+
+      await auditLog(user.id, "password_reset_request", "user", user.id, {}, req);
+
+      res.json({ 
+        message: "If an account exists with this email, a password reset link has been sent.",
+        // For self-hosted demo purposes, include the reset URL in dev mode
+        ...(process.env.NODE_ENV === "development" && { resetUrl })
+      });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ error: "Failed to process password reset request" });
+    }
+  });
+
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token || !newPassword) {
+        return res.status(400).json({ error: "Token and new password are required" });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters" });
+      }
+
+      const user = await storage.getUserByResetToken(token);
+
+      if (!user) {
+        return res.status(400).json({ error: "Invalid or expired reset token" });
+      }
+
+      if (!user.resetTokenExpiry || new Date(user.resetTokenExpiry) < new Date()) {
+        return res.status(400).json({ error: "Reset token has expired" });
+      }
+
+      // Hash the new password
+      const hashedPassword = await hashPassword(newPassword);
+
+      await storage.updateUser(user.id, {
+        password: hashedPassword,
+        resetToken: null,
+        resetTokenExpiry: null,
+      });
+
+      await auditLog(user.id, "password_reset", "user", user.id, {}, req);
+
+      res.json({ message: "Password has been reset successfully. You can now log in with your new password." });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ error: "Failed to reset password" });
+    }
+  });
+
+  app.get("/api/auth/verify-reset-token", async (req, res) => {
+    try {
+      const { token } = req.query;
+
+      if (!token || typeof token !== "string") {
+        return res.status(400).json({ valid: false, error: "Token is required" });
+      }
+
+      const user = await storage.getUserByResetToken(token);
+
+      if (!user) {
+        return res.json({ valid: false, error: "Invalid reset token" });
+      }
+
+      if (!user.resetTokenExpiry || new Date(user.resetTokenExpiry) < new Date()) {
+        return res.json({ valid: false, error: "Reset token has expired" });
+      }
+
+      res.json({ valid: true, email: user.email });
+    } catch (error) {
+      console.error("Verify reset token error:", error);
+      res.status(500).json({ valid: false, error: "Failed to verify token" });
     }
   });
 
@@ -511,8 +626,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: parsed.error.errors });
       }
 
+      // Clean data before passing to storage - ensure empty strings become null/undefined
+      const cleanedData = {
+        ...parsed.data,
+        billingAmount: parsed.data.billingAmount && String(parsed.data.billingAmount) !== "" ? parsed.data.billingAmount : undefined,
+        nextRenewalDate: parsed.data.nextRenewalDate || undefined,
+        billingCycle: parsed.data.billingCycle && parsed.data.billingCycle !== "" ? parsed.data.billingCycle : undefined,
+        paymentMethod: parsed.data.paymentMethod && parsed.data.paymentMethod !== "" ? parsed.data.paymentMethod : undefined,
+      };
+
       const tool = await storage.createTool({
-        ...(parsed.data as any),
+        ...(cleanedData as any),
         userId: req.userId,
       });
 

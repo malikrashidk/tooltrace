@@ -24,6 +24,9 @@ export const users = pgTable(
     twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
     twoFactorSecret: text("two_factor_secret"), // TOTP secret (encrypted)
     twoFactorBackupCodes: text("two_factor_backup_codes").array(), // Hashed backup codes
+    // Password reset fields
+    resetToken: text("reset_token"),
+    resetTokenExpiry: timestamp("reset_token_expiry"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

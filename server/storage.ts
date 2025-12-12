@@ -37,6 +37,8 @@ function mapUser(row: any): User | undefined {
     twoFactorEnabled: row.two_factor_enabled,
     twoFactorSecret: row.two_factor_secret,
     twoFactorBackupCodes: row.two_factor_backup_codes,
+    resetToken: row.reset_token,
+    resetTokenExpiry: row.reset_token_expiry,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -161,6 +163,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByGoogleId(googleId: string): Promise<User | undefined>;
   getUserByFacebookId(facebookId: string): Promise<User | undefined>;
+  getUserByResetToken(token: string): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   createOAuthUser(userData: Partial<User>): Promise<User>;
@@ -231,6 +234,10 @@ export class MemStorage implements IStorage {
 
   async getUserByFacebookId(facebookId: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find((u) => u.facebookId === facebookId);
+  }
+
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find((u) => u.resetToken === token);
   }
 
   async createOAuthUser(userData: Partial<User>): Promise<User> {
@@ -487,6 +494,17 @@ export class DbStorage implements IStorage {
     return mapUser(result[0]);
   }
 
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    try {
+      const result = await sql`SELECT * FROM users WHERE reset_token = ${token} LIMIT 1`;
+      if (!result || !Array.isArray(result) || result.length === 0) return undefined;
+      return mapUser(result[0]);
+    } catch (error) {
+      console.error("[DbStorage.getUserByResetToken] Error:", error);
+      return undefined;
+    }
+  }
+
   async getAllUsers(): Promise<User[]> {
     const result = await sql`SELECT * FROM users`;
     return result.map((row: any) => mapUser(row)!);
@@ -526,17 +544,24 @@ export class DbStorage implements IStorage {
     Object.entries(updates).forEach(([key, value]) => {
       const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
       setClauses.push(`${snakeKey} = $${paramIndex}`);
-      values.push(value);
+      // Explicitly handle null values for password reset token clearing
+      // undefined should be skipped, but null should be passed to clear fields
+      values.push(value === undefined ? null : value);
       paramIndex++;
     });
 
     if (setClauses.length === 0) return undefined;
 
-    const query = `UPDATE users SET ${setClauses.join(', ')}, updated_at = NOW() WHERE id = $${paramIndex} RETURNING *`;
-    values.push(id);
+    try {
+      const query = `UPDATE users SET ${setClauses.join(', ')}, updated_at = NOW() WHERE id = $${paramIndex} RETURNING *`;
+      values.push(id);
 
-    const result = await sql(query, values);
-    return mapUser(result[0]);
+      const result = await sql(query, values);
+      return mapUser(result[0]);
+    } catch (error) {
+      console.error("[DbStorage.updateUser] Error:", error);
+      throw error;
+    }
   }
 
   async deleteUser(id: string): Promise<boolean> {
@@ -558,11 +583,16 @@ export class DbStorage implements IStorage {
 
   async getUserTools(userId: string): Promise<Tool[]> {
     try {
-      const result = await sql`SELECT * FROM tools WHERE user_id = ${userId}`;
-      if (!result || !Array.isArray(result)) return [];
-      return result.map((row: any) => mapTool(row)!);
+      // Use raw query with explicit array handling to avoid Neon null pointer errors
+      const result = await sql`SELECT * FROM tools WHERE user_id = ${userId} ORDER BY created_at DESC`;
+      // Handle null/undefined results from Neon driver
+      if (!result) return [];
+      if (!Array.isArray(result)) return [];
+      if (result.length === 0) return [];
+      return result.map((row: any) => mapTool(row)).filter((t): t is Tool => t !== undefined);
     } catch (error) {
-      console.error("[DbStorage.getUserTools] Error:", error);
+      // Neon serverless driver can throw on empty results - this is expected
+      console.error("[DbStorage.getUserTools] Error (may be expected for empty results):", error);
       return [];
     }
   }

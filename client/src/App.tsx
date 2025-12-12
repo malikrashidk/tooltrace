@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Switch, Route } from "wouter";
+import { useState, useEffect } from "react";
+import { Switch, Route, useLocation, useSearch } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -11,6 +11,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { AppSidebar } from "@/components/AppSidebar";
 import { LoginPage } from "@/components/LoginPage";
 import { SignupPage } from "@/components/SignupPage";
+import { ForgotPasswordPage } from "@/components/ForgotPasswordPage";
+import { ResetPasswordPage } from "@/components/ResetPasswordPage";
 import { Dashboard } from "@/pages/Dashboard";
 import { ToolsPage } from "@/pages/ToolsPage";
 import { AnalyticsPage } from "@/pages/AnalyticsPage";
@@ -73,13 +75,46 @@ function AuthenticatedApp() {
 
 function UnauthenticatedApp() {
   const [showSignup, setShowSignup] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [location, setLocation] = useLocation();
+  const searchString = useSearch();
+  
+  // Check for reset password token in URL
+  const urlParams = new URLSearchParams(searchString);
+  const resetToken = urlParams.get("token");
+  const isResetPasswordRoute = location === "/reset-password" && resetToken;
+
+  // Handle reset password route
+  if (isResetPasswordRoute && resetToken) {
+    return (
+      <div className="min-h-screen bg-background">
+        <ResetPasswordPage 
+          token={resetToken} 
+          onBackToLogin={() => {
+            setLocation("/");
+          }} 
+        />
+      </div>
+    );
+  }
+
+  if (showForgotPassword) {
+    return (
+      <div className="min-h-screen bg-background">
+        <ForgotPasswordPage onBackToLogin={() => setShowForgotPassword(false)} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
       {showSignup ? (
         <SignupPage onSwitchToLogin={() => setShowSignup(false)} />
       ) : (
-        <LoginPage onSwitchToSignup={() => setShowSignup(true)} />
+        <LoginPage 
+          onSwitchToSignup={() => setShowSignup(true)} 
+          onForgotPassword={() => setShowForgotPassword(true)}
+        />
       )}
     </div>
   );
