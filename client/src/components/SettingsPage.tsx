@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -350,7 +350,7 @@ export function SettingsPage() {
                 className="text-sm text-primary hover:underline"
                 data-testid="link-extension-docs"
               >
-                View Installation Instructions →
+                View Installation Instructions â†’
               </a>
             </div>
           </CardContent>
@@ -360,3 +360,6 @@ export function SettingsPage() {
     </div>
   );
 }
+
+
+

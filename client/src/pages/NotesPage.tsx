@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+﻿import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { Trash2, Pin, PinOff, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -131,7 +131,7 @@ export function NotesPage() {
             />
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>
-                {contentWords} words · {contentChars} characters
+                {contentWords} words Â· {contentChars} characters
               </span>
               {isOverLimit && <span className="text-destructive">Limit exceeded</span>}
             </div>
@@ -262,7 +262,7 @@ export function NotesPage() {
                       {note.content}
                     </p>
                     <div className="text-xs text-muted-foreground">
-                      {wordCount(note.content)} words · Updated {new Date(note.updatedAt).toLocaleDateString()}
+                      {wordCount(note.content)} words Â· Updated {new Date(note.updatedAt).toLocaleDateString()}
                     </div>
                   </div>
                 )}
@@ -274,3 +274,6 @@ export function NotesPage() {
     </div>
   );
 }
+
+
+

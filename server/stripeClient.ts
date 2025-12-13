@@ -1,4 +1,4 @@
-import Stripe from 'stripe';
+﻿import Stripe from 'stripe';
 
 let connectionSettings: any;
 
@@ -77,3 +77,4 @@ export async function getStripeSync() {
   }
   return stripeSync;
 }
+

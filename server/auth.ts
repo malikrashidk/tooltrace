@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+﻿import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import type { User } from "@shared/schema";
 
@@ -63,3 +63,4 @@ export function extractTokenFromHeader(authHeader?: string): string | null {
   if (parts.length !== 2 || parts[0] !== "Bearer") return null;
   return parts[1];
 }
+

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Security utilities and best practices for the application
  */
 
@@ -185,3 +185,6 @@ export class AuditLogger {
 }
 
 export const auditLogger = new AuditLogger();
+
+
+

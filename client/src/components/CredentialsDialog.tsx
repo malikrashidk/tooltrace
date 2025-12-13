@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Eye, EyeOff, Copy, Check, Lock, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -310,7 +310,7 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
+                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     data-testid={`input-password-edit-${tool.id}`}
@@ -398,3 +398,6 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
     </Dialog>
   );
 }
+
+
+

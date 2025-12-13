@@ -1,4 +1,4 @@
-import { authenticator } from "otplib";
+﻿import { authenticator } from "otplib";
 import QRCode from "qrcode";
 import crypto from "crypto";
 
@@ -69,3 +69,4 @@ export function verifyBackupCode(inputCode: string, hashedCodes: string[]): { va
   
   return { valid: true, remainingCodes };
 }
+

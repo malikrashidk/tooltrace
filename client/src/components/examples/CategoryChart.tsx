@@ -1,4 +1,4 @@
-import { CategoryChart } from "../CategoryChart";
+﻿import { CategoryChart } from "../CategoryChart";
 import { mockTools, getCategorySpending } from "@/lib/mockData";
 
 export default function CategoryChartExample() {
@@ -10,3 +10,6 @@ export default function CategoryChartExample() {
     </div>
   );
 }
+
+
+

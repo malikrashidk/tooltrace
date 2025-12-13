@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Copy, Check, ExternalLink, Zap, MessageSquare, Code2, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -303,3 +303,6 @@ export function IntegrationsHub() {
     </div>
   );
 }
+
+
+

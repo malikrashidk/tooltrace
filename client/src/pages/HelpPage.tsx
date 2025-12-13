@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -188,7 +188,7 @@ const helpSections = [
         details: [
           "Export: Download all tools as CSV for backup or analysis",
           "Import: Upload CSV to add multiple tools at once",
-          "Go to 'Advanced Tools' → 'Export Tools'",
+          "Go to 'Advanced Tools' â†’ 'Export Tools'",
           "CSV format: Name, Cost, Billing Cycle, Category, Usage Frequency",
         ],
       },
@@ -339,7 +339,7 @@ export function HelpPage() {
                                     key={detailIdx}
                                     className="flex gap-3 text-sm text-muted-foreground"
                                   >
-                                    <span className="text-primary font-bold min-w-fit">•</span>
+                                    <span className="text-primary font-bold min-w-fit">â€¢</span>
                                     <span>{detail}</span>
                                   </li>
                                 ))}
@@ -430,7 +430,7 @@ function FeedbackForm({ onClose }: FeedbackFormProps) {
     localStorage.setItem("feedback", JSON.stringify(feedbackList));
 
     toast({
-      description: "✓ Thank you! Your feedback has been submitted.",
+      description: "âœ“ Thank you! Your feedback has been submitted.",
     });
 
     setFormData({ type: "suggestion", subject: "", message: "", email: "" });
@@ -509,3 +509,6 @@ function FeedbackForm({ onClose }: FeedbackFormProps) {
     </form>
   );
 }
+
+
+

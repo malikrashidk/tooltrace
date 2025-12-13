@@ -1,4 +1,4 @@
-import { LowUsageWidget } from "../LowUsageWidget";
+﻿import { LowUsageWidget } from "../LowUsageWidget";
 import { mockTools, getLowUsageTools } from "@/lib/mockData";
 
 export default function LowUsageWidgetExample() {
@@ -14,3 +14,6 @@ export default function LowUsageWidgetExample() {
     </div>
   );
 }
+
+
+

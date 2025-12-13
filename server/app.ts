@@ -1,4 +1,4 @@
-import { type Server } from "node:http";
+﻿import { type Server } from "node:http";
 
 import express, {
   type Express,
@@ -75,7 +75,7 @@ app.use((req, res, next) => {
       }
 
       if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
+        logLine = logLine.slice(0, 79) + "â€¦";
       }
 
       log(logLine);
@@ -136,3 +136,4 @@ export default async function runApp(
     log(`serving on port ${port} at http://${host}:${port}`);
   });
 }
+

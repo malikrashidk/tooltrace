@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from "express";
+﻿import type { Request, Response, NextFunction } from "express";
 import { extractTokenFromHeader, verifyToken } from "./auth";
 import { storage } from "./storage";
 import type { User } from "@shared/schema";
@@ -113,3 +113,4 @@ export async function auditLog(
     console.error("Failed to create audit log:", error);
   }
 }
+

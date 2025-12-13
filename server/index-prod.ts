@@ -1,4 +1,4 @@
-import "dotenv/config";
+﻿import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
 import { type Server } from "node:http";
@@ -26,3 +26,4 @@ export async function serveStatic(app: Express, _server: Server) {
 (async () => {
   await runApp(serveStatic);
 })();
+

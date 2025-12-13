@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Seed Products Script
  * Creates subscription products and prices in Stripe
  * Run this script to initialize your Stripe account with products
@@ -21,7 +21,7 @@ async function seedProducts() {
       metadata: { tier: 'free', toolsLimit: '5' },
       type: 'service',
     });
-    console.log('✓ Free Plan created:', freeProduct.id);
+    console.log('âœ“ Free Plan created:', freeProduct.id);
 
     // Standard Plan Product
     const standardProduct = await stripe.products.create({
@@ -30,7 +30,7 @@ async function seedProducts() {
       metadata: { tier: 'standard', toolsLimit: '12' },
       type: 'service',
     });
-    console.log('✓ Standard Plan created:', standardProduct.id);
+    console.log('âœ“ Standard Plan created:', standardProduct.id);
 
     // Premium Plan Product
     const premiumProduct = await stripe.products.create({
@@ -39,7 +39,7 @@ async function seedProducts() {
       metadata: { tier: 'premium', toolsLimit: 'unlimited' },
       type: 'service',
     });
-    console.log('✓ Premium Plan created:', premiumProduct.id);
+    console.log('âœ“ Premium Plan created:', premiumProduct.id);
 
     // Create prices for each product
     console.log('\nCreating prices...');
@@ -53,7 +53,7 @@ async function seedProducts() {
       billing_scheme: 'per_unit',
       nickname: 'Standard Monthly',
     });
-    console.log('✓ Standard Monthly ($9.99/mo):', standardMonthly.id);
+    console.log('âœ“ Standard Monthly ($9.99/mo):', standardMonthly.id);
 
     // Standard Yearly
     const standardYearly = await stripe.prices.create({
@@ -64,7 +64,7 @@ async function seedProducts() {
       billing_scheme: 'per_unit',
       nickname: 'Standard Yearly',
     });
-    console.log('✓ Standard Yearly ($99.99/yr):', standardYearly.id);
+    console.log('âœ“ Standard Yearly ($99.99/yr):', standardYearly.id);
 
     // Premium Monthly
     const premiumMonthly = await stripe.prices.create({
@@ -75,7 +75,7 @@ async function seedProducts() {
       billing_scheme: 'per_unit',
       nickname: 'Premium Monthly',
     });
-    console.log('✓ Premium Monthly ($19.99/mo):', premiumMonthly.id);
+    console.log('âœ“ Premium Monthly ($19.99/mo):', premiumMonthly.id);
 
     // Premium Yearly
     const premiumYearly = await stripe.prices.create({
@@ -86,9 +86,9 @@ async function seedProducts() {
       billing_scheme: 'per_unit',
       nickname: 'Premium Yearly',
     });
-    console.log('✓ Premium Yearly ($199.99/yr):', premiumYearly.id);
+    console.log('âœ“ Premium Yearly ($199.99/yr):', premiumYearly.id);
 
-    console.log('\n✅ All products created successfully!');
+    console.log('\nâœ… All products created successfully!');
     console.log('\nSave these IDs for your frontend:');
     console.log('Standard Monthly:', standardMonthly.id);
     console.log('Standard Yearly:', standardYearly.id);
@@ -96,9 +96,10 @@ async function seedProducts() {
     console.log('Premium Yearly:', premiumYearly.id);
 
   } catch (error: any) {
-    console.error('❌ Error creating products:', error.message);
+    console.error('âŒ Error creating products:', error.message);
     process.exit(1);
   }
 }
 
 seedProducts();
+

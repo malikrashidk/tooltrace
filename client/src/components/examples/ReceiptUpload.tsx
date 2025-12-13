@@ -1,4 +1,4 @@
-import { ReceiptUpload } from "../ReceiptUpload";
+﻿import { ReceiptUpload } from "../ReceiptUpload";
 
 export default function ReceiptUploadExample() {
   const mockReceipts = [
@@ -18,3 +18,6 @@ export default function ReceiptUploadExample() {
     </div>
   );
 }
+
+
+

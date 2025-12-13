@@ -1,4 +1,4 @@
-import { ThemeToggle } from "../ThemeToggle";
+﻿import { ThemeToggle } from "../ThemeToggle";
 import { ThemeProvider } from "@/context/ThemeContext";
 
 export default function ThemeToggleExample() {
@@ -11,3 +11,6 @@ export default function ThemeToggleExample() {
     </ThemeProvider>
   );
 }
+
+
+

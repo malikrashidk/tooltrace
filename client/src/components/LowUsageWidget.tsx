@@ -1,4 +1,4 @@
-import { AlertTriangle, ChevronRight, Clock } from "lucide-react";
+﻿import { AlertTriangle, ChevronRight, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -100,3 +100,6 @@ export function LowUsageWidget({ tools, onViewAll, onReviewTool }: LowUsageWidge
     </Card>
   );
 }
+
+
+

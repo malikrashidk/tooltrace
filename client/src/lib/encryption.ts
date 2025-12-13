@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Client-side encryption utilities for secure credential storage
  * Uses Web Crypto API for browser-native encryption without external dependencies
  */
@@ -122,3 +122,6 @@ export async function hashPassword(password: string): Promise<string> {
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
+
+
+

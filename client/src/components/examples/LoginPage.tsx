@@ -1,4 +1,4 @@
-import { LoginPage } from "../LoginPage";
+﻿import { LoginPage } from "../LoginPage";
 import { AuthProvider } from "@/context/AuthContext";
 
 export default function LoginPageExample() {
@@ -8,3 +8,6 @@ export default function LoginPageExample() {
     </AuthProvider>
   );
 }
+
+
+

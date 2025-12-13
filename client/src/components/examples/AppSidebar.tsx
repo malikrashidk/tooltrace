@@ -1,4 +1,4 @@
-import { AppSidebar, AppHeader } from "../AppSidebar";
+﻿import { AppSidebar, AppHeader } from "../AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AuthProvider } from "@/context/AuthContext";
 
@@ -22,3 +22,6 @@ export default function AppSidebarExample() {
     </AuthProvider>
   );
 }
+
+
+

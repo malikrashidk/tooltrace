@@ -1,4 +1,4 @@
-import { SignupPage } from "../SignupPage";
+﻿import { SignupPage } from "../SignupPage";
 import { AuthProvider } from "@/context/AuthContext";
 
 export default function SignupPageExample() {
@@ -8,3 +8,6 @@ export default function SignupPageExample() {
     </AuthProvider>
   );
 }
+
+
+

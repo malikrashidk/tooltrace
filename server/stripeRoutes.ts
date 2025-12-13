@@ -1,4 +1,4 @@
-import { type Express } from 'express';
+﻿import { type Express } from 'express';
 import { getUncachableStripeClient } from './stripeClient';
 import { stripeService } from './stripeService';
 
@@ -70,3 +70,4 @@ export async function registerStripeRoutes(app: Express) {
     }
   });
 }
+
