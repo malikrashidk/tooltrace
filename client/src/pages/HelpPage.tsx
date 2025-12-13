@@ -188,7 +188,7 @@ const helpSections = [
         details: [
           "Export: Download all tools as CSV for backup or analysis",
           "Import: Upload CSV to add multiple tools at once",
-          "Go to 'Advanced Tools' â†’ 'Export Tools'",
+          "Go to 'Advanced Tools' …†’ 'Export Tools'",
           "CSV format: Name, Cost, Billing Cycle, Category, Usage Frequency",
         ],
       },
@@ -339,7 +339,7 @@ export function HelpPage() {
                                     key={detailIdx}
                                     className="flex gap-3 text-sm text-muted-foreground"
                                   >
-                                    <span className="text-primary font-bold min-w-fit">â€¢</span>
+                                    <span className="text-primary font-bold min-w-fit">…€¢</span>
                                     <span>{detail}</span>
                                   </li>
                                 ))}
@@ -430,7 +430,7 @@ function FeedbackForm({ onClose }: FeedbackFormProps) {
     localStorage.setItem("feedback", JSON.stringify(feedbackList));
 
     toast({
-      description: "âœ“ Thank you! Your feedback has been submitted.",
+      description: "…œ“ Thank you! Your feedback has been submitted.",
     });
 
     setFormData({ type: "suggestion", subject: "", message: "", email: "" });
@@ -509,6 +509,7 @@ function FeedbackForm({ onClose }: FeedbackFormProps) {
     </form>
   );
 }
+
 
 
 

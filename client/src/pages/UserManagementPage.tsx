@@ -302,7 +302,7 @@ export function UserManagementPage() {
               <Input
                 id="password"
                 type="password"
-                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                placeholder="…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 data-testid="input-password"
@@ -353,6 +353,7 @@ export function UserManagementPage() {
     </div>
   );
 }
+
 
 
 

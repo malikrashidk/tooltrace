@@ -310,7 +310,7 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                    placeholder="…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     data-testid={`input-password-edit-${tool.id}`}
@@ -398,6 +398,7 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
     </Dialog>
   );
 }
+
 
 
 

@@ -118,7 +118,7 @@ export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
                       <div className="relative">
                         <Input
                           type={showPassword ? "text" : "password"}
-                          placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                          placeholder="…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢"
                           data-testid="input-password"
                           className="h-10 pr-10"
                           {...field}
@@ -151,7 +151,7 @@ export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
                     <FormControl>
                       <Input
                         type={showPassword ? "text" : "password"}
-                        placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                        placeholder="…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢"
                         data-testid="input-confirm-password"
                         className="h-10"
                         {...field}
@@ -222,6 +222,7 @@ export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
     </div>
   );
 }
+
 
 
 

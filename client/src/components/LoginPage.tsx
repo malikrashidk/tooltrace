@@ -189,7 +189,7 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
                       <div className="relative">
                         <Input
                           type={showPassword ? "text" : "password"}
-                          placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                          placeholder="…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢"
                           data-testid="input-password"
                           className="h-10 pr-10"
                           {...field}
@@ -342,6 +342,7 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
     </div>
   );
 }
+
 
 
 

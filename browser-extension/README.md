@@ -1,13 +1,13 @@
-# Tool Trace Browser Extension
+﻿# Tool Trace Browser Extension
 
 Auto-detect and add SaaS tools to your Tool Trace dashboard while browsing!
 
 ## Features
 
-✨ **Auto-Detection**: Automatically detects SaaS tools you're using
-🔍 **Quick Add**: Select and add multiple tools with one click
-📊 **Supported Tools**: Figma, GitHub, ChatGPT, AWS, Notion, Slack, Zoom, and more
-🔒 **Privacy First**: Works entirely on your browser without tracking
+…œ¨ **Auto-Detection**: Automatically detects SaaS tools you're using
+” **Quick Add**: Select and add multiple tools with one click
+“Š **Supported Tools**: Figma, GitHub, ChatGPT, AWS, Notion, Slack, Zoom, and more
+”’ **Privacy First**: Works entirely on your browser without tracking
 
 ## Installation
 
@@ -75,7 +75,7 @@ KNOWN_SAAS_TOOLS = {
   'your-domain.com': { 
     name: 'Tool Name', 
     category: 'Category', 
-    icon: '🔧' 
+    icon: '”§' 
   },
   // ... more tools
 }
@@ -83,10 +83,10 @@ KNOWN_SAAS_TOOLS = {
 
 ## Privacy & Security
 
-- ✅ No data is sent to third parties
-- ✅ Credentials are never stored in the extension
-- ✅ Uses browser's native storage API
-- ✅ Works offline (detects from current tabs only)
+- …œ… No data is sent to third parties
+- …œ… Credentials are never stored in the extension
+- …œ… Uses browser's native storage API
+- …œ… Works offline (detects from current tabs only)
 
 ## Troubleshooting
 
@@ -114,3 +114,4 @@ MIT License - See LICENSE file for details
 ## Support
 
 For issues or feature requests, please visit: [GitHub Issues](https://github.com/yourusername/saazhub-extension/issues)
+

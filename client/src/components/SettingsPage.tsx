@@ -350,7 +350,7 @@ export function SettingsPage() {
                 className="text-sm text-primary hover:underline"
                 data-testid="link-extension-docs"
               >
-                View Installation Instructions â†’
+                View Installation Instructions …†’
               </a>
             </div>
           </CardContent>
@@ -360,6 +360,7 @@ export function SettingsPage() {
     </div>
   );
 }
+
 
 
 
