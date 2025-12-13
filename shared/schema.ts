@@ -27,6 +27,9 @@ export const users = pgTable(
     // Password reset fields
     resetToken: text("reset_token"),
     resetTokenExpiry: timestamp("reset_token_expiry"),
+    // User preferences
+    currency: text("currency").default("USD"),
+    language: text("language").default("en"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -296,6 +299,40 @@ export type ApiKey = typeof apiKeys.$inferSelect;
 
 export type InsertNote = z.infer<typeof insertNoteSchema>;
 export type Note = typeof notes.$inferSelect;
+
+// ============ TEAM MEMBERS TABLE ============
+export const teamMembers = pgTable(
+  "team_members",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    teamOwnerId: varchar("team_owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }), // null for pending invitations
+    email: text("email").notNull(),
+    role: text("role").notNull().default("member"), // owner, admin, member, viewer
+    status: text("status").notNull().default("pending"), // active, pending
+    invitedBy: varchar("invited_by").references(() => users.id),
+    invitationToken: text("invitation_token").unique(),
+    invitationExpiresAt: timestamp("invitation_expires_at"),
+    joinedAt: timestamp("joined_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    teamOwnerIdx: index("team_owner_idx").on(table.teamOwnerId),
+    userIdIdx: index("team_user_id_idx").on(table.userId),
+    emailIdx: index("team_email_idx").on(table.email),
+    tokenIdx: index("team_token_idx").on(table.invitationToken),
+  })
+);
+
+export const insertTeamMemberSchema = createInsertSchema(teamMembers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
+export type TeamMember = typeof teamMembers.$inferSelect;
 
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
 export type AuditLog = typeof auditLogs.$inferSelect;

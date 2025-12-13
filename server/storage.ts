@@ -14,6 +14,8 @@ import type {
   Note,
   InsertNote,
   AuditLog,
+  TeamMember,
+  InsertTeamMember,
 } from "@shared/schema";
 import { tools } from "@shared/schema";
 import { randomUUID } from "crypto";
@@ -210,6 +212,15 @@ export interface IStorage {
 
   // Audit Log operations
   createAuditLog(log: Omit<AuditLog, "id" | "createdAt">): Promise<AuditLog>;
+  getAuditLogs(userId?: string, limit?: number): Promise<AuditLog[]>;
+
+  // Team Member operations
+  getTeamMembers(teamOwnerId: string): Promise<TeamMember[]>;
+  getTeamMember(id: string): Promise<TeamMember | undefined>;
+  getTeamMemberByToken(token: string): Promise<TeamMember | undefined>;
+  createTeamMember(member: InsertTeamMember): Promise<TeamMember>;
+  updateTeamMember(id: string, updates: Partial<TeamMember>): Promise<TeamMember | undefined>;
+  deleteTeamMember(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -724,6 +735,8 @@ export class DbStorage implements IStorage {
   }
 
   async createSubscription(sub: InsertSubscription): Promise<Subscription> {
+    // Use current date if startDate is not provided (database default requires a value)
+    const startDate = sub.startDate || new Date();
     const result = await sql`
       INSERT INTO subscriptions (
         user_id, plan, status, current_tools_count, tools_limit, 
@@ -732,7 +745,7 @@ export class DbStorage implements IStorage {
       VALUES (
         ${sub.userId}, ${sub.plan}, ${sub.status || 'active'}, 
         ${sub.currentToolsCount || 0}, ${sub.toolsLimit || 8}, 
-        ${sub.startDate || null}, ${sub.renewalDate || null}, ${sub.cancelledAt || null}
+        ${startDate}, ${sub.renewalDate || null}, ${sub.cancelledAt || null}
       )
       RETURNING *
     `;
@@ -792,17 +805,28 @@ export class DbStorage implements IStorage {
 
   // Receipt operations
   async createReceipt(receipt: InsertReceipt): Promise<Receipt> {
+    // Ensure all required fields are present
+    if (!receipt.userId) throw new Error("userId is required");
+    if (!receipt.fileName) throw new Error("fileName is required");
+    if (!receipt.fileUrl) throw new Error("fileUrl is required");
+    
+    // Use current date if uploadDate is not provided (database default requires a value)
+    const uploadDate = receipt.uploadDate || new Date();
+    
     const result = await sql`
       INSERT INTO receipts (
         user_id, tool_id, file_name, file_url, upload_date, amount, receipt_date
       )
       VALUES (
         ${receipt.userId}, ${receipt.toolId || null}, ${receipt.fileName}, 
-        ${receipt.fileUrl}, ${receipt.uploadDate || null}, ${receipt.amount || null}, 
+        ${receipt.fileUrl}, ${uploadDate}, ${receipt.amount || null}, 
         ${receipt.receiptDate || null}
       )
       RETURNING *
     `;
+    if (!result || !Array.isArray(result) || result.length === 0) {
+      throw new Error("Failed to create receipt");
+    }
     return mapReceipt(result[0])!;
   }
 
@@ -910,6 +934,168 @@ export class DbStorage implements IStorage {
       RETURNING *
     `;
     return mapAuditLog(result[0])!;
+  }
+
+  async getAuditLogs(userId?: string, limit = 100): Promise<AuditLog[]> {
+    const query = userId 
+      ? sql`SELECT * FROM audit_logs WHERE user_id = ${userId} ORDER BY created_at DESC LIMIT ${limit}`
+      : sql`SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT ${limit}`;
+    const result = await query;
+    return result.map((row: any) => ({
+      id: row.id,
+      userId: row.user_id,
+      action: row.action,
+      resource: row.resource,
+      resourceId: row.resource_id,
+      changes: row.changes,
+      ipAddress: row.ip_address,
+      userAgent: row.user_agent,
+      createdAt: row.created_at,
+    }));
+  }
+
+  // Team Member operations
+  async getTeamMembers(teamOwnerId: string): Promise<TeamMember[]> {
+    const result = await sql`SELECT * FROM team_members WHERE team_owner_id = ${teamOwnerId} ORDER BY created_at DESC`;
+    return result.map((row: any) => ({
+      id: row.id,
+      teamOwnerId: row.team_owner_id,
+      userId: row.user_id,
+      email: row.email,
+      role: row.role,
+      status: row.status,
+      invitedBy: row.invited_by,
+      invitationToken: row.invitation_token,
+      invitationExpiresAt: row.invitation_expires_at,
+      joinedAt: row.joined_at,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+  }
+
+  async getTeamMember(id: string): Promise<TeamMember | undefined> {
+    const result = await sql`SELECT * FROM team_members WHERE id = ${id} LIMIT 1`;
+    if (!result || !Array.isArray(result) || result.length === 0) return undefined;
+    const row = result[0];
+    return {
+      id: row.id,
+      teamOwnerId: row.team_owner_id,
+      userId: row.user_id,
+      email: row.email,
+      role: row.role,
+      status: row.status,
+      invitedBy: row.invited_by,
+      invitationToken: row.invitation_token,
+      invitationExpiresAt: row.invitation_expires_at,
+      joinedAt: row.joined_at,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
+
+  async getTeamMemberByToken(token: string): Promise<TeamMember | undefined> {
+    const result = await sql`SELECT * FROM team_members WHERE invitation_token = ${token} LIMIT 1`;
+    if (!result || !Array.isArray(result) || result.length === 0) return undefined;
+    const row = result[0];
+    return {
+      id: row.id,
+      teamOwnerId: row.team_owner_id,
+      userId: row.user_id,
+      email: row.email,
+      role: row.role,
+      status: row.status,
+      invitedBy: row.invited_by,
+      invitationToken: row.invitation_token,
+      invitationExpiresAt: row.invitation_expires_at,
+      joinedAt: row.joined_at,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
+
+  async createTeamMember(member: InsertTeamMember): Promise<TeamMember> {
+    const result = await sql`
+      INSERT INTO team_members (
+        team_owner_id, user_id, email, role, status, invited_by, 
+        invitation_token, invitation_expires_at, joined_at
+      )
+      VALUES (
+        ${member.teamOwnerId}, ${member.userId || null}, ${member.email}, 
+        ${member.role || 'member'}, ${member.status || 'pending'}, ${member.invitedBy || null},
+        ${member.invitationToken || null}, ${member.invitationExpiresAt || null}, ${member.joinedAt || null}
+      )
+      RETURNING *
+    `;
+    if (!result || !Array.isArray(result) || result.length === 0) {
+      throw new Error("Failed to create team member");
+    }
+    const row = result[0];
+    return {
+      id: row.id,
+      teamOwnerId: row.team_owner_id,
+      userId: row.user_id,
+      email: row.email,
+      role: row.role,
+      status: row.status,
+      invitedBy: row.invited_by,
+      invitationToken: row.invitation_token,
+      invitationExpiresAt: row.invitation_expires_at,
+      joinedAt: row.joined_at,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
+
+  async updateTeamMember(id: string, updates: Partial<TeamMember>): Promise<TeamMember | undefined> {
+    const setClauses: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    if (updates.role !== undefined) {
+      setClauses.push(`role = $${paramIndex++}`);
+      values.push(updates.role);
+    }
+    if (updates.status !== undefined) {
+      setClauses.push(`status = $${paramIndex++}`);
+      values.push(updates.status);
+    }
+    if (updates.userId !== undefined) {
+      setClauses.push(`user_id = $${paramIndex++}`);
+      values.push(updates.userId);
+    }
+    if (updates.joinedAt !== undefined) {
+      setClauses.push(`joined_at = $${paramIndex++}`);
+      values.push(updates.joinedAt);
+    }
+
+    if (setClauses.length === 0) return undefined;
+
+    setClauses.push(`updated_at = NOW()`);
+    const query = `UPDATE team_members SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+    values.push(id);
+
+    const result = await sql(query, values);
+    if (!result || !Array.isArray(result) || result.length === 0) return undefined;
+    const row = result[0];
+    return {
+      id: row.id,
+      teamOwnerId: row.team_owner_id,
+      userId: row.user_id,
+      email: row.email,
+      role: row.role,
+      status: row.status,
+      invitedBy: row.invited_by,
+      invitationToken: row.invitation_token,
+      invitationExpiresAt: row.invitation_expires_at,
+      joinedAt: row.joined_at,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
+
+  async deleteTeamMember(id: string): Promise<boolean> {
+    const result = await sql`DELETE FROM team_members WHERE id = ${id} RETURNING id`;
+    return result.length > 0;
   }
 }
 

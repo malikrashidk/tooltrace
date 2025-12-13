@@ -9,6 +9,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/context/AuthContext";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import {
   Dialog,
   DialogContent,
@@ -28,11 +30,11 @@ import {
 type TeamMember = {
   id: string;
   email: string;
-  name: string;
+  name?: string;
   role: "owner" | "admin" | "member" | "viewer";
   avatarUrl?: string;
   status: "active" | "pending";
-  joinedAt?: string;
+  joinedAt?: string | Date;
 };
 
 export function TeamCollaborationPage() {
@@ -45,17 +47,57 @@ export function TeamCollaborationPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<string>("member");
 
-  const [teamMembers] = useState<TeamMember[]>([
-    {
-      id: "1",
-      email: user?.email || "owner@example.com",
-      name: user?.name || "Account Owner",
-      role: "owner",
-      avatarUrl: user?.avatarUrl || undefined,
-      status: "active",
-      joinedAt: new Date().toISOString(),
+  const { data: teamData, isLoading: teamLoading } = useQuery<{ members: TeamMember[] }>({
+    queryKey: ['/api/team/members'],
+    enabled: isPremium,
+  });
+
+  const inviteMutation = useMutation({
+    mutationFn: async (data: { email: string; role: string }) => {
+      const response = await apiRequest("POST", "/api/team/invite", data);
+      return response.json();
     },
-  ]);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/team/members'] });
+      toast({ title: "Success", description: "Invitation sent successfully" });
+      setInviteDialogOpen(false);
+      setInviteEmail("");
+      setInviteRole("member");
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to send invitation", variant: "destructive" });
+    },
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest("DELETE", `/api/team/members/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/team/members'] });
+      toast({ title: "Success", description: "Team member removed successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to remove team member", variant: "destructive" });
+    },
+  });
+
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({ id, role }: { id: string; role: string }) => {
+      const response = await apiRequest("PATCH", `/api/team/members/${id}`, { role });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/team/members'] });
+      toast({ title: "Success", description: "Role updated successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to update role", variant: "destructive" });
+    },
+  });
+
+  const teamMembers = teamData?.members || [];
 
   if (!isPremium) {
     return (
@@ -99,13 +141,7 @@ export function TeamCollaborationPage() {
       return;
     }
 
-    toast({ 
-      title: "Coming Soon", 
-      description: "Team invitations will be available in a future update. We'll notify you when this feature is ready." 
-    });
-    setInviteDialogOpen(false);
-    setInviteEmail("");
-    setInviteRole("member");
+    inviteMutation.mutate({ email: inviteEmail, role: inviteRole });
   };
 
   const getRoleBadgeColor = (role: string) => {
@@ -145,34 +181,15 @@ export function TeamCollaborationPage() {
           <h1 className="text-2xl sm:text-3xl font-semibold">Team Collaboration</h1>
           <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Manage your team and permissions</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400">
-            Coming Soon
-          </Badge>
-          <Button 
-            onClick={() => setInviteDialogOpen(true)}
-            className="w-full sm:w-auto"
-            data-testid="button-invite-member"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Invite Team Member
-          </Button>
-        </div>
+        <Button 
+          onClick={() => setInviteDialogOpen(true)}
+          className="w-full sm:w-auto"
+          data-testid="button-invite-member"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Invite Team Member
+        </Button>
       </div>
-
-      <Card className="bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-900/30">
-        <CardContent className="py-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <p className="font-medium text-yellow-800 dark:text-yellow-200">Preview Feature</p>
-              <p className="text-yellow-700 dark:text-yellow-300 mt-1">
-                Team collaboration is coming soon. You can explore the interface and we'll notify you when team invitations are available.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
@@ -229,10 +246,13 @@ export function TeamCollaborationPage() {
                   </Avatar>
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="font-medium">{member.name}</p>
+                      <p className="font-medium">{member.name || member.email}</p>
                       {member.role === "owner" && <Crown className="h-4 w-4 text-yellow-500" />}
                     </div>
                     <p className="text-sm text-muted-foreground">{member.email}</p>
+                    {member.status === "pending" && (
+                      <Badge variant="outline" className="text-xs mt-1">Pending Invitation</Badge>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -240,7 +260,13 @@ export function TeamCollaborationPage() {
                     {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
                   </Badge>
                   {member.role !== "owner" && (
-                    <Button size="icon" variant="ghost" data-testid={`button-remove-${member.id}`}>
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      onClick={() => removeMutation.mutate(member.id)}
+                      disabled={removeMutation.isPending}
+                      data-testid={`button-remove-${member.id}`}
+                    >
                       <UserMinus className="h-4 w-4" />
                     </Button>
                   )}
@@ -274,6 +300,8 @@ export function TeamCollaborationPage() {
           </div>
         </CardContent>
       </Card>
+        </>
+      )}
 
       <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
         <DialogContent className="sm:max-w-md">
@@ -320,9 +348,13 @@ export function TeamCollaborationPage() {
             <Button variant="outline" onClick={() => setInviteDialogOpen(false)} data-testid="button-cancel">
               Cancel
             </Button>
-            <Button onClick={handleInvite} data-testid="button-send-invite">
+            <Button 
+              onClick={handleInvite} 
+              disabled={inviteMutation.isPending}
+              data-testid="button-send-invite"
+            >
               <Mail className="h-4 w-4 mr-2" />
-              Send Invitation
+              {inviteMutation.isPending ? "Sending..." : "Send Invitation"}
             </Button>
           </DialogFooter>
         </DialogContent>

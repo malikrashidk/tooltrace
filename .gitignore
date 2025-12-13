@@ -11,3 +11,6 @@ attached_assets/
 
 # OS junk
 .DS_Store
+.env
+.env.*
+

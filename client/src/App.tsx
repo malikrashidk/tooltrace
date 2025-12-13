@@ -7,7 +7,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { CurrencyProvider } from "@/context/CurrencyContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { CurrencySelector } from "@/components/CurrencySelector";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import { AppSidebar } from "@/components/AppSidebar";
 import { LoginPage } from "@/components/LoginPage";
 import { SignupPage } from "@/components/SignupPage";
@@ -44,7 +48,11 @@ function AuthenticatedApp() {
         <div className="flex flex-col flex-1 overflow-hidden">
           <header className="h-14 border-b border-border flex items-center justify-between px-4 bg-background sticky top-0 z-40 gap-4">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <CurrencySelector />
+              <LanguageSelector />
+              <ThemeToggle />
+            </div>
           </header>
           <main className="flex-1 overflow-y-auto bg-background">
             <Switch>
@@ -135,10 +143,14 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <TooltipProvider>
-            <AppContent />
-            <Toaster />
-          </TooltipProvider>
+          <CurrencyProvider>
+            <LanguageProvider>
+              <TooltipProvider>
+                <AppContent />
+                <Toaster />
+              </TooltipProvider>
+            </LanguageProvider>
+          </CurrencyProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

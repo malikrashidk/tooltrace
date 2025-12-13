@@ -105,8 +105,8 @@ export function ReceiptStoragePage() {
         toast({ title: "Error", description: "Only PDF, PNG, JPG, and JPEG files are allowed", variant: "destructive" });
         return;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        toast({ title: "Error", description: "File size must be less than 5MB", variant: "destructive" });
+      if (file.size > 2 * 1024 * 1024) {
+        toast({ title: "Error", description: "File size must be less than 2MB", variant: "destructive" });
         return;
       }
       setSelectedFile(file);
@@ -291,7 +291,7 @@ export function ReceiptStoragePage() {
           <DialogHeader>
             <DialogTitle>Upload Receipt</DialogTitle>
             <DialogDescription>
-              Upload a receipt or invoice file (PDF, PNG, JPG, JPEG - max 5MB)
+              Upload a receipt or invoice file (PDF, PNG, JPG, JPEG - max 2MB)
             </DialogDescription>
           </DialogHeader>
           

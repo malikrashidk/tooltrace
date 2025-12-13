@@ -28,12 +28,32 @@ declare module 'http' {
     rawBody: unknown
   }
 }
+// Configure body parser with increased limits for file uploads
+const jsonLimit = '10mb';
+const urlencodedLimit = '10mb';
 app.use(express.json({
+  limit: jsonLimit, // Allow up to 10MB for JSON payloads (base64 encoded files need more space)
   verify: (req, _res, buf) => {
     req.rawBody = buf;
   }
 }));
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false, limit: urlencodedLimit }));
+log(`Body parser limits: JSON=${jsonLimit}, URLEncoded=${urlencodedLimit}`);
+
+// Middleware to catch body parser errors (happens before routes)
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  if (err.type === 'entity.too.large' || 
+      err.message?.includes('too large') || 
+      err.message?.includes('request entity too large') ||
+      err.status === 413 ||
+      err.statusCode === 413) {
+    log(`Entity too large error caught: ${err.message}`);
+    return res.status(413).json({ 
+      error: "File is too large. Maximum file size is 2MB. Please compress your file and try again." 
+    });
+  }
+  next(err);
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -73,12 +93,28 @@ export default async function runApp(
   
   const server = await registerRoutes(app);
 
+  // Final error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    // Handle "entity too large" errors specifically (happens at body parser level)
+    if (err.type === 'entity.too.large' || 
+        err.message?.includes('too large') || 
+        err.message?.includes('request entity too large') ||
+        err.status === 413 ||
+        err.statusCode === 413) {
+      log(`Entity too large error: ${err.message}`);
+      return res.status(413).json({ 
+        error: "File is too large. Maximum file size is 2MB. Please compress your file and try again." 
+      });
+    }
+
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
+    
+    log(`Error ${status}: ${message}`);
+    if (err.stack && process.env.NODE_ENV === 'development') {
+      console.error("Error stack:", err.stack);
+    }
+    res.status(status).json({ error: message });
   });
 
   // importantly run the final setup after setting up all the other routes so
@@ -90,11 +126,13 @@ export default async function runApp(
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
+  // Use localhost on Windows, 0.0.0.0 on Linux/Mac
+  const host = process.platform === 'win32' ? 'localhost' : '0.0.0.0';
   server.listen({
     port,
-    host: "0.0.0.0",
-    reusePort: true,
+    host,
+    reusePort: process.platform !== 'win32', // reusePort not supported on Windows
   }, () => {
-    log(`serving on port ${port}`);
+    log(`serving on port ${port} at http://${host}:${port}`);
   });
 }

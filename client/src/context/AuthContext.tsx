@@ -9,6 +9,8 @@ interface User {
   isAdmin?: boolean;
   twoFactorEnabled?: boolean;
   avatarUrl?: string | null;
+  currency?: string;
+  language?: string;
 }
 
 interface AuthContextType {

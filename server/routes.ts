@@ -578,11 +578,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: user.name,
           plan: user.plan,
           isAdmin: user.isAdmin,
+          currency: user.currency || "USD",
+          language: user.language || "en",
         },
         subscription,
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch profile" });
+    }
+  });
+
+  // Update user profile (currency, language, etc.)
+  app.patch("/api/auth/profile", authMiddleware, async (req, res) => {
+    try {
+      const updates: any = {};
+      if (req.body.currency !== undefined) updates.currency = req.body.currency;
+      if (req.body.language !== undefined) updates.language = req.body.language;
+      if (req.body.name !== undefined) updates.name = req.body.name;
+      
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ error: "No valid fields to update" });
+      }
+
+      const updated = await storage.updateUser(req.userId!, updates);
+      await auditLog(req.userId!, "update", "user", req.userId!, updates, req);
+      
+      res.json({
+        user: {
+          id: updated.id,
+          email: updated.email,
+          name: updated.name,
+          plan: updated.plan,
+          isAdmin: updated.isAdmin,
+          currency: updated.currency || "USD",
+          language: updated.language || "en",
+        },
+      });
+    } catch (error: any) {
+      console.error("Profile update error:", error);
+      res.status(500).json({ error: error.message || "Failed to update profile" });
     }
   });
 
@@ -907,28 +941,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Only PDF, PNG, JPG, and JPEG files are allowed" });
       }
 
-      // Validate file size (max 5MB as base64 string)
-      const maxSizeBytes = 5 * 1024 * 1024; // 5MB
+      // Validate file size (max 2MB as base64 string)
+      const maxSizeBytes = 2 * 1024 * 1024; // 2MB
       const base64Size = (fileData.length * 3) / 4;
       if (base64Size > maxSizeBytes) {
-        return res.status(400).json({ error: "File size must be less than 5MB" });
+        return res.status(400).json({ error: "File size must be less than 2MB" });
       }
 
       // Store the file data as a base64 data URL
+      // Ensure all required fields are set
       const receipt = await storage.createReceipt({
         userId: req.userId!,
-        toolId: toolId || null,
-        fileName,
+        toolId: (toolId && toolId !== 'none' && toolId !== '') ? toolId : null,
+        fileName: fileName.trim(),
         fileUrl: fileData, // Store base64 data directly
         amount: amount ? String(amount) : null,
         receiptDate: receiptDate ? new Date(receiptDate) : null,
-      } as any);
+        uploadDate: new Date(), // Explicitly set upload date
+      });
 
       await auditLog(req.userId!, "create", "receipt", receipt.id, { fileName }, req);
       res.json({ receipt });
     } catch (error: any) {
       console.error("Receipt upload error:", error);
-      res.status(400).json({ error: error.message || "Failed to upload receipt" });
+      // Check for database constraint violations
+      if (error.code === '23502' || error.message?.includes('null value') || error.message?.includes('violates not-null constraint')) {
+        const columnMatch = error.message?.match(/column "(\w+)" of relation/);
+        const column = columnMatch ? columnMatch[1] : 'unknown';
+        return res.status(400).json({ 
+          error: `Missing required field: ${column}. Please ensure all required fields are provided.` 
+        });
+      }
+      res.status(500).json({ error: error.message || "Failed to upload receipt" });
     }
   });
 
@@ -1250,6 +1294,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("API tool deletion error:", error);
       res.status(400).json({ error: error.message || "Failed to delete tool" });
+    }
+  });
+
+  // ============ TEAM COLLABORATION ROUTES ============
+  app.get("/api/team/members", authMiddleware, paidPlanMiddleware, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.userId!);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Get team members (including owner)
+      const teamMembers = await storage.getTeamMembers(req.userId!);
+      
+      // Add owner as first member
+      const ownerMember = {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: "owner" as const,
+        avatarUrl: user.avatarUrl,
+        status: "active" as const,
+        joinedAt: user.createdAt,
+      };
+
+      res.json({ members: [ownerMember, ...teamMembers] });
+    } catch (error: any) {
+      console.error("Get team members error:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch team members" });
+    }
+  });
+
+  app.post("/api/team/invite", authMiddleware, paidPlanMiddleware, async (req, res) => {
+    try {
+      const { email, role } = req.body;
+
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({ error: "Valid email address is required" });
+      }
+
+      if (!["admin", "member", "viewer"].includes(role)) {
+        return res.status(400).json({ error: "Invalid role. Must be admin, member, or viewer" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      
+      // Check if already a team member
+      const existingMembers = await storage.getTeamMembers(req.userId!);
+      if (existingMembers.some(m => m.email === email)) {
+        return res.status(400).json({ error: "User is already a team member" });
+      }
+
+      // Generate invitation token
+      const crypto = await import("crypto");
+      const invitationToken = crypto.randomBytes(32).toString("hex");
+      const invitationExpiresAt = new Date();
+      invitationExpiresAt.setDate(invitationExpiresAt.getDate() + 7); // 7 days expiry
+
+      const teamMember = await storage.createTeamMember({
+        teamOwnerId: req.userId!,
+        userId: existingUser?.id || null,
+        email,
+        role,
+        status: existingUser ? "active" : "pending",
+        invitedBy: req.userId!,
+        invitationToken,
+        invitationExpiresAt,
+        joinedAt: existingUser ? new Date() : null,
+      });
+
+      await auditLog(req.userId!, "create", "team_member", teamMember.id, { email, role }, req);
+
+      // TODO: Send invitation email
+      // For now, return the invitation token in development
+      res.json({ 
+        member: teamMember,
+        invitationLink: existingUser ? null : `${process.env.OAUTH_CALLBACK_URL || "http://localhost:5000"}/team/accept?token=${invitationToken}`
+      });
+    } catch (error: any) {
+      console.error("Invite team member error:", error);
+      res.status(500).json({ error: error.message || "Failed to invite team member" });
+    }
+  });
+
+  app.patch("/api/team/members/:id", authMiddleware, paidPlanMiddleware, async (req, res) => {
+    try {
+      const { role } = req.body;
+      const memberId = req.params.id;
+
+      const member = await storage.getTeamMember(memberId);
+      if (!member) {
+        return res.status(404).json({ error: "Team member not found" });
+      }
+
+      if (member.teamOwnerId !== req.userId!) {
+        return res.status(403).json({ error: "You can only update members of your own team" });
+      }
+
+      if (member.role === "owner") {
+        return res.status(400).json({ error: "Cannot modify owner role" });
+      }
+
+      if (role && !["admin", "member", "viewer"].includes(role)) {
+        return res.status(400).json({ error: "Invalid role" });
+      }
+
+      const updated = await storage.updateTeamMember(memberId, { role });
+      await auditLog(req.userId!, "update", "team_member", memberId, { role }, req);
+
+      res.json({ member: updated });
+    } catch (error: any) {
+      console.error("Update team member error:", error);
+      res.status(500).json({ error: error.message || "Failed to update team member" });
+    }
+  });
+
+  app.delete("/api/team/members/:id", authMiddleware, paidPlanMiddleware, async (req, res) => {
+    try {
+      const memberId = req.params.id;
+
+      const member = await storage.getTeamMember(memberId);
+      if (!member) {
+        return res.status(404).json({ error: "Team member not found" });
+      }
+
+      if (member.teamOwnerId !== req.userId!) {
+        return res.status(403).json({ error: "You can only remove members of your own team" });
+      }
+
+      if (member.role === "owner") {
+        return res.status(400).json({ error: "Cannot remove owner" });
+      }
+
+      await storage.deleteTeamMember(memberId);
+      await auditLog(req.userId!, "delete", "team_member", memberId, {}, req);
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Remove team member error:", error);
+      res.status(500).json({ error: error.message || "Failed to remove team member" });
     }
   });
 
