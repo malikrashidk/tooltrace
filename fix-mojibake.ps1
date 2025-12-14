@@ -36,7 +36,15 @@ foreach ($f in $files) {
   }
 
   if ($content.Length -gt 0 -and $content -ne $orig) {
-    Set-Content -Path $path -Value $content -Encoding utf8 -NoNewline
+    if ($DryRun) {
+        Write-Host "Dry run: would write to $path"
+    } else {
+        if (-not (Test-Path $BackupDir)) {
+            New-Item -ItemType Directory -Path $BackupDir
+        }
+        Copy-Item -Path $path -Destination "$BackupDir\$($f.Name)" -Force
+        Set-Content -Path $path -Value $content -Encoding utf8 -NoNewline
+    }
   }
 }
 
