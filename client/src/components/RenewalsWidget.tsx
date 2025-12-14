@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { Tool } from "@/lib/mockData";
+import type { Tool } from "@/lib/analytics";
 
 interface RenewalsWidgetProps {
   renewals: Tool[];
@@ -18,10 +18,10 @@ export function RenewalsWidget({
   showViewAll = true,
   onViewAll,
 }: RenewalsWidgetProps) {
-  const getDaysUntil = (dateStr: string) => {
+  const getDaysUntil = (date: string | Date) => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
-    const renewalDate = new Date(dateStr);
+    const renewalDate = date instanceof Date ? new Date(date) : new Date(String(date));
     renewalDate.setHours(0, 0, 0, 0);
     const diffTime = renewalDate.getTime() - now.getTime();
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -80,7 +80,7 @@ export function RenewalsWidget({
                   data-testid={`renewal-item-${tool.id}`}
                 >
                   <Avatar className="h-10 w-10 rounded-lg border border-border">
-                    <AvatarImage src={tool.logoUrl} alt={tool.name} className="object-contain p-1" />
+                    <AvatarImage src={tool.logoUrl || undefined} alt={tool.name} className="object-contain p-1" />
                     <AvatarFallback className="rounded-lg bg-background text-xs font-medium">
                       {getInitials(tool.name)}
                     </AvatarFallback>
@@ -96,7 +96,7 @@ export function RenewalsWidget({
                   </div>
                   <div className="text-right flex flex-col items-end gap-1">
                     <span className="text-sm font-mono font-medium">
-                      {formatCurrency(tool.billingAmount || 0)}
+                      {formatCurrency(Number(tool.billingAmount) || 0)}
                     </span>
                     <Badge className={`text-xs ${getUrgencyStyle(daysUntil)}`}>
                       {daysUntil === 0 ? (

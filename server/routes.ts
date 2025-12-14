@@ -601,6 +601,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updated = await storage.updateUser(req.userId!, updates);
+      if (!updated) {
+        return res.status(404).json({ error: "User not found" });
+      }
       await auditLog(req.userId!, "update", "user", req.userId!, updates, req);
       
       res.json({
@@ -908,7 +911,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const paidPlanMiddleware = async (req: any, res: any, next: any) => {
     try {
       const user = await storage.getUser(req.userId!);
-      if (!user || (user.plan !== "standard" && user.plan !== "premium")) {
+      if (!user) {
+        return res.status(403).json({ error: "Receipt storage is only available for Standard and Premium plans" });
+      }
+
+      // Allow admins regardless of plan
+      if (user.isAdmin) {
+        return next();
+      }
+
+      const plan = (user.plan || "").toString().toLowerCase().trim();
+      if (plan !== "standard" && plan !== "premium") {
         return res.status(403).json({ error: "Receipt storage is only available for Standard and Premium plans" });
       }
       next();
@@ -1232,16 +1245,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name,
         websiteUrl,
         isPaid: isPaid || false,
-        billingAmount: billingAmount || null,
-        billingCycle: billingCycle || null,
+        billingAmount: billingAmount || undefined,
+        billingCycle: billingCycle || undefined,
         categories: categories || [],
         usageFrequency: usageFrequency || "daily",
         nextRenewalDate: nextRenewalDate ? new Date(nextRenewalDate) : undefined,
-        notes: notes || null,
-        logoUrl: null,
-        paymentMethod: null,
+        notes: notes || undefined,
+        logoUrl: undefined,
+        paymentMethod: undefined,
         tags: [],
-        credentials: null,
+        credentials: undefined,
       });
 
       await auditLog(req.userId!, "create", "tool", tool.id, { name: tool.name, source: "api" }, req);

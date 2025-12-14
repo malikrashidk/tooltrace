@@ -66,6 +66,14 @@ export function ReceiptStoragePage() {
       handleCloseUploadDialog();
     },
     onError: (error: any) => {
+      const msg = error?.message || "";
+      if (msg.startsWith("403:") || msg.includes("Receipt storage is only")) {
+        // Prompt upgrade instead of showing a destructive error
+        toast({ title: "Upgrade required", description: "Receipt storage requires a Standard or Premium plan.", });
+        setLocation("/pricing");
+        return;
+      }
+
       toast({ title: "Error", description: error.message || "Failed to upload receipt", variant: "destructive" });
     },
   });

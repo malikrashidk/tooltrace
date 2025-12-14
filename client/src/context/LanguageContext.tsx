@@ -20,6 +20,7 @@ const LANGUAGES: Language[] = [
   { code: "ko", name: "Korean", nativeName: "한국어" },
   { code: "ar", name: "Arabic", nativeName: "العربية" },
   { code: "hi", name: "Hindi", nativeName: "हिन्दी" },
+  { code: "ur", name: "Urdu", nativeName: "اردو" },
   { code: "ru", name: "Russian", nativeName: "Русский" },
 ];
 
@@ -50,6 +51,25 @@ const translations: Record<string, Record<string, string>> = {
     "welcome": "Bienvenue",
   },
   // Add more translations as needed
+};
+
+// add minimal translations for Hindi and Urdu
+translations.hi = {
+  "dashboard": "डैशबोर्ड",
+  "tools": "उपकरण",
+  "analytics": "विश्लेषिकी",
+  "settings": "सेटिंग्स",
+  "team": "टीम",
+  "welcome": "स्वागत है",
+};
+
+translations.ur = {
+  "dashboard": "ڈیش بورڈ",
+  "tools": "ٹولز",
+  "analytics": "تجزیات",
+  "settings": "ترتیبات",
+  "team": "ٹیم",
+  "welcome": "خوش آمدید",
 };
 
 type LanguageContextType = {

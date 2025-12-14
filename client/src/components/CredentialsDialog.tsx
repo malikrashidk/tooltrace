@@ -15,7 +15,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { encryptCredential, decryptCredential, generateSecurePassword } from "@/lib/encryption";
 import { validatePasswordStrength, sanitizeInput, auditLogger } from "@/lib/security";
-import type { Tool } from "@/lib/mockData";
+import type { Tool } from "@/lib/analytics";
 
 interface CredentialsDialogProps {
   tool: Tool;
@@ -26,8 +26,9 @@ interface CredentialsDialogProps {
 
 export function CredentialsDialog({ tool, open, onOpenChange, onSave }: CredentialsDialogProps) {
   const { toast } = useToast();
+  const credentials = tool.credentials as { username?: string; email?: string; password?: string; notes?: string; lastUpdated?: string | Date } | undefined;
   const [showPassword, setShowPassword] = useState(false);
-  const [showForm, setShowForm] = useState(!tool.credentials?.username);
+  const [showForm, setShowForm] = useState(!credentials?.username);
   const [copied, setCopied] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState<{ isStrong: boolean; errors: string[] }>({
@@ -35,10 +36,10 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
     errors: [],
   });
   const [formData, setFormData] = useState({
-    username: tool.credentials?.username || "",
-    email: tool.credentials?.email || "",
-    password: tool.credentials?.password || "",
-    notes: tool.credentials?.notes || "",
+    username: credentials?.username || "",
+    email: credentials?.email || "",
+    password: credentials?.password || "",
+    notes: credentials?.notes || "",
   });
 
   // Validate password strength on change
@@ -58,7 +59,7 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
   const handleCopy = (text: string, label: string) => {
     if (!text) return;
     
-    navigator.clipboard.writeText(text).then(() => {
+      navigator.clipboard.writeText(text).then(() => {
       setCopied(label);
       auditLogger.log("credential_copied", undefined, tool.id, label);
       toast({ description: `${label} copied to clipboard` });
@@ -97,16 +98,16 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
         ? await encryptCredential(formData.password)
         : "";
 
-      const updatedTool: Tool = {
-        ...tool,
-        credentials: {
-          username: sanitizedUsername,
-          email: sanitizedEmail,
-          password: encryptedPassword,
-          notes: sanitizedNotes,
-          lastUpdated: new Date().toISOString(),
-        },
-      };
+          const updatedTool: Tool = {
+            ...tool,
+            credentials: {
+              username: sanitizedUsername,
+              email: sanitizedEmail,
+              password: encryptedPassword,
+              notes: sanitizedNotes,
+              lastUpdated: new Date().toISOString(),
+            },
+          };
 
       auditLogger.log("credentials_saved", undefined, tool.id);
       onSave?.(updatedTool);
@@ -141,32 +142,32 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
         </DialogHeader>
 
         <div className="space-y-4">
-          {!showForm && tool.credentials && tool.credentials.username ? (
+          {!showForm && credentials && credentials.username ? (
             <Card className="bg-muted/30">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm">Saved Credentials</CardTitle>
-                {tool.credentials.lastUpdated && (
+                {credentials.lastUpdated && (
                   <CardDescription className="text-xs">
-                    Last updated: {new Date(tool.credentials.lastUpdated).toLocaleDateString()}
+                    Last updated: {new Date(credentials.lastUpdated as any).toLocaleDateString()}
                   </CardDescription>
                 )}
               </CardHeader>
               <CardContent className="space-y-3">
-                {tool.credentials?.username && (
+                {credentials?.username && (
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Username</Label>
                     <div className="flex gap-2">
                       <input
                         type="text"
                         readOnly
-                        value={tool.credentials.username}
+                        value={credentials.username}
                         className="flex-1 text-sm px-3 py-2 rounded-md border border-border bg-background"
                         data-testid={`input-username-display-${tool.id}`}
                       />
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleCopy(tool.credentials?.username || "", "Username")}
+                        onClick={() => handleCopy(credentials?.username || "", "Username")}
                         data-testid={`button-copy-username-${tool.id}`}
                       >
                         {copied === "Username" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -175,21 +176,21 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
                   </div>
                 )}
 
-                {tool.credentials?.email && (
+                {credentials?.email && (
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Email</Label>
                     <div className="flex gap-2">
                       <input
                         type="text"
                         readOnly
-                        value={tool.credentials.email}
+                        value={credentials.email}
                         className="flex-1 text-sm px-3 py-2 rounded-md border border-border bg-background"
                         data-testid={`input-email-display-${tool.id}`}
                       />
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleCopy(tool.credentials?.email || "", "Email")}
+                        onClick={() => handleCopy(credentials?.email || "", "Email")}
                         data-testid={`button-copy-email-${tool.id}`}
                       >
                         {copied === "Email" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -198,14 +199,14 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
                   </div>
                 )}
 
-                {tool.credentials?.password && (
+                {credentials?.password && (
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Password</Label>
                     <div className="flex gap-2">
                       <input
                         type={showPassword ? "text" : "password"}
                         readOnly
-                        value={tool.credentials.password}
+                        value={credentials.password}
                         className="flex-1 text-sm px-3 py-2 rounded-md border border-border bg-background"
                         data-testid={`input-password-display-${tool.id}`}
                       />
@@ -220,7 +221,7 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleCopy(tool.credentials?.password || "", "Password")}
+                        onClick={() => handleCopy(credentials?.password || "", "Password")}
                         data-testid={`button-copy-password-${tool.id}`}
                       >
                         {copied === "Password" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -229,11 +230,11 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
                   </div>
                 )}
 
-                {tool.credentials?.notes && (
+                {credentials?.notes && (
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Notes</Label>
                     <p className="text-xs text-muted-foreground bg-background rounded-md p-2">
-                      {tool.credentials.notes}
+                      {credentials.notes}
                     </p>
                   </div>
                 )}
@@ -367,10 +368,10 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
                   onClick={() => {
                     setShowForm(false);
                     setFormData({
-                      username: tool.credentials?.username || "",
-                      email: tool.credentials?.email || "",
-                      password: tool.credentials?.password || "",
-                      notes: tool.credentials?.notes || "",
+                      username: credentials?.username || "",
+                      email: credentials?.email || "",
+                      password: credentials?.password || "",
+                      notes: credentials?.notes || "",
                     });
                   }}
                   data-testid={`button-cancel-credentials-${tool.id}`}

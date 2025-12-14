@@ -18,6 +18,7 @@ const CURRENCIES: Currency[] = [
   { code: "CHF", symbol: "CHF", name: "Swiss Franc" },
   { code: "CNY", symbol: "¥", name: "Chinese Yuan" },
   { code: "INR", symbol: "₹", name: "Indian Rupee" },
+  { code: "PKR", symbol: "₨", name: "Pakistani Rupee" },
   { code: "BRL", symbol: "R$", name: "Brazilian Real" },
   { code: "MXN", symbol: "MX$", name: "Mexican Peso" },
   { code: "SGD", symbol: "S$", name: "Singapore Dollar" },
