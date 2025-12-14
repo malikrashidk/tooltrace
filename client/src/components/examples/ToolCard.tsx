@@ -1,4 +1,4 @@
-﻿import { ToolCard } from "../ToolCard";
+import { ToolCard } from "../ToolCard";
 import { mockTools } from "@/lib/mockData";
 
 export default function ToolCardExample() {

@@ -1,4 +1,4 @@
-﻿import jwt from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import type { User } from "@shared/schema";
 

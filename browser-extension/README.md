@@ -1,4 +1,4 @@
-﻿# Tool Trace Browser Extension
+# Tool Trace Browser Extension
 
 Auto-detect and add SaaS tools to your Tool Trace dashboard while browsing!
 

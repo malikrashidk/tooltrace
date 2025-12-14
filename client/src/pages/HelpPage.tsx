@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -339,7 +339,7 @@ export function HelpPage() {
                                     key={detailIdx}
                                     className="flex gap-3 text-sm text-muted-foreground"
                                   >
-                                    <span className="text-primary font-bold min-w-fit">…€¢</span>
+                                    <span className="text-primary font-bold min-w-fit">-</span>
                                     <span>{detail}</span>
                                   </li>
                                 ))}

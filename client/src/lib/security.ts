@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Security utilities and best practices for the application
  */
 

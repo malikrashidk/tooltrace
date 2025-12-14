@@ -1,20 +1,14 @@
-﻿import { neon } from "@neondatabase/serverless";
+import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@shared/schema";
 
 const connectionString = process.env.DATABASE_URL;
 
-if (!connectionString) {
-  throw new Error("DATABASE_URL environment variable is required");
-}
+let sql: any;
+let db: any;
 
-// Raw SQL client for queries
-export const sql = neon(connectionString);
-
-// Safe query execution helper
-export async function safeQuery<T = any>(
-  queryFn: () => Promise<T[]>
-): Promise<T[]> {
+export async function safeQuery<T = any>(queryFn: () => Promise<T[]>): Promise<T[]> {
+  if (!connectionString) return [];
   try {
     const result = await queryFn();
     return result || [];
@@ -27,6 +21,16 @@ export async function safeQuery<T = any>(
   }
 }
 
-// Drizzle instance for schema management
-export const db = drizzle(sql, { schema });
+if (!connectionString) {
+  console.warn("[db] DATABASE_URL not set — running without DB (in-memory mode)");
+  sql = { __noDb: true } as any;
+  db = null as any;
+} else {
+  // Raw SQL client for queries
+  sql = neon(connectionString);
+  // Drizzle instance for schema management
+  db = drizzle(sql, { schema });
+}
+
+export { sql, db };
 

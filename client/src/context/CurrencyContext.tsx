@@ -1,4 +1,4 @@
-﻿import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useAuth } from "./AuthContext";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -99,6 +99,10 @@ export function useCurrency() {
   }
   return context;
 }
+
+
+
+
 
 
 

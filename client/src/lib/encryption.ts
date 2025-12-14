@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Client-side encryption utilities for secure credential storage
  * Uses Web Crypto API for browser-native encryption without external dependencies
  */

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -189,7 +189,7 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
                       <div className="relative">
                         <Input
                           type={showPassword ? "text" : "password"}
-                          placeholder="…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢"
+                          placeholder="Enter password"
                           data-testid="input-password"
                           className="h-10 pr-10"
                           {...field}

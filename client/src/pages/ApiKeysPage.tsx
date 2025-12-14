@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Key, Plus, Trash2, Copy, Check, Eye, EyeOff, Lock, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -343,7 +343,7 @@ export function ApiKeysPage() {
                   <Label>Secret</Label>
                   <div className="flex items-center gap-2 mt-1">
                     <Input 
-                      value={showSecret ? newlyCreatedKey.secret : "…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢…€¢"} 
+                      value={showSecret ? newlyCreatedKey.secret : "[hidden]"} 
                       readOnly 
                       className="font-mono text-sm" 
                       data-testid="input-new-secret"

@@ -1,4 +1,4 @@
-﻿import { getUncachableStripeClient } from './stripeClient';
+import { getUncachableStripeClient } from './stripeClient';
 
 export class StripeService {
   async createCustomer(email: string, userId: string) {

@@ -1,4 +1,4 @@
-﻿import { SettingsPage } from "../SettingsPage";
+import { SettingsPage } from "../SettingsPage";
 import { AuthProvider } from "@/context/AuthContext";
 
 export default function SettingsPageExample() {

@@ -1099,5 +1099,7 @@ export class DbStorage implements IStorage {
   }
 }
 
-export const storage = new DbStorage();
+// Choose storage backend based on DATABASE_URL presence. Use in-memory
+// storage when no database is configured to make local development easier.
+export const storage = process.env.DATABASE_URL ? new DbStorage() : new MemStorage();
 

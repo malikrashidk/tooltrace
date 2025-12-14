@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { SearchFilter, type FilterState } from "../SearchFilter";
 import { mockCategories } from "@/lib/mockData";
 

@@ -1,4 +1,4 @@
-﻿import type { tools } from "@shared/schema";
+import type { tools } from "@shared/schema";
 
 // Use the canonical Tool type from schema
 export type Tool = typeof tools.$inferSelect;

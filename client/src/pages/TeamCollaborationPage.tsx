@@ -300,8 +300,6 @@ export function TeamCollaborationPage() {
           </div>
         </CardContent>
       </Card>
-        </>
-      )}
 
       <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
         <DialogContent className="sm:max-w-md">

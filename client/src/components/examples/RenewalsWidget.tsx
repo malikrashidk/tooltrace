@@ -1,4 +1,4 @@
-﻿import { RenewalsWidget } from "../RenewalsWidget";
+import { RenewalsWidget } from "../RenewalsWidget";
 import { mockTools, getUpcomingRenewals } from "@/lib/mockData";
 
 export default function RenewalsWidgetExample() {

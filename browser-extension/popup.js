@@ -1,4 +1,4 @@
-﻿const KNOWN_SAAS_TOOLS = {
+const KNOWN_SAAS_TOOLS = {
   'figma.com': { name: 'Figma', category: 'Design', icon: 'Ž¨' },
   'github.com': { name: 'GitHub', category: 'Development', icon: '’»' },
   'chat.openai.com': { name: 'ChatGPT', category: 'AI', icon: '¤–' },

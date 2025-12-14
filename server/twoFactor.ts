@@ -1,4 +1,4 @@
-﻿import { authenticator } from "otplib";
+import { authenticator } from "otplib";
 import QRCode from "qrcode";
 import crypto from "crypto";
 

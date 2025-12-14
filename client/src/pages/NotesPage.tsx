@@ -1,4 +1,4 @@
-﻿import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { Trash2, Pin, PinOff, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";

@@ -1,4 +1,4 @@
-﻿import { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Plus, Grid3X3, List, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ToolCard } from "@/components/ToolCard";

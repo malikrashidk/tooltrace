@@ -1,4 +1,4 @@
-﻿import { CSVImportExport } from "../CSVImportExport";
+import { CSVImportExport } from "../CSVImportExport";
 import { mockTools } from "@/lib/mockData";
 
 export default function CSVImportExportExample() {

@@ -1,4 +1,4 @@
-﻿import { AddToolDialog } from "../AddToolDialog";
+import { AddToolDialog } from "../AddToolDialog";
 import { mockCategories } from "@/lib/mockData";
 
 export default function AddToolDialogExample() {

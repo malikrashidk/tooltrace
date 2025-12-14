@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Seed Products Script
  * Creates subscription products and prices in Stripe
  * Run this script to initialize your Stripe account with products
