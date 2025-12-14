@@ -19,6 +19,7 @@ $replacements = @(
 ```powershell
 <<<<<<< SEARCH
   $content = $content.Replace($r.bad, $r.good)
+  foreach ($r in $replacements) {
   @{ bad = "âœ";  good = U 0x2713 }
 )
 
