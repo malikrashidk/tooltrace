@@ -47,6 +47,9 @@ foreach ($f in $files) {
         if (-not (Test-Path $BackupDir)) {
             New-Item -ItemType Directory -Path $BackupDir
         }
+        if (-not (Test-Path $BackupDir)) {
+            New-Item -ItemType Directory -Path $BackupDir
+        }
         Copy-Item -Path $path -Destination "$BackupDir\$($f.Name)" -Force
         Set-Content -Path $path -Value $content -Encoding utf8 -NoNewline
     }
