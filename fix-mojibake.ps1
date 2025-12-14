@@ -22,9 +22,7 @@ $replacements = @(
   foreach ($r in $replacements) {
     Write-Host "Replaced '$($r.bad)' with '$($r.good)'"
     $content = $content.Replace($r.bad, $r.good)
-    Write-Host "Replaced '$($r.bad)' with '$($r.good)'"
-  @{ bad = "âœ";  good = U 0x2713 }
-)
+  }
 
 foreach ($f in $files) {
   $path = $f.FullName
