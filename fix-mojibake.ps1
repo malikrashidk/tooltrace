@@ -42,7 +42,6 @@ foreach ($f in $files) {
     if ($DryRun) {
         Write-Host "Dry run: would write to $path"
         Write-Host "Dry run: would write to $path"
-        Write-Host "Dry run: would write to $path"
     } else {
         Write-Host "Backing up original file to $BackupDir\$($f.Name)"
         if (-not (Test-Path $BackupDir)) {
