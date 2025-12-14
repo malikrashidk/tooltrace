@@ -3,7 +3,8 @@ param (
     [string]$BackupDir = ".\backup"
 )
 
-$files = Get-ChildItem . -Recurse -File -Include *.ts,*.tsx,*.js,*.jsx,*.md,*.json | Where-Object { 
+$files = Get-ChildItem . -Recurse -File -Include *.ts,*.tsx,*.js,*.jsx,*.md,*.json | Where-Object {
+    Write-Host "Processing file: $($_.FullName)"
     $_.FullName -notmatch 'node_modules|dist|build|\.next|out|coverage|\.git' 
 }
 
@@ -18,8 +19,9 @@ $replacements = @(
 ```
 ```powershell
 <<<<<<< SEARCH
-  $content = $content.Replace($r.bad, $r.good)
   foreach ($r in $replacements) {
+    $content = $content.Replace($r.bad, $r.good)
+    Write-Host "Replaced '$($r.bad)' with '$($r.good)'"
   @{ bad = "âœ";  good = U 0x2713 }
 )
 
@@ -27,6 +29,7 @@ foreach ($f in $files) {
   $path = $f.FullName
   try { $content = Get-Content -Path $path -Raw -ErrorAction Stop } catch { continue }
   $orig = $content
+  Write-Host "Original content length: $($orig.Length)"
 
   foreach ($r in $replacements) {
     $content = $content.Replace($r.bad, $r.good)
@@ -39,7 +42,9 @@ foreach ($f in $files) {
   if ($content.Length -gt 0 -and $content -ne $orig) {
     if ($DryRun) {
         Write-Host "Dry run: would write to $path"
+        Write-Host "Dry run: would write to $path"
     } else {
+        Write-Host "Backing up original file to $BackupDir\$($f.Name)"
         if (-not (Test-Path $BackupDir)) {
             New-Item -ItemType Directory -Path $BackupDir
         }
