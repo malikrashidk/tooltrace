@@ -82,7 +82,7 @@ type LanguageContextType = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const [language, setLanguageState] = useState<Language>(LANGUAGES[0]);
 
   // Load language preference from user settings or localStorage
@@ -117,6 +117,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     if (user) {
       try {
         await apiRequest("PATCH", "/api/auth/profile", { language: newLanguage.code });
+        const updatedUser = { ...user, language: newLanguage.code };
+        setUser(updatedUser);
+        localStorage.setItem("user", JSON.stringify(updatedUser));
       } catch (error) {
         console.error("Failed to update language preference:", error);
       }
