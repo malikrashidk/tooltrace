@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import type { Tool } from "@/lib/mockData";
+import type { Tool } from "@/lib/analytics";
 import { CredentialsDialog } from "./CredentialsDialog";
 
 interface ToolCardProps {
@@ -24,6 +24,7 @@ interface ToolCardProps {
 export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCardProps) {
   const [showCredentials, setShowCredentials] = useState(false);
   const { toast } = useToast();
+  const credentials = tool.credentials as { username?: string; email?: string; password?: string; notes?: string; lastUpdated?: string | Date } | undefined;
   const getUsageColor = (frequency: string) => {
     switch (frequency) {
       case "daily":
@@ -61,7 +62,7 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-4 min-w-0 flex-1">
             <Avatar className="h-14 w-14 rounded-lg border-2 border-border/50">
-              <AvatarImage src={tool.logoUrl} alt={tool.name} className="object-contain p-1" />
+              <AvatarImage src={tool.logoUrl || undefined} alt={tool.name} className="object-contain p-1" />
               <AvatarFallback className="rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 text-sm font-semibold">
                 {getInitials(tool.name)}
               </AvatarFallback>
@@ -73,7 +74,7 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
               <div className="flex items-center gap-2 mt-2">
                 {tool.isPaid && tool.billingAmount && (
                   <span className="text-base font-mono font-bold text-primary" data-testid={`text-tool-cost-${tool.id}`}>
-                    {formatCost(tool.billingAmount, tool.billingCycle || "")}
+                    {formatCost(Number(tool.billingAmount) as number, tool.billingCycle || "")}
                   </span>
                 )}
                 {!tool.isPaid && (
@@ -123,7 +124,7 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
         )}
 
         <div className="flex flex-wrap gap-2 mb-4">
-          {tool.categories.map((category) => (
+          {tool.categories?.map((category) => (
             <Badge key={category} variant="outline" className="text-xs font-medium">
               {category}
             </Badge>
@@ -151,7 +152,7 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
             <ExternalLink className="h-4 w-4 mr-2" />
             Visit Website
           </Button>
-          {tool.credentials?.username && (
+          {credentials?.username && (
             <Button
               variant="secondary"
               className="w-full"

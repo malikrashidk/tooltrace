@@ -13,7 +13,7 @@ export default function SearchFilterExample() {
   return (
     <div className="p-4 max-w-2xl">
       <SearchFilter
-        categories={mockCategories.map((c) => c.name)}
+        categories={mockCategories}
         onSearch={(query) => console.log("Search:", query)}
         onFilterChange={setFilters}
         activeFilters={filters}

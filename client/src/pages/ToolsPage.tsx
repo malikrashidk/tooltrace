@@ -50,6 +50,7 @@ export function ToolsPage() {
     open: false,
     tool: null,
   });
+  const [editDialog, setEditDialog] = useState<{ open: boolean; tool: Tool | null }>({ open: false, tool: null });
 
   // Get unique categories from tools
   const categories = useMemo(() => {
@@ -178,7 +179,7 @@ export function ToolsPage() {
   };
 
   const handleEditTool = (tool: Tool) => {
-    updateToolMutation.mutate(tool);
+    setEditDialog({ open: true, tool });
   };
 
   const handleDeleteTool = (tool: Tool) => {
@@ -388,6 +389,25 @@ export function ToolsPage() {
           </Table>
         </div>
           )}
+
+        {/* Edit dialog (controlled) - open when user chooses to edit a tool */}
+        <AddToolDialog
+          categories={categories}
+          editTool={editDialog.tool || null}
+          open={editDialog.open}
+          onOpenChange={(open) => {
+            if (!open) setEditDialog({ open: false, tool: null });
+            else setEditDialog((s) => ({ ...s, open }));
+          }}
+          onSave={(data) => {
+            if (editDialog.tool) {
+              updateToolMutation.mutate({ ...editDialog.tool, ...data } as Tool);
+            } else {
+              addToolMutation.mutate(data);
+            }
+            setEditDialog({ open: false, tool: null });
+          }}
+        />
         </>
       )}
 

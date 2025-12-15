@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import type { Tool } from "@/lib/mockData";
+import type { Tool } from "@/lib/analytics";
 
 interface CSVImportExportProps {
   tools: Tool[];

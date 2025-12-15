@@ -43,6 +43,8 @@ function mapUser(row: any): User | undefined {
     twoFactorBackupCodes: row.two_factor_backup_codes,
     resetToken: row.reset_token,
     resetTokenExpiry: row.reset_token_expiry,
+    currency: row.currency,
+    language: row.language,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -232,6 +234,7 @@ export class MemStorage implements IStorage {
   private apiKeys: Map<string, ApiKey> = new Map();
   private notes: Map<string, Note> = new Map();
   private auditLogs: AuditLog[] = [];
+  private teamMembers: Map<string, TeamMember> = new Map();
 
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
@@ -271,6 +274,8 @@ export class MemStorage implements IStorage {
       twoFactorBackupCodes: null,
       createdAt: new Date(),
       updatedAt: new Date(),
+      currency: userData.currency || "USD",
+      language: userData.language || "en",
     } as User;
     this.users.set(id, fullUser as any);
     return fullUser;
@@ -278,7 +283,7 @@ export class MemStorage implements IStorage {
 
   async createUser(user: InsertUser): Promise<User> {
     const id = randomUUID();
-    const fullUser = { ...user, id, isAdmin: false, plan: "free", createdAt: new Date(), updatedAt: new Date() } as any;
+    const fullUser = { ...user, id, isAdmin: false, plan: "free", createdAt: new Date(), updatedAt: new Date(), currency: (user as any).currency || "USD", language: (user as any).language || "en" } as any;
     this.users.set(id, fullUser);
     return fullUser;
   }
@@ -338,7 +343,7 @@ export class MemStorage implements IStorage {
     return Array.from(this.tools.values()).filter((t) => t.userId === userId);
   }
 
-  async createTool(tool: InsertTool): Promise<Tool> {
+  async createTool(tool: InsertTool & { userId: string }): Promise<Tool> {
     const id = randomUUID();
     const fullTool = { ...tool, id, createdAt: new Date(), updatedAt: new Date() } as Tool;
     this.tools.set(id, fullTool);
@@ -468,6 +473,58 @@ export class MemStorage implements IStorage {
     const fullLog = { ...log, id, createdAt: new Date() } as AuditLog;
     this.auditLogs.push(fullLog);
     return fullLog;
+  }
+
+  async getAuditLogs(userId?: string, limit = 100): Promise<AuditLog[]> {
+    const list = userId ? this.auditLogs.filter((l) => l.userId === userId) : this.auditLogs.slice();
+    return list
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit);
+  }
+
+  // Team member operations (in-memory)
+  async getTeamMembers(teamOwnerId: string): Promise<TeamMember[]> {
+    return Array.from(this.teamMembers.values()).filter((m) => m.teamOwnerId === teamOwnerId).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async getTeamMember(id: string): Promise<TeamMember | undefined> {
+    return this.teamMembers.get(id);
+  }
+
+  async getTeamMemberByToken(token: string): Promise<TeamMember | undefined> {
+    return Array.from(this.teamMembers.values()).find((m) => m.invitationToken === token);
+  }
+
+  async createTeamMember(member: InsertTeamMember): Promise<TeamMember> {
+    const id = randomUUID();
+    const full: TeamMember = {
+      id,
+      teamOwnerId: (member as any).teamOwnerId,
+      userId: (member as any).userId || null,
+      email: (member as any).email,
+      role: (member as any).role || 'member',
+      status: (member as any).status || 'pending',
+      invitedBy: (member as any).invitedBy || null,
+      invitationToken: (member as any).invitationToken || null,
+      invitationExpiresAt: (member as any).invitationExpiresAt || null,
+      joinedAt: (member as any).joinedAt || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.teamMembers.set(id, full);
+    return full;
+  }
+
+  async updateTeamMember(id: string, updates: Partial<TeamMember>): Promise<TeamMember | undefined> {
+    const existing = this.teamMembers.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...updates, updatedAt: new Date() };
+    this.teamMembers.set(id, updated);
+    return updated;
+  }
+
+  async deleteTeamMember(id: string): Promise<boolean> {
+    return this.teamMembers.delete(id);
   }
 }
 

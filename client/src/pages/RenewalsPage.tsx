@@ -46,10 +46,10 @@ export function RenewalsPage() {
     );
   }
 
-  const getDaysUntil = (dateStr: string) => {
+  const getDaysUntil = (date: string | Date) => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
-    const renewalDate = new Date(dateStr);
+    const renewalDate = date instanceof Date ? new Date(date) : new Date(String(date));
     renewalDate.setHours(0, 0, 0, 0);
     const diffTime = renewalDate.getTime() - now.getTime();
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -182,7 +182,7 @@ export function RenewalsPage() {
                           data-testid={`renewal-${tool.id}`}
                         >
                           <Avatar className="h-12 w-12 rounded-lg border border-border flex-shrink-0">
-                            <AvatarImage src={tool.logoUrl} alt={tool.name} className="object-contain p-1" />
+                            <AvatarImage src={tool.logoUrl || undefined} alt={tool.name} className="object-contain p-1" />
                             <AvatarFallback className="rounded-lg bg-background text-sm font-medium">
                               {getInitials(tool.name)}
                             </AvatarFallback>
@@ -197,13 +197,13 @@ export function RenewalsPage() {
                               })}
                             </p>
                           </div>
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                            <div className="text-right">
-                              <p className="font-mono font-medium">{formatCurrency(tool.billingAmount || 0)}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {tool.billingCycle === "yearly" ? "Yearly" : "Monthly"}
-                              </p>
-                            </div>
+                                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                                      <div className="text-right">
+                                        <p className="font-mono font-medium">{formatCurrency(Number(tool.billingAmount) || 0)}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {tool.billingCycle === "yearly" ? "Yearly" : "Monthly"}
+                                        </p>
+                                      </div>
                             <Badge className={`text-xs w-fit ${getUrgencyStyle(daysUntil)}`}>
                               {daysUntil === 0 ? (
                                 <>

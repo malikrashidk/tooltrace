@@ -241,8 +241,8 @@ export function TeamCollaborationPage() {
               >
                 <div className="flex items-center gap-3">
                   <Avatar>
-                    <AvatarImage src={member.avatarUrl} alt={member.name} />
-                    <AvatarFallback>{member.name.charAt(0).toUpperCase()}</AvatarFallback>
+                    <AvatarImage src={member.avatarUrl || undefined} alt={member.name} />
+                    <AvatarFallback>{(member.name || member.email).charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div>
                     <div className="flex items-center gap-2">

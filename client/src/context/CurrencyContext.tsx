@@ -18,6 +18,7 @@ const CURRENCIES: Currency[] = [
   { code: "CHF", symbol: "CHF", name: "Swiss Franc" },
   { code: "CNY", symbol: "¥", name: "Chinese Yuan" },
   { code: "INR", symbol: "₹", name: "Indian Rupee" },
+  { code: "PKR", symbol: "₨", name: "Pakistani Rupee" },
   { code: "BRL", symbol: "R$", name: "Brazilian Real" },
   { code: "MXN", symbol: "MX$", name: "Mexican Peso" },
   { code: "SGD", symbol: "S$", name: "Singapore Dollar" },
@@ -33,7 +34,7 @@ type CurrencyContextType = {
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const [currency, setCurrencyState] = useState<Currency>(CURRENCIES[0]);
 
   // Load currency preference from user settings or localStorage
@@ -60,6 +61,9 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     if (user) {
       try {
         await apiRequest("PATCH", "/api/auth/profile", { currency: newCurrency.code });
+        const updatedUser = { ...user, currency: newCurrency.code };
+        setUser(updatedUser);
+        localStorage.setItem("user", JSON.stringify(updatedUser));
       } catch (error) {
         console.error("Failed to update currency preference:", error);
       }

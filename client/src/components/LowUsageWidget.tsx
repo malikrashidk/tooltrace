@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { Tool } from "@/lib/mockData";
+import type { Tool } from "@/lib/analytics";
 
 interface LowUsageWidgetProps {
   tools: Tool[];
@@ -29,8 +29,9 @@ export function LowUsageWidget({ tools, onViewAll, onReviewTool }: LowUsageWidge
   };
 
   const totalWasted = tools.reduce((sum, tool) => {
-    if (!tool.billingAmount) return sum;
-    return sum + (tool.billingCycle === "yearly" ? tool.billingAmount / 12 : tool.billingAmount);
+    const amt = Number(tool.billingAmount || 0);
+    if (!amt) return sum;
+    return sum + (tool.billingCycle === "yearly" ? amt / 12 : amt);
   }, 0);
 
   return (
@@ -71,7 +72,7 @@ export function LowUsageWidget({ tools, onViewAll, onReviewTool }: LowUsageWidge
                   data-testid={`low-usage-item-${tool.id}`}
                 >
                   <Avatar className="h-10 w-10 rounded-lg border border-border">
-                    <AvatarImage src={tool.logoUrl} alt={tool.name} className="object-contain p-1" />
+                    <AvatarImage src={tool.logoUrl || undefined} alt={tool.name} className="object-contain p-1" />
                     <AvatarFallback className="rounded-lg bg-background text-xs font-medium">
                       {getInitials(tool.name)}
                     </AvatarFallback>
@@ -85,7 +86,7 @@ export function LowUsageWidget({ tools, onViewAll, onReviewTool }: LowUsageWidge
                   </div>
                   <div className="text-right">
                     <span className="text-sm font-mono font-medium">
-                      {formatCurrency(tool.billingAmount || 0)}
+                      {formatCurrency(Number(tool.billingAmount) || 0)}
                     </span>
                     <p className="text-xs text-muted-foreground">
                       /{tool.billingCycle === "yearly" ? "yr" : "mo"}

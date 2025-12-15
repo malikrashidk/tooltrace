@@ -20,6 +20,7 @@ const LANGUAGES: Language[] = [
   { code: "ko", name: "Korean", nativeName: "한국어" },
   { code: "ar", name: "Arabic", nativeName: "العربية" },
   { code: "hi", name: "Hindi", nativeName: "हिन्दी" },
+  { code: "ur", name: "Urdu", nativeName: "اردو" },
   { code: "ru", name: "Russian", nativeName: "Русский" },
 ];
 
@@ -52,6 +53,25 @@ const translations: Record<string, Record<string, string>> = {
   // Add more translations as needed
 };
 
+// add minimal translations for Hindi and Urdu
+translations.hi = {
+  "dashboard": "डैशबोर्ड",
+  "tools": "उपकरण",
+  "analytics": "विश्लेषिकी",
+  "settings": "सेटिंग्स",
+  "team": "टीम",
+  "welcome": "स्वागत है",
+};
+
+translations.ur = {
+  "dashboard": "ڈیش بورڈ",
+  "tools": "ٹولز",
+  "analytics": "تجزیات",
+  "settings": "ترتیبات",
+  "team": "ٹیم",
+  "welcome": "خوش آمدید",
+};
+
 type LanguageContextType = {
   language: Language;
   setLanguage: (language: Language) => void;
@@ -62,7 +82,7 @@ type LanguageContextType = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const [language, setLanguageState] = useState<Language>(LANGUAGES[0]);
 
   // Load language preference from user settings or localStorage
@@ -97,6 +117,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     if (user) {
       try {
         await apiRequest("PATCH", "/api/auth/profile", { language: newLanguage.code });
+        const updatedUser = { ...user, language: newLanguage.code };
+        setUser(updatedUser);
+        localStorage.setItem("user", JSON.stringify(updatedUser));
       } catch (error) {
         console.error("Failed to update language preference:", error);
       }

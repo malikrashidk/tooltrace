@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -54,10 +54,16 @@ interface AddToolDialogProps {
   onSave: (tool: Partial<Tool>) => void;
   editTool?: Tool | null;
   trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function AddToolDialog({ categories, onSave, editTool, trigger }: AddToolDialogProps) {
-  const [open, setOpen] = useState(false);
+export function AddToolDialog({ categories, onSave, editTool, trigger, open: openProp, onOpenChange }: AddToolDialogProps) {
+  // Support controlled open state when `open` and `onOpenChange` are provided
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = typeof openProp === "boolean" && typeof onOpenChange === "function";
+  const open = isControlled ? openProp : internalOpen;
+  const setOpen = isControlled ? onOpenChange! : setInternalOpen;
   const [selectedCategories, setSelectedCategories] = useState<string[]>(editTool?.categories || []);
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>(editTool?.tags || []);
@@ -81,6 +87,28 @@ export function AddToolDialog({ categories, onSave, editTool, trigger }: AddTool
       paymentMethod: editTool?.paymentMethod || "",
     },
   });
+
+  // Reset form when editTool or open changes (so edit fields populate)
+  useEffect(() => {
+    form.reset({
+      name: editTool?.name || "",
+      websiteUrl: editTool?.websiteUrl || "",
+      notes: editTool?.notes || "",
+      isPaid: editTool?.isPaid || false,
+      usageFrequency: (editTool?.usageFrequency as "daily" | "weekly" | "rarely") || "weekly",
+      billingAmount: editTool?.billingAmount ? parseFloat(String(editTool.billingAmount)) : undefined,
+      billingCycle: (editTool?.billingCycle as "monthly" | "yearly" | "one-time") || "monthly",
+      nextRenewalDate: editTool?.nextRenewalDate
+        ? (editTool.nextRenewalDate instanceof Date
+            ? editTool.nextRenewalDate.toISOString().split("T")[0]
+            : new Date(editTool.nextRenewalDate).toISOString().split("T")[0])
+        : "",
+      paymentMethod: editTool?.paymentMethod || "",
+    });
+    setSelectedCategories(editTool?.categories || []);
+    setTags(editTool?.tags || []);
+    setLogoPreview(editTool?.logoUrl || null);
+  }, [editTool, open]);
 
   const isPaid = form.watch("isPaid");
 

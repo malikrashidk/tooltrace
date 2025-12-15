@@ -201,7 +201,7 @@ export function PricingPage() {
             <CardContent className="pt-6 sm:pt-8">
               <div className="text-center space-y-2">
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground">Premium Plan</p>
-                <p className="text-3xl sm:text-4xl font-bold text-primary">…ˆž</p>
+                <p className="text-3xl sm:text-4xl font-bold text-primary">∞</p>
                 <p className="text-xs text-muted-foreground">unlimited tools</p>
               </div>
             </CardContent>
