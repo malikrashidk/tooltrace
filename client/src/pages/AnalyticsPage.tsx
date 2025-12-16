@@ -40,15 +40,16 @@ export function AnalyticsPage() {
     // Calculate category spending
     const categorySpend: Record<string, number> = {};
     paid.forEach((tool) => {
-      const amount = Number(tool.billingAmount || 0);
+      let amount = Number(tool.billingAmount || 0);
+      // Normalize to monthly cost
+      if (tool.billingCycle === 'yearly') {
+        amount = amount / 12;
+      }
+
       const categories = tool.categories?.length ? tool.categories : ["Uncategorized"];
-      categories.forEach((cat) => {
-        // If a tool has multiple categories, split the cost (simplification) or assign to first?
-        // Let's assign full cost to each for visibility, or first.
-        // For accurate total, maybe assign to the first category.
-        const primaryCat = categories[0];
-        categorySpend[primaryCat] = (categorySpend[primaryCat] || 0) + amount;
-      });
+      // Assign cost to the first category only to avoid double counting in pie chart
+      const primaryCat = categories[0];
+      categorySpend[primaryCat] = (categorySpend[primaryCat] || 0) + amount;
     });
 
     const categoryData = Object.entries(categorySpend)
@@ -56,10 +57,22 @@ export function AnalyticsPage() {
       .sort((a, b) => b.value - a.value);
 
     // Calculate daily/weekly/monthly/yearly breakdown
+    const calculateFrequencySpend = (frequency: string) => {
+      return paid
+        .filter(t => t.usageFrequency === frequency)
+        .reduce((sum, t) => {
+          let amount = Number(t.billingAmount || 0);
+          if (t.billingCycle === 'yearly') {
+            amount = amount / 12;
+          }
+          return sum + amount;
+        }, 0);
+    };
+
     const frequencySpend = {
-        Daily: paid.filter(t => t.usageFrequency === 'daily').reduce((s, t) => s + Number(t.billingAmount || 0), 0),
-        Weekly: paid.filter(t => t.usageFrequency === 'weekly').reduce((s, t) => s + Number(t.billingAmount || 0), 0),
-        Rarely: paid.filter(t => t.usageFrequency === 'rarely').reduce((s, t) => s + Number(t.billingAmount || 0), 0),
+        Daily: calculateFrequencySpend('daily'),
+        Weekly: calculateFrequencySpend('weekly'),
+        Rarely: calculateFrequencySpend('rarely'),
     };
 
     const usageData = Object.entries(frequencySpend).map(([name, value]) => ({ name, value }));

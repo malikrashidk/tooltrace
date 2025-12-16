@@ -3,11 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
-import { useCurrency } from "@/context/CurrencyContext";
 
 export function PricingPage() {
   const { user } = useAuth();
-  const { formatAmount } = useCurrency();
 
   // todo: remove mock functionality - replace with real API call to fetch user subscription
   const userPlan = user ? (user as any).plan || "free" : "free";
@@ -127,7 +125,7 @@ export function PricingPage() {
               </div>
               <div className="pt-2 border-t border-border/50">
                 <div className="flex items-baseline gap-1 mb-1">
-                  <span className="text-3xl sm:text-4xl font-bold">{formatAmount(plan.price)}</span>
+                  <span className="text-3xl sm:text-4xl font-bold">${plan.price}</span>
                   <span className="text-muted-foreground text-xs sm:text-sm">/month</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
