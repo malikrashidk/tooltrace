@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Upload, X, Link2 } from "lucide-react";
+import { Plus, Upload, X, Link2, Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,7 +33,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import type { Tool } from "@/lib/analytics";
+import { knownTools, type KnownTool } from "../../../shared/known-tools";
 
 const toolSchema = z.object({
   name: z.string().min(1, "Tool name is required"),
@@ -68,6 +83,8 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>(editTool?.tags || []);
   const [logoPreview, setLogoPreview] = useState<string | null>(editTool?.logoUrl || null);
+  const [comboboxOpen, setComboboxOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
 
   const form = useForm<ToolFormData>({
     resolver: zodResolver(toolSchema),
@@ -168,6 +185,17 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
     }
   };
 
+  const handleToolSelect = (tool: KnownTool) => {
+    form.setValue("name", tool.name);
+    form.setValue("websiteUrl", `https://${tool.website}`);
+
+    if (tool.category && !selectedCategories.includes(tool.category)) {
+      setSelectedCategories(prev => [...prev, tool.category]);
+    }
+
+    setComboboxOpen(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -220,11 +248,84 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
                     control={form.control}
                     name="name"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="flex flex-col">
                         <FormLabel>Tool Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Figma" data-testid="input-tool-name" {...field} />
-                        </FormControl>
+                        <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={comboboxOpen}
+                                className={cn(
+                                  "w-full justify-between",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                                data-testid="input-tool-name"
+                              >
+                                {field.value || "Select or type tool name..."}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[400px] p-0" align="start">
+                            <Command filter={(value, search) => {
+                              const item = knownTools.find(t => t.name.toLowerCase() === value.toLowerCase());
+                              if (!item) return 0;
+
+                              const searchLower = search.toLowerCase();
+                              if (item.name.toLowerCase().includes(searchLower)) return 1;
+                              if (item.website.toLowerCase().includes(searchLower)) return 1;
+                              if (item.aliases.some(alias => alias.toLowerCase().includes(searchLower))) return 1;
+
+                              return 0;
+                            }}>
+                              <CommandInput
+                                placeholder="Search common tools..."
+                                onValueChange={(search) => {
+                                  setSearchValue(search);
+                                }}
+                              />
+                              <CommandList>
+                                <CommandEmpty className="py-2 px-4 text-sm">
+                                  <p className="text-muted-foreground mb-2">No known tool found.</p>
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    className="w-full"
+                                    onClick={() => {
+                                      // Use the custom search value
+                                      field.onChange(searchValue);
+                                      setComboboxOpen(false);
+                                    }}
+                                  >
+                                    Use "{searchValue}"
+                                  </Button>
+                                </CommandEmpty>
+                                <CommandGroup>
+                                  {knownTools.map((tool) => (
+                                    <CommandItem
+                                      key={tool.name}
+                                      value={tool.name}
+                                      onSelect={() => handleToolSelect(tool)}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          field.value === tool.name ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      <div className="flex flex-col">
+                                        <span>{tool.name}</span>
+                                        <span className="text-xs text-muted-foreground">{tool.website}</span>
+                                      </div>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -481,6 +582,3 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
     </Dialog>
   );
 }
-
-
-
