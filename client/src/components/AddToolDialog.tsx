@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Plus, Upload, X, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useCurrency } from "@/context/CurrencyContext";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +62,7 @@ interface AddToolDialogProps {
 export function AddToolDialog({ categories, onSave, editTool, trigger, open: openProp, onOpenChange }: AddToolDialogProps) {
   // Support controlled open state when `open` and `onOpenChange` are provided
   const [internalOpen, setInternalOpen] = useState(false);
+  const { currency } = useCurrency();
   const isControlled = typeof openProp === "boolean" && typeof onOpenChange === "function";
   const open = isControlled ? openProp : internalOpen;
   const setOpen = isControlled ? onOpenChange! : setInternalOpen;
@@ -382,7 +384,7 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
                           <FormControl>
                             <div className="relative">
                               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                                $
+                                {currency.symbol}
                               </span>
                               <Input
                                 type="number"
