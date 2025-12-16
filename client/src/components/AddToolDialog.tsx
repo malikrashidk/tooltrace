@@ -67,6 +67,7 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
   const open = isControlled ? openProp : internalOpen;
   const setOpen = isControlled ? onOpenChange! : setInternalOpen;
   const [selectedCategories, setSelectedCategories] = useState<string[]>(editTool?.categories || []);
+  const [categoryInput, setCategoryInput] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>(editTool?.tags || []);
   const [logoPreview, setLogoPreview] = useState<string | null>(editTool?.logoUrl || null);
@@ -146,6 +147,16 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
         ? prev.filter((c) => c !== categoryName)
         : [...prev, categoryName]
     );
+  };
+
+  const addCategory = () => {
+    if (categoryInput.trim()) {
+      const newCategory = categoryInput.trim();
+      if (!selectedCategories.includes(newCategory)) {
+        setSelectedCategories([...selectedCategories, newCategory]);
+      }
+      setCategoryInput("");
+    }
   };
 
   const addTag = () => {
@@ -278,7 +289,25 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
 
               <div className="space-y-2">
                 <FormLabel>Categories</FormLabel>
+                <div className="flex gap-2 mb-2">
+                  <Input
+                    value={categoryInput}
+                    onChange={(e) => setCategoryInput(e.target.value)}
+                    placeholder="Add a category"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addCategory();
+                      }
+                    }}
+                    data-testid="input-category"
+                  />
+                  <Button type="button" variant="secondary" onClick={addCategory} data-testid="button-add-category">
+                    Add
+                  </Button>
+                </div>
                 <div className="flex flex-wrap gap-2">
+                  {/* Show existing/system categories */}
                   {categories.map((category) => (
                     <Badge
                       key={category}
@@ -286,6 +315,20 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
                       className="cursor-pointer"
                       onClick={() => toggleCategory(category)}
                       data-testid={`select-category-${category.toLowerCase()}`}
+                    >
+                      {category}
+                    </Badge>
+                  ))}
+                  {/* Show newly added categories that are not in the 'categories' prop yet */}
+                  {selectedCategories
+                    .filter(c => !categories.includes(c))
+                    .map((category) => (
+                    <Badge
+                      key={category}
+                      variant="default"
+                      className="cursor-pointer"
+                      onClick={() => toggleCategory(category)}
+                      data-testid={`select-new-category-${category.toLowerCase()}`}
                     >
                       {category}
                     </Badge>
