@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { type Tool } from "@/lib/analytics";
+import { useCurrency } from "@/context/CurrencyContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 import {
   Table,
@@ -32,6 +34,8 @@ type ViewMode = "grid" | "list";
 
 export function ToolsPage() {
   const { toast } = useToast();
+  const { formatAmount } = useCurrency();
+  const { t } = useLanguage();
   
   const { data: toolsData } = useQuery<{ tools: Tool[] }>({
     queryKey: ["/api/tools"],
@@ -202,20 +206,13 @@ export function ToolsPage() {
       .slice(0, 2);
   };
 
-  const formatCurrency = (amount: number) => {
-    return amount.toLocaleString("en-US", {
-      style: "currency",
-      currency: "USD",
-    });
-  };
-
   return (
     <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold">All Tools</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold">{t("all_tools")}</h1>
           <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
-            {tools.length} tools in your collection
+            {t("tools_count").replace("{count}", String(tools.length))}
           </p>
         </div>
         <div className="flex gap-2">
@@ -248,7 +245,7 @@ export function ToolsPage() {
               <Package className="h-10 w-10 text-muted-foreground" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-xl sm:text-2xl font-semibold">No tools yet</h2>
+              <h2 className="text-xl sm:text-2xl font-semibold">{t("no_tools")}</h2>
               <p className="text-xs sm:text-sm md:text-base text-muted-foreground max-w-xs">
                 Start by adding your first tool/website/app to begin tracking your subscriptions and much more.
               </p>
@@ -291,11 +288,11 @@ export function ToolsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[140px] sm:w-[200px]">Tool</TableHead>
-                <TableHead className="hidden md:table-cell">Categories</TableHead>
-                <TableHead className="hidden md:table-cell">Usage</TableHead>
-                <TableHead className="text-right w-[80px] sm:w-[100px]">Cost</TableHead>
-                <TableHead className="hidden sm:table-cell w-[100px] sm:w-[120px]">Renewal</TableHead>
+                <TableHead className="w-[140px] sm:w-[200px]">{t("tools")}</TableHead>
+                <TableHead className="hidden md:table-cell">{t("categories")}</TableHead>
+                <TableHead className="hidden md:table-cell">{t("usage")}</TableHead>
+                <TableHead className="text-right w-[80px] sm:w-[100px]">{t("cost")}</TableHead>
+                <TableHead className="hidden sm:table-cell w-[100px] sm:w-[120px]">{t("renewal")}</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -353,7 +350,7 @@ export function ToolsPage() {
                   </TableCell>
                   <TableCell className="text-right font-mono text-xs sm:text-sm whitespace-nowrap">
                     {tool.isPaid && tool.billingAmount
-                      ? formatCurrency(typeof tool.billingAmount === 'string' ? parseFloat(tool.billingAmount) : tool.billingAmount)
+                      ? formatAmount(typeof tool.billingAmount === 'string' ? parseFloat(tool.billingAmount) : tool.billingAmount)
                       : "Free"}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell text-sm text-muted-foreground whitespace-nowrap">

@@ -4,8 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Package } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type Tool } from "@/lib/analytics";
+import { useCurrency } from "@/context/CurrencyContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 export function AnalyticsPage() {
+  const { formatAmount } = useCurrency();
+  const { t } = useLanguage();
+
   const { data: toolsData, isLoading } = useQuery<{ tools: Tool[] }>({
     queryKey: ["/api/tools"],
   });
@@ -38,8 +43,8 @@ export function AnalyticsPage() {
   return (
     <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-semibold">Analytics</h1>
-        <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Insights into your SaaS spending and usage</p>
+        <h1 className="text-2xl sm:text-3xl font-semibold">{t("analytics")}</h1>
+        <p className="text-xs sm:text-sm md:text-base text-muted-foreground">{t("insights")}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
@@ -50,9 +55,9 @@ export function AnalyticsPage() {
                 <DollarSign className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Monthly Spend</p>
+                <p className="text-sm text-muted-foreground">{t("monthly_spend")}</p>
                 <p className="text-2xl font-semibold font-mono" data-testid="text-monthly-spend">
-                  ${stats.monthlySpend.toFixed(2)}
+                  {formatAmount(stats.monthlySpend)}
                 </p>
               </div>
             </div>
@@ -66,7 +71,7 @@ export function AnalyticsPage() {
                 <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Tools</p>
+                <p className="text-sm text-muted-foreground">{t("total_tools")}</p>
                 <p className="text-2xl font-semibold" data-testid="text-total-tools">{stats.totalTools}</p>
                 <p className="text-xs text-muted-foreground">{stats.paidTools} paid, {stats.freeTools} free</p>
               </div>
@@ -81,9 +86,9 @@ export function AnalyticsPage() {
                 <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Yearly Projection</p>
+                <p className="text-sm text-muted-foreground">{t("yearly_projection")}</p>
                 <p className="text-2xl font-semibold font-mono" data-testid="text-yearly-projection">
-                  ${stats.yearlySpend.toFixed(2)}
+                  {formatAmount(stats.yearlySpend)}
                 </p>
               </div>
             </div>

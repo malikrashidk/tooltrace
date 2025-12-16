@@ -16,12 +16,19 @@ $replacements = @(
   @{ bad = "âˆž"; good = U 0x221E }
   @{ bad = "â€¢"; good = U 0x2022 }
   @{ bad = "Â·";  good = U 0x00B7 }
-)
+```
+```powershell
+<<<<<<< SEARCH
+  foreach ($r in $replacements) {
+    Write-Host "Replaced '$($r.bad)' with '$($r.good)'"
+    $content = $content.Replace($r.bad, $r.good)
+  }
 
 foreach ($f in $files) {
   $path = $f.FullName
   try { $content = Get-Content -Path $path -Raw -ErrorAction Stop } catch { continue }
   $orig = $content
+  Write-Host "Original content length: $($orig.Length)"
 
   foreach ($r in $replacements) {
     $content = $content.Replace($r.bad, $r.good)
@@ -37,11 +44,13 @@ foreach ($f in $files) {
     } else {
         Write-Host "Backing up original file to $BackupDir\$($f.Name)"
         if (-not (Test-Path $BackupDir)) {
-            New-Item -ItemType Directory -Path $BackupDir | Out-Null
+            New-Item -ItemType Directory -Path $BackupDir
+        }
+        if (-not (Test-Path $BackupDir)) {
+            New-Item -ItemType Directory -Path $BackupDir
         }
         Copy-Item -Path $path -Destination "$BackupDir\$($f.Name)" -Force
         Set-Content -Path $path -Value $content -Encoding utf8 -NoNewline
-        Write-Host "Fixed $path"
     }
   }
 }

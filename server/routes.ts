@@ -271,7 +271,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // In a self-hosted environment, log the reset URL (in production, you'd send an email)
       const resetUrl = `${req.protocol}://${req.get("host")}/reset-password?token=${resetToken}`;
-      console.log(`\n📧 Password Reset Request for ${email}`);
+      console.log(`\nðŸ“§ Password Reset Request for ${email}`);
       console.log(`   Reset URL: ${resetUrl}`);
       console.log(`   Token expires: ${resetTokenExpiry.toISOString()}\n`);
 
@@ -1014,7 +1014,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Don't return the secret, only show it once when created
       const safeApiKeys = apiKeys.map(key => ({
         ...key,
-        secret: "••••••••", // Hide secret
+        secret: "â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢", // Hide secret
       }));
       res.json({ apiKeys: safeApiKeys });
     } catch (error) {
