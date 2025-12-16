@@ -398,7 +398,12 @@ export function ToolsPage() {
           }}
           onSave={(data) => {
             if (editDialog.tool) {
-              updateToolMutation.mutate({ ...editDialog.tool, ...data } as Tool);
+              // Only send the fields that need to be updated, plus the ID
+              const updates = {
+                ...data,
+                id: editDialog.tool.id
+              };
+              updateToolMutation.mutate(updates as Tool);
             } else {
               addToolMutation.mutate(data);
             }
