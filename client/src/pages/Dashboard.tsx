@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type Tool } from "@/lib/analytics";
+import { useLanguage } from "@/context/LanguageContext";
 
 export function Dashboard() {
   const [, setLocation] = useLocation();
+  const { t } = useLanguage();
   
   const { data: toolsData, isLoading } = useQuery<{ tools: Tool[] }>({
     queryKey: ["/api/tools"],
@@ -33,7 +35,7 @@ export function Dashboard() {
   return (
     <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-semibold">Dashboard</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold">{t("dashboard")}</h1>
         <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Overview of your tools and subscriptions</p>
       </div>
 

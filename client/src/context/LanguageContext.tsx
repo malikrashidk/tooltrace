@@ -113,6 +113,13 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("language", newLanguage.code);
     document.documentElement.lang = newLanguage.code;
     
+    // Set text direction for RTL languages
+    if (newLanguage.code === "ar" || newLanguage.code === "ur") {
+      document.documentElement.dir = "rtl";
+    } else {
+      document.documentElement.dir = "ltr";
+    }
+
     // Update user preference in database if logged in
     if (user) {
       try {
