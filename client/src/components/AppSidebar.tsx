@@ -45,105 +45,107 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/AuthContext";
-
-const mainNavItems = [
-  {
-    title: "Dashboard",
-    url: "/",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "All Tools",
-    url: "/tools",
-    icon: Package,
-  },
-  {
-    title: "Advanced Management",
-    url: "/tools-advanced",
-    icon: Sliders,
-  },
-  {
-    title: "Analytics",
-    url: "/analytics",
-    icon: BarChart3,
-  },
-  {
-    title: "Notes",
-    url: "/notes",
-    icon: StickyNote,
-  },
-  {
-    title: "Renewals",
-    url: "/renewals",
-    icon: Calendar,
-  },
-  {
-    title: "Low Usage",
-    url: "/low-usage",
-    icon: AlertTriangle,
-  },
-];
-
-const settingsNavItems = [
-  {
-    title: "Pricing",
-    url: "/pricing",
-    icon: CreditCard,
-    locked: false,
-  },
-  {
-    title: "Receipts & Invoices",
-    url: "/receipts",
-    icon: FileText,
-    locked: false,
-  },
-  {
-    title: "Integrations",
-    url: "/integrations",
-    icon: Zap,
-    locked: true,
-  },
-  {
-    title: "Team Collaboration",
-    url: "/team",
-    icon: Users,
-    locked: true,
-  },
-  {
-    title: "API Keys",
-    url: "/api-keys",
-    icon: Code2,
-    locked: true,
-  },
-  {
-    title: "Settings",
-    url: "/settings",
-    icon: Settings,
-    locked: false,
-  },
-];
-
-const supportNavItems = [
-  {
-    title: "Help & Documentation",
-    url: "/help",
-    icon: HelpCircle,
-    locked: false,
-  },
-];
-
-const adminNavItems = [
-  {
-    title: "Admin Dashboard",
-    url: "/admin",
-    icon: BarChart2,
-  },
-];
+import { useLanguage } from "@/context/LanguageContext";
 
 export function AppSidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const isPaidPlan = user?.plan === "standard" || user?.plan === "premium";
+
+  const mainNavItems = [
+    {
+      title: t("dashboard"),
+      url: "/",
+      icon: LayoutDashboard,
+    },
+    {
+      title: t("tools"),
+      url: "/tools",
+      icon: Package,
+    },
+    {
+      title: "Advanced Management",
+      url: "/tools-advanced",
+      icon: Sliders,
+    },
+    {
+      title: t("analytics"),
+      url: "/analytics",
+      icon: BarChart3,
+    },
+    {
+      title: "Notes",
+      url: "/notes",
+      icon: StickyNote,
+    },
+    {
+      title: "Renewals",
+      url: "/renewals",
+      icon: Calendar,
+    },
+    {
+      title: "Low Usage",
+      url: "/low-usage",
+      icon: AlertTriangle,
+    },
+  ];
+
+  const settingsNavItems = [
+    {
+      title: "Pricing",
+      url: "/pricing",
+      icon: CreditCard,
+      locked: false,
+    },
+    {
+      title: "Receipts & Invoices",
+      url: "/receipts",
+      icon: FileText,
+      locked: false,
+    },
+    {
+      title: "Integrations",
+      url: "/integrations",
+      icon: Zap,
+      locked: true,
+    },
+    {
+      title: t("team"),
+      url: "/team",
+      icon: Users,
+      locked: true,
+    },
+    {
+      title: "API Keys",
+      url: "/api-keys",
+      icon: Code2,
+      locked: true,
+    },
+    {
+      title: t("settings"),
+      url: "/settings",
+      icon: Settings,
+      locked: false,
+    },
+  ];
+
+  const supportNavItems = [
+    {
+      title: "Help & Documentation",
+      url: "/help",
+      icon: HelpCircle,
+      locked: false,
+    },
+  ];
+
+  const adminNavItems = [
+    {
+      title: "Admin Dashboard",
+      url: "/admin",
+      icon: BarChart2,
+    },
+  ];
   
   const getItemStatus = (item: typeof settingsNavItems[0]) => {
     if (!item.locked) return "available";
