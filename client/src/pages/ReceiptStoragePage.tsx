@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
+import { useCurrency } from "@/context/CurrencyContext";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -34,6 +35,7 @@ export function ReceiptStoragePage() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { formatAmount } = useCurrency();
   const isPaidPlan = user?.plan === "standard" || user?.plan === "premium";
   
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -161,9 +163,9 @@ export function ReceiptStoragePage() {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const formatAmount = (amount: string | null) => {
+  const formatReceiptAmount = (amount: string | null) => {
     if (!amount) return "N/A";
-    return `$${parseFloat(amount).toFixed(2)}`;
+    return formatAmount(amount);
   };
 
   if (!isPaidPlan) {
@@ -282,7 +284,7 @@ export function ReceiptStoragePage() {
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <DollarSign className="h-4 w-4" />
-                  <span>{formatAmount(receipt.amount)}</span>
+                  <span>{formatReceiptAmount(receipt.amount)}</span>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Calendar className="h-4 w-4" />

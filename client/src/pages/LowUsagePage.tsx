@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
+import { useCurrency } from "@/context/CurrencyContext";
 import { type Tool } from "@/lib/analytics";
 
 export function LowUsagePage() {
+  const { formatAmount } = useCurrency();
   const { data: toolsData, isLoading } = useQuery<{ tools: Tool[] }>({
     queryKey: ["/api/tools"],
   });
@@ -71,7 +73,7 @@ export function LowUsagePage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-              ${potentialMonthlySavings.toFixed(2)}
+              {formatAmount(potentialMonthlySavings)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">from rarely used tools</p>
           </CardContent>
@@ -142,7 +144,7 @@ export function LowUsagePage() {
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-orange-600 dark:text-orange-400">
-                        ${monthlyAmount.toFixed(2)}/mo
+                        {formatAmount(monthlyAmount)}/mo
                       </p>
                       <Badge variant="outline" className="text-xs bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
                         Rarely Used
@@ -185,7 +187,7 @@ export function LowUsagePage() {
                       <span className="font-medium">{tool.name}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm text-muted-foreground">${monthlyAmount.toFixed(2)}/mo</span>
+                      <span className="text-sm text-muted-foreground">{formatAmount(monthlyAmount)}/mo</span>
                       <Badge variant="secondary">Weekly</Badge>
                     </div>
                   </div>
@@ -209,10 +211,10 @@ export function LowUsagePage() {
               <div className="flex justify-between text-sm mb-2">
                 <span>Daily use tools</span>
                 <span className="text-green-600 dark:text-green-400">
-                  ${paidTools.filter(t => t.usageFrequency === "daily").reduce((sum, t) => {
+                  {formatAmount(paidTools.filter(t => t.usageFrequency === "daily").reduce((sum, t) => {
                     const amount = parseFloat(t.billingAmount || "0");
                     return sum + (t.billingCycle === "yearly" ? amount / 12 : amount);
-                  }, 0).toFixed(2)}/mo
+                  }, 0))}/mo
                 </span>
               </div>
               <Progress 
@@ -226,7 +228,7 @@ export function LowUsagePage() {
             <div>
               <div className="flex justify-between text-sm mb-2">
                 <span>Weekly use tools</span>
-                <span className="text-yellow-600 dark:text-yellow-400">${weeklyPotentialSavings.toFixed(2)}/mo</span>
+                <span className="text-yellow-600 dark:text-yellow-400">{formatAmount(weeklyPotentialSavings)}/mo</span>
               </div>
               <Progress 
                 value={totalMonthlySpend > 0 ? (weeklyPotentialSavings / totalMonthlySpend) * 100 : 0} 
@@ -236,7 +238,7 @@ export function LowUsagePage() {
             <div>
               <div className="flex justify-between text-sm mb-2">
                 <span>Rarely use tools</span>
-                <span className="text-orange-600 dark:text-orange-400">${potentialMonthlySavings.toFixed(2)}/mo</span>
+                <span className="text-orange-600 dark:text-orange-400">{formatAmount(potentialMonthlySavings)}/mo</span>
               </div>
               <Progress 
                 value={totalMonthlySpend > 0 ? (potentialMonthlySavings / totalMonthlySpend) * 100 : 0} 

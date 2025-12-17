@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
+import { useCurrency } from "@/context/CurrencyContext";
 import type { Tool } from "@/lib/analytics";
 import { CredentialsDialog } from "./CredentialsDialog";
 
@@ -24,6 +25,7 @@ interface ToolCardProps {
 export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCardProps) {
   const [showCredentials, setShowCredentials] = useState(false);
   const { toast } = useToast();
+  const { formatAmount } = useCurrency();
   const credentials = tool.credentials as { username?: string; email?: string; password?: string; notes?: string; lastUpdated?: string | Date } | undefined;
   const getUsageColor = (frequency: string) => {
     switch (frequency) {
@@ -39,12 +41,9 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
   };
 
   const formatCost = (amount: number, cycle: string) => {
-    const formattedAmount = amount.toLocaleString("en-US", {
-      style: "currency",
-      currency: "USD",
-    });
+    const formatted = formatAmount(amount);
     const cycleLabel = cycle === "monthly" ? "/mo" : cycle === "yearly" ? "/yr" : "";
-    return `${formattedAmount}${cycleLabel}`;
+    return `${formatted}${cycleLabel}`;
   };
 
   const getInitials = (name: string) => {

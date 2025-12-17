@@ -1,5 +1,6 @@
 import { DollarSign, TrendingUp, Package, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useCurrency } from "@/context/CurrencyContext";
 
 interface StatsCardsProps {
   monthlySpend: number;
@@ -18,19 +19,12 @@ export function StatsCards({
   freeTools,
   lowUsageCount,
 }: StatsCardsProps) {
-  const formatCurrency = (amount: number) => {
-    return amount.toLocaleString("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    });
-  };
+  const { formatAmount } = useCurrency();
 
   const stats = [
     {
       label: "Monthly Spend",
-      value: formatCurrency(monthlySpend),
+      value: formatAmount(monthlySpend),
       icon: DollarSign,
       description: "Current monthly cost",
       color: "text-blue-600 dark:text-blue-400",
@@ -38,7 +32,7 @@ export function StatsCards({
     },
     {
       label: "Yearly Spend",
-      value: formatCurrency(yearlySpend),
+      value: formatAmount(yearlySpend),
       icon: TrendingUp,
       description: "Projected annual cost",
       color: "text-green-600 dark:text-green-400",

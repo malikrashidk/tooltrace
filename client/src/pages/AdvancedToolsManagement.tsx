@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/context/AuthContext";
+import { useCurrency } from "@/context/CurrencyContext";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -33,6 +34,7 @@ export function AdvancedToolsManagement() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { formatAmount } = useCurrency();
   const isPaidPlan = user?.plan === "standard" || user?.plan === "premium";
   
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
@@ -344,7 +346,7 @@ export function AdvancedToolsManagement() {
                     </td>
                     <td className="p-3">
                       {tool.isPaid ? (
-                        <span className="font-medium">${parseFloat(tool.billingAmount || "0").toFixed(2)}/{tool.billingCycle === "yearly" ? "yr" : "mo"}</span>
+                        <span className="font-medium">{formatAmount(tool.billingAmount)}/{tool.billingCycle === "yearly" ? "yr" : "mo"}</span>
                       ) : (
                         <span className="text-muted-foreground">Free</span>
                       )}

@@ -33,6 +33,22 @@ const translations: Record<string, Record<string, string>> = {
     "settings": "Settings",
     "team": "Team",
     "welcome": "Welcome",
+    "total_tools": "Total Tools",
+    "monthly_spend": "Monthly Spend",
+    "yearly_projection": "Yearly Projection",
+    "no_tools": "No tools added yet",
+    "recent_tools": "Recent Tools",
+    "view_all": "View All Tools",
+    "all_tools": "All Tools",
+    "tools_count": "{count} tools in your collection",
+    "add_tool": "Add Tool",
+    "search": "Search...",
+    "categories": "Categories",
+    "usage": "Usage",
+    "cost": "Cost",
+    "renewal": "Renewal",
+    "insights": "Insights into your SaaS spending and usage",
+    "overview": "Overview of your tools and subscriptions"
   },
   es: {
     "dashboard": "Panel",
@@ -41,6 +57,22 @@ const translations: Record<string, Record<string, string>> = {
     "settings": "Configuración",
     "team": "Equipo",
     "welcome": "Bienvenido",
+    "total_tools": "Herramientas Totales",
+    "monthly_spend": "Gasto Mensual",
+    "yearly_projection": "Proyección Anual",
+    "no_tools": "No hay herramientas añadidas",
+    "recent_tools": "Herramientas Recientes",
+    "view_all": "Ver Todas",
+    "all_tools": "Todas las Herramientas",
+    "tools_count": "{count} herramientas en tu colección",
+    "add_tool": "Añadir Herramienta",
+    "search": "Buscar...",
+    "categories": "Categorías",
+    "usage": "Uso",
+    "cost": "Costo",
+    "renewal": "Renovación",
+    "insights": "Información sobre tus gastos y uso de SaaS",
+    "overview": "Resumen de tus herramientas y suscripciones"
   },
   fr: {
     "dashboard": "Tableau de bord",
@@ -49,8 +81,23 @@ const translations: Record<string, Record<string, string>> = {
     "settings": "Paramètres",
     "team": "Équipe",
     "welcome": "Bienvenue",
+    "total_tools": "Total des Outils",
+    "monthly_spend": "Dépenses Mensuelles",
+    "yearly_projection": "Projection Annuelle",
+    "no_tools": "Aucun outil ajouté",
+    "recent_tools": "Outils Récents",
+    "view_all": "Voir Tout",
+    "all_tools": "Tous les Outils",
+    "tools_count": "{count} outils dans votre collection",
+    "add_tool": "Ajouter un Outil",
+    "search": "Chercher...",
+    "categories": "Catégories",
+    "usage": "Utilisation",
+    "cost": "Coût",
+    "renewal": "Renouvellement",
+    "insights": "Aperçu de vos dépenses et de l'utilisation SaaS",
+    "overview": "Aperçu de vos outils et abonnements"
   },
-  // Add more translations as needed
 };
 
 // add minimal translations for Hindi and Urdu
@@ -61,6 +108,22 @@ translations.hi = {
   "settings": "सेटिंग्स",
   "team": "टीम",
   "welcome": "स्वागत है",
+  "total_tools": "कुल उपकरण",
+  "monthly_spend": "मासिक खर्च",
+  "yearly_projection": "वार्षिक प्रक्षेपण",
+  "no_tools": "कोई उपकरण नहीं जोड़ा गया",
+  "recent_tools": "हाल के उपकरण",
+  "view_all": "सभी देखें",
+  "all_tools": "सभी उपकरण",
+  "tools_count": "आपके संग्रह में {count} उपकरण",
+  "add_tool": "उपकरण जोड़ें",
+  "search": "खोजें...",
+  "categories": "श्रेणियाँ",
+  "usage": "उपयोग",
+  "cost": "लागत",
+  "renewal": "नवीनीकरण",
+  "insights": "आपके SaaS खर्च और उपयोग की जानकारी",
+  "overview": "आपके उपकरणों और सदस्यता का अवलोकन"
 };
 
 translations.ur = {
@@ -70,6 +133,22 @@ translations.ur = {
   "settings": "ترتیبات",
   "team": "ٹیم",
   "welcome": "خوش آمدید",
+  "total_tools": "کل ٹولز",
+  "monthly_spend": "ماہانہ خرچ",
+  "yearly_projection": "سالانہ تخمینہ",
+  "no_tools": "کوئی ٹول شامل نہیں کیا گیا",
+  "recent_tools": "حالیہ ٹولز",
+  "view_all": "سب دیکھیں",
+  "all_tools": "تمام ٹولز",
+  "tools_count": "آپ کے مجموعہ میں {count} ٹولز",
+  "add_tool": "ٹول شامل کریں",
+  "search": "تلاش کریں...",
+  "categories": "زمرہ جات",
+  "usage": "استعمال",
+  "cost": "لاگت",
+  "renewal": "تجدید",
+  "insights": "آپ کے SaaS اخراجات اور استعمال کے بارے میں بصیرت",
+  "overview": "آپ کے ٹولز اور سبسکرپشنز کا جائزہ"
 };
 
 type LanguageContextType = {
@@ -113,13 +192,6 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("language", newLanguage.code);
     document.documentElement.lang = newLanguage.code;
     
-    // Set text direction for RTL languages
-    if (newLanguage.code === "ar" || newLanguage.code === "ur") {
-      document.documentElement.dir = "rtl";
-    } else {
-      document.documentElement.dir = "ltr";
-    }
-
     // Update user preference in database if logged in
     if (user) {
       try {

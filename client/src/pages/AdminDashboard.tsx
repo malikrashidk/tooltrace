@@ -3,9 +3,11 @@ import { Users, DollarSign, TrendingUp, Activity } from "lucide-react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useCurrency } from "@/context/CurrencyContext";
 
 export function AdminDashboard() {
   const [, setLocation] = useLocation();
+  const { formatAmount } = useCurrency();
 
   // Fetch stats
   const { data: statsResponse, isLoading: statsLoading } = useQuery({
@@ -67,7 +69,7 @@ export function AdminDashboard() {
               <div>
                 <p className="text-sm text-muted-foreground">Total Revenue</p>
                 <p className="text-xl sm:text-2xl font-semibold font-mono">
-                  ${totalRevenue.toLocaleString()}
+                  {formatAmount(totalRevenue)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">All time</p>
               </div>
@@ -84,7 +86,7 @@ export function AdminDashboard() {
               <div>
                 <p className="text-sm text-muted-foreground">MRR</p>
                 <p className="text-xl sm:text-2xl font-semibold font-mono">
-                  ${monthlyRecurring.toLocaleString()}
+                  {formatAmount(monthlyRecurring)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">Monthly recurring</p>
               </div>
