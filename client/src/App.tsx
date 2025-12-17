@@ -1,5 +1,5 @@
-﻿import { useState, useEffect } from "react";
-import { Switch, Route, useLocation, useSearch } from "wouter";
+import { useState, useEffect } from "react";
+import { Switch, Route, useLocation, useSearch, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -72,6 +72,9 @@ function AuthenticatedApp() {
               <Route path="/integrations" component={IntegrationsHub} />
               <Route path="/help" component={HelpPage} />
               <Route path="/settings" component={SettingsPage} />
+              {/* Redirect auth routes to dashboard if already logged in */}
+              <Route path="/login"><Redirect to="/" /></Route>
+              <Route path="/signup"><Redirect to="/" /></Route>
               <Route component={NotFound} />
             </Switch>
           </main>
@@ -81,30 +84,11 @@ function AuthenticatedApp() {
   );
 }
 
-function UnauthenticatedApp() {
-  const [showSignup, setShowSignup] = useState(false);
+// Wrapper for LoginPage to handle local "Forgot Password" toggle state
+// while keeping the main URL as /login
+function LoginRoute() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [location, setLocation] = useLocation();
-  const searchString = useSearch();
-  
-  // Check for reset password token in URL
-  const urlParams = new URLSearchParams(searchString);
-  const resetToken = urlParams.get("token");
-  const isResetPasswordRoute = location === "/reset-password" && resetToken;
-
-  // Handle reset password route
-  if (isResetPasswordRoute && resetToken) {
-    return (
-      <div className="min-h-screen bg-background">
-        <ResetPasswordPage 
-          token={resetToken} 
-          onBackToLogin={() => {
-            setLocation("/");
-          }} 
-        />
-      </div>
-    );
-  }
+  const [, setLocation] = useLocation();
 
   if (showForgotPassword) {
     return (
@@ -116,15 +100,69 @@ function UnauthenticatedApp() {
 
   return (
     <div className="min-h-screen bg-background">
-      {showSignup ? (
-        <SignupPage onSwitchToLogin={() => setShowSignup(false)} />
-      ) : (
-        <LoginPage 
-          onSwitchToSignup={() => setShowSignup(true)} 
-          onForgotPassword={() => setShowForgotPassword(true)}
-        />
-      )}
+      <LoginPage
+        onSwitchToSignup={() => setLocation("/signup")}
+        onForgotPassword={() => setShowForgotPassword(true)}
+      />
     </div>
+  );
+}
+
+function SignupRoute() {
+  const [, setLocation] = useLocation();
+  return (
+    <div className="min-h-screen bg-background">
+      <SignupPage onSwitchToLogin={() => setLocation("/login")} />
+    </div>
+  );
+}
+
+function UnauthenticatedApp() {
+  const [location] = useLocation();
+  const searchString = useSearch();
+
+  // Check for reset password token in URL
+  const urlParams = new URLSearchParams(searchString);
+  const resetToken = urlParams.get("token");
+  const isResetPasswordRoute = location === "/reset-password" && resetToken;
+
+  if (isResetPasswordRoute) {
+    return (
+      <div className="min-h-screen bg-background">
+        <ResetPasswordPage 
+          token={resetToken} 
+          onBackToLogin={() => {
+            // If they navigate back, go to login
+            window.location.href = "/login";
+          }} 
+        />
+      </div>
+    );
+  }
+
+  return (
+    <Switch>
+      <Route path="/login" component={LoginRoute} />
+      <Route path="/signup" component={SignupRoute} />
+      <Route path="/reset-password">
+          <Redirect to="/login" />
+      </Route>
+      {/* Catch-all: Redirect to Login with returnTo */}
+      <Route>
+        {() => {
+           // We can't access params here directly if wouter doesn't pass it in the way we expect for a catch-all
+           // But since we are inside a Route component (or fallback), we can rely on the outer hook if needed.
+           // However, wouter's Route `component` or `children` render prop usually receives params.
+           // If it's a catch-all (no path), it matches everything.
+           // Let's use window.location directly to be safe and avoid type errors with 'location' prop not existing on params.
+           const currentPath = window.location.pathname;
+           if (currentPath === "/login" || currentPath === "/signup") return null;
+
+           const returnTo = currentPath + window.location.search;
+           return <Redirect to={`/login?returnTo=${encodeURIComponent(returnTo)}`} />;
+        }}
+      </Route>
+    </Switch>
   );
 }
 
@@ -158,6 +196,3 @@ function App() {
 }
 
 export default App;
-
-
-

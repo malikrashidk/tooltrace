@@ -27,6 +27,16 @@ interface LoginPageProps {
   onForgotPassword?: () => void;
 }
 
+// Helper to sanitize returnTo path to prevent open redirects
+const sanitizeReturnTo = (path: string | null): string => {
+  if (!path) return "/";
+  // Ensure path starts with / and doesn't start with // (protocol relative)
+  if (path.startsWith("/") && !path.startsWith("//")) {
+    return path;
+  }
+  return "/";
+};
+
 export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,7 +61,8 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
     
     if (token) {
       localStorage.setItem("token", token);
-      window.location.href = "/";
+      const returnTo = sanitizeReturnTo(urlParams.get("returnTo"));
+      window.location.href = returnTo;
     }
     
     if (error === "oauth_failed") {
@@ -65,11 +76,18 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
   }, [toast]);
 
   const handleGoogleSignIn = () => {
-    window.location.href = "/api/auth/google";
+    const urlParams = new URLSearchParams(window.location.search);
+    const returnTo = sanitizeReturnTo(urlParams.get("returnTo"));
+    // We pass returnTo to the backend, assuming backend will also validate or passthrough
+    const redirectUrl = returnTo !== "/" ? `/api/auth/google?returnTo=${encodeURIComponent(returnTo)}` : "/api/auth/google";
+    window.location.href = redirectUrl;
   };
 
   const handleFacebookSignIn = () => {
-    window.location.href = "/api/auth/facebook";
+    const urlParams = new URLSearchParams(window.location.search);
+    const returnTo = sanitizeReturnTo(urlParams.get("returnTo"));
+    const redirectUrl = returnTo !== "/" ? `/api/auth/facebook?returnTo=${encodeURIComponent(returnTo)}` : "/api/auth/facebook";
+    window.location.href = redirectUrl;
   };
 
   const onSubmit = async (data: LoginFormData) => {
@@ -96,7 +114,9 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
       
       localStorage.setItem("token", result.token);
       localStorage.setItem("user", JSON.stringify(result.user));
-      window.location.href = "/";
+      const urlParams = new URLSearchParams(window.location.search);
+      const returnTo = sanitizeReturnTo(urlParams.get("returnTo"));
+      window.location.href = returnTo;
     } catch (error: any) {
       console.error("Login error:", error);
       toast({
@@ -342,7 +362,3 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
     </div>
   );
 }
-
-
-
-
