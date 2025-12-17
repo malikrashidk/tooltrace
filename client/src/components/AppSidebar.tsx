@@ -45,106 +45,108 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/AuthContext";
-
-const mainNavItems = [
-  {
-    title: "Dashboard",
-    url: "/",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "All Tools",
-    url: "/tools",
-    icon: Package,
-  },
-  {
-    title: "Advanced Management",
-    url: "/tools-advanced",
-    icon: Sliders,
-  },
-  {
-    title: "Analytics",
-    url: "/analytics",
-    icon: BarChart3,
-  },
-  {
-    title: "Notes",
-    url: "/notes",
-    icon: StickyNote,
-  },
-  {
-    title: "Renewals",
-    url: "/renewals",
-    icon: Calendar,
-  },
-  {
-    title: "Low Usage",
-    url: "/low-usage",
-    icon: AlertTriangle,
-  },
-];
-
-const settingsNavItems = [
-  {
-    title: "Pricing",
-    url: "/pricing",
-    icon: CreditCard,
-    locked: false,
-  },
-  {
-    title: "Receipts & Invoices",
-    url: "/receipts",
-    icon: FileText,
-    locked: false,
-  },
-  {
-    title: "Integrations",
-    url: "/integrations",
-    icon: Zap,
-    locked: true,
-  },
-  {
-    title: "Team Collaboration",
-    url: "/team",
-    icon: Users,
-    locked: true,
-  },
-  {
-    title: "API Keys",
-    url: "/api-keys",
-    icon: Code2,
-    locked: true,
-  },
-  {
-    title: "Settings",
-    url: "/settings",
-    icon: Settings,
-    locked: false,
-  },
-];
-
-const supportNavItems = [
-  {
-    title: "Help & Documentation",
-    url: "/help",
-    icon: HelpCircle,
-    locked: false,
-  },
-];
-
-const adminNavItems = [
-  {
-    title: "Admin Dashboard",
-    url: "/admin",
-    icon: BarChart2,
-  },
-];
+import { useLanguage } from "@/context/LanguageContext";
 
 export function AppSidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const isPaidPlan = user?.plan === "standard" || user?.plan === "premium";
-  
+
+  const mainNavItems = [
+    {
+      title: t("dashboard") || "Dashboard",
+      url: "/",
+      icon: LayoutDashboard,
+    },
+    {
+      title: t("all_tools") || "All Tools",
+      url: "/tools",
+      icon: Package,
+    },
+    {
+      title: "Advanced Management", // No key in common dict usually
+      url: "/tools-advanced",
+      icon: Sliders,
+    },
+    {
+      title: t("analytics") || "Analytics",
+      url: "/analytics",
+      icon: BarChart3,
+    },
+    {
+      title: "Notes", // Often missing
+      url: "/notes",
+      icon: StickyNote,
+    },
+    {
+      title: "Renewals", // Often missing
+      url: "/renewals",
+      icon: Calendar,
+    },
+    {
+      title: "Low Usage", // Often missing
+      url: "/low-usage",
+      icon: AlertTriangle,
+    },
+  ];
+
+  const settingsNavItems = [
+    {
+      title: t("pricing") || "Pricing",
+      url: "/pricing",
+      icon: CreditCard,
+      locked: false,
+    },
+    {
+      title: "Receipts & Invoices",
+      url: "/receipts",
+      icon: FileText,
+      locked: false,
+    },
+    {
+      title: "Integrations",
+      url: "/integrations",
+      icon: Zap,
+      locked: true,
+    },
+    {
+      title: "Team Collaboration",
+      url: "/team",
+      icon: Users,
+      locked: true,
+    },
+    {
+      title: "API Keys",
+      url: "/api-keys",
+      icon: Code2,
+      locked: true,
+    },
+    {
+      title: t("settings") || "Settings",
+      url: "/settings",
+      icon: Settings,
+      locked: false,
+    },
+  ];
+
+  const supportNavItems = [
+    {
+      title: "Help & Documentation",
+      url: "/help",
+      icon: HelpCircle,
+      locked: false,
+    },
+  ];
+
+  const adminNavItems = [
+    {
+      title: "Admin Dashboard",
+      url: "/admin",
+      icon: BarChart2,
+    },
+  ];
+
   const getItemStatus = (item: typeof settingsNavItems[0]) => {
     if (!item.locked) return "available";
     if (isPaidPlan) return "available";
@@ -165,8 +167,8 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-3 px-2 py-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-            <Layers className="w-5 h-5 text-primary-foreground" />
+          <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
+             <img src="/tooltrace-logo.png" alt="ToolTrace Logo" className="w-full h-full object-contain" />
           </div>
           {state === "expanded" && (
             <div className="flex flex-col min-w-0">
@@ -179,11 +181,11 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("navigation") || "Navigation"}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNavItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
+                <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton
                     asChild
                     isActive={location === item.url}
@@ -201,7 +203,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Account</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("account") || "Account"}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {settingsNavItems.map((item) => {
@@ -209,7 +211,7 @@ export function AppSidebar() {
                 const isLocked = status === "locked";
                 
                 return (
-                  <SidebarMenuItem key={item.title}>
+                  <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
                       asChild
                       isActive={location === item.url}
@@ -241,7 +243,7 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {adminNavItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
+                  <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
                       asChild
                       isActive={location === item.url}
@@ -264,7 +266,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {supportNavItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
+                <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton
                     asChild
                     isActive={location === item.url}
@@ -317,7 +319,7 @@ export function AppSidebar() {
                 <DropdownMenuItem asChild>
                   <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
                     <Settings className="h-4 w-4" />
-                    Settings
+                    {t("settings") || "Settings"}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -327,7 +329,7 @@ export function AppSidebar() {
                   data-testid="button-logout"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
-                  Log out
+                  {t("logout") || "Log out"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -345,6 +347,3 @@ export function AppHeader() {
     </header>
   );
 }
-
-
-

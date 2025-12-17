@@ -7,10 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { type Tool, getUpcomingRenewals, formatCurrency } from "@/lib/analytics";
+import { type Tool, getUpcomingRenewals } from "@/lib/analytics";
+import { useCurrency } from "@/context/CurrencyContext";
 
 export function RenewalsPage() {
   const { toast } = useToast();
+  const { formatAmount } = useCurrency();
   
   const { data: toolsData, isLoading } = useQuery<{ tools: Tool[] }>({
     queryKey: ["/api/tools"],
@@ -106,7 +108,7 @@ export function RenewalsPage() {
                 <p className="text-sm text-muted-foreground">Next 7 Days</p>
                 <p className="text-xl sm:text-2xl font-semibold">{renewals7.length}</p>
                 <p className="text-sm font-mono text-muted-foreground">
-                  {formatCurrency(renewals7.reduce((s, t) => s + Number(t.billingAmount || 0), 0))}
+                  {formatAmount(renewals7.reduce((s, t) => s + Number(t.billingAmount || 0), 0))}
                 </p>
               </div>
             </div>
@@ -123,7 +125,7 @@ export function RenewalsPage() {
                 <p className="text-sm text-muted-foreground">Next 30 Days</p>
                 <p className="text-xl sm:text-2xl font-semibold">{renewals30.length}</p>
                 <p className="text-sm font-mono text-muted-foreground">
-                  {formatCurrency(renewals30.reduce((s, t) => s + Number(t.billingAmount || 0), 0))}
+                  {formatAmount(renewals30.reduce((s, t) => s + Number(t.billingAmount || 0), 0))}
                 </p>
               </div>
             </div>
@@ -140,7 +142,7 @@ export function RenewalsPage() {
                 <p className="text-sm text-muted-foreground">Next 90 Days</p>
                 <p className="text-xl sm:text-2xl font-semibold">{renewals90.length}</p>
                 <p className="text-sm font-mono text-muted-foreground">
-                  {formatCurrency(renewals90.reduce((s, t) => s + Number(t.billingAmount || 0), 0))}
+                  {formatAmount(renewals90.reduce((s, t) => s + Number(t.billingAmount || 0), 0))}
                 </p>
               </div>
             </div>
@@ -155,7 +157,7 @@ export function RenewalsPage() {
             Renewals in Next {selectedPeriod} Days
           </CardTitle>
           <CardDescription>
-            {currentRenewals.length} subscriptions totaling {formatCurrency(totalAmount)}
+            {currentRenewals.length} subscriptions totaling {formatAmount(totalAmount)}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -199,7 +201,7 @@ export function RenewalsPage() {
                           </div>
                                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                                       <div className="text-right">
-                                        <p className="font-mono font-medium">{formatCurrency(Number(tool.billingAmount) || 0)}</p>
+                                        <p className="font-mono font-medium">{formatAmount(Number(tool.billingAmount) || 0)}</p>
                                         <p className="text-xs text-muted-foreground">
                                           {tool.billingCycle === "yearly" ? "Yearly" : "Monthly"}
                                         </p>
@@ -262,6 +264,3 @@ export function RenewalsPage() {
     </div>
   );
 }
-
-
-
