@@ -10,7 +10,10 @@ export class WebhookHandlers {
     }
 
     const sync = await getStripeSync();
-    await sync.processWebhook(payload, signature, uuid);
+    if (sync) {
+        // @ts-ignore
+        await sync.processWebhook(payload, signature, uuid);
+    }
   }
 }
 

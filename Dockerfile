@@ -23,8 +23,8 @@ COPY package*.json ./
 RUN npm ci --only=production
 
 # Copy built application from builder
+# dist contains both backend (dist/index.js) and frontend (dist/public)
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/public ./public
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
@@ -40,4 +40,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 EXPOSE 5000
 
 # Start application
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/index.js"]

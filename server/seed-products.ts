@@ -6,11 +6,9 @@
  * Usage: npx tsx server/seed-products.ts
  */
 
-import { getUncachableStripeClient } from './stripeClient';
+import { stripe } from './stripeClient';
 
 async function seedProducts() {
-  const stripe = await getUncachableStripeClient();
-
   console.log('Creating Stripe products...');
 
   try {

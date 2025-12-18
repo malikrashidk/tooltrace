@@ -1,18 +1,16 @@
 import { type Express } from 'express';
-import { getUncachableStripeClient } from './stripeClient';
+import { stripe } from './stripeClient';
 import { stripeService } from './stripeService';
 
 export async function registerStripeRoutes(app: Express) {
   // Get published products
   app.get('/api/stripe/products', async (req, res) => {
-    const stripe = await getUncachableStripeClient();
     const products = await stripe.products.list({ active: true, limit: 100 });
     res.json({ data: products.data });
   });
 
   // Get product with prices
   app.get('/api/stripe/products/:productId/prices', async (req, res) => {
-    const stripe = await getUncachableStripeClient();
     const prices = await stripe.prices.list({ product: req.params.productId, active: true });
     res.json({ data: prices.data });
   });
