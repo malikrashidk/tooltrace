@@ -126,14 +126,19 @@ export default async function runApp(
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
-  // Use localhost on Windows, 0.0.0.0 on Linux/Mac
-  const host = process.platform === 'win32' ? 'localhost' : '0.0.0.0';
-  server.listen({
-    port,
-    host,
-    reusePort: process.platform !== 'win32', // reusePort not supported on Windows
-  }, () => {
-    log(`serving on port ${port} at http://${host}:${port}`);
-  });
+
+  // Bind to localhost only (Apache is the public entry point)
+const host = '127.0.0.1';
+
+console.log("[smtp] user=", process.env.SMTP_USER, "host=", process.env.SMTP_HOST);
+
+server.listen({
+  port,
+  host,
+  reusePort: process.platform !== 'win32',
+}, () => {
+  log(`serving on port ${port} at http://${host}:${port}`);
+});
+
 }
 

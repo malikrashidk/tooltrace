@@ -11,6 +11,7 @@ import { storage } from "./storage";
 import { authMiddleware, adminMiddleware, rateLimit, auditLog } from "./middleware";
 import { hashPassword, verifyPassword, generateToken } from "./auth";
 import { insertUserSchema, insertToolSchema, insertNoteSchema } from "@shared/schema";
+import { sendWelcomeEmail, sendPasswordResetEmail } from "./emailTemplates";
 import { z } from "zod";
 import {
   generateSecret,
@@ -24,6 +25,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Apply rate limiting only to API routes
   app.use("/api", rateLimit(100, 60000)); // 100 API requests per minute
   app.use(passport.initialize());
+
+
 
   // ============ OAUTH CONFIGURATION ============
   const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -145,6 +148,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...parsed.data,
         password: hashedPassword,
       });
+
+try {
+  await sendWelcomeEmail(user.email, user.name);
+} catch (e) {
+  console.error("Welcome email failed:", e);
+}
 
       // Create default free subscription
       await storage.createSubscription({
