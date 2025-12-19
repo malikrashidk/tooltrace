@@ -17,10 +17,10 @@
   TeamMember,
   InsertTeamMember,
 } from "@shared/schema";
-import { tools } from "@shared/schema";
+import { tools, users } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { sql, db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, gt, isNull } from "drizzle-orm";
 
 // Helper to convert snake_case database rows to camelCase TypeScript objects
 function mapUser(row: any): User | undefined {
@@ -650,6 +650,47 @@ export class DbStorage implements IStorage {
       return undefined;
     }
   }
+
+// ─────────────────────────────
+// Email verification helpers
+// ─────────────────────────────
+
+async setEmailVerificationToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
+  await db
+    .update(users)
+    .set({
+      emailVerifyTokenHash: tokenHash,
+      emailVerifyTokenExpiresAt: expiresAt,
+    })
+    .where(eq(users.id, userId));
+}
+
+async verifyEmailByTokenHash(tokenHash: string): Promise<User | null> {
+  const now = new Date();
+
+  const user = await db.query.users.findFirst({
+    where: (u, { and, eq, gt, isNull }) =>
+      and(
+        eq(u.emailVerifyTokenHash, tokenHash),
+        gt(u.emailVerifyTokenExpiresAt, now),
+        isNull(u.emailVerifiedAt)
+      ),
+  });
+
+  if (!user) return null;
+
+  await db
+    .update(users)
+    .set({
+      emailVerifiedAt: now,
+      emailVerifyTokenHash: null,
+      emailVerifyTokenExpiresAt: null,
+    })
+    .where(eq(users.id, user.id));
+
+  return mapUser(user as any) || null;
+}
+
 
   async getUserTools(userId: string): Promise<Tool[]> {
     try {

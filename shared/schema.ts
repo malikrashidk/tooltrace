@@ -27,6 +27,13 @@ export const users = pgTable(
     // Password reset fields
     resetToken: text("reset_token"),
     resetTokenExpiry: timestamp("reset_token_expiry"),
+// Email verification fields
+emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
+emailVerifyTokenHash: text("email_verify_token_hash"),
+emailVerifyTokenExpiresAt: timestamp("email_verify_token_expires_at", {
+  withTimezone: true,
+}),
+
     // User preferences
     currency: text("currency").default("USD"),
     language: text("language").default("en"),

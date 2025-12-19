@@ -11,6 +11,7 @@ import { storage } from "./storage";
 import { authMiddleware, adminMiddleware, rateLimit, auditLog } from "./middleware";
 import { hashPassword, verifyPassword, generateToken } from "./auth";
 import { insertUserSchema, insertToolSchema, insertNoteSchema } from "@shared/schema";
+import { generateEmailVerifyToken, hashVerifyToken } from "./emailVerification";
 import { sendWelcomeEmail, sendPasswordResetEmail } from "./emailTemplates";
 import { z } from "zod";
 import {
@@ -148,6 +149,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...parsed.data,
         password: hashedPassword,
       });
+// Email verification
+const { raw, hash, expiresAt } = generateEmailVerifyToken();
+await storage.setEmailVerificationToken(user.id, hash, expiresAt);
+
+const verifyUrl = `${process.env.APP_URL}/verify-email?token=${raw}`;
+
+await sendEmail({
+  to: user.email,
+  subject: "Verify your Tooltrace email",
+  html: `
+    <p>Welcome to Tooltrace!</p>
+    <p>Please verify your email by clicking the link below:</p>
+    <p><a href="${verifyUrl}">Verify email</a></p>
+    <p>This link expires in 24 hours.</p>
+  `,
+});
 
 try {
   await sendWelcomeEmail(user.email, user.name);
@@ -180,6 +197,61 @@ try {
       res.status(500).json({ error: "Registration failed" });
     }
   });
+
+app.get("/api/auth/verify-email", async (req, res) => {
+  try {
+    const token = String(req.query.token || "");
+    if (!token) {
+      return res.status(400).json({ error: "Missing token" });
+    }
+
+    const tokenHash = hashVerifyToken(token);
+    const user = await storage.verifyEmailByTokenHash(tokenHash);
+
+    if (!user) {
+      return res.status(400).json({ error: "Invalid or expired token" });
+    }
+
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error("verify-email error:", error);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post("/api/auth/resend-verification", async (req, res) => {
+  try {
+    const email = String(req.body.email || "").trim().toLowerCase();
+    if (!email) return res.status(400).json({ error: "Missing email" });
+
+    const user = await storage.getUserByEmail(email);
+
+    // Always return ok to avoid leaking which emails exist
+    if (!user) return res.json({ ok: true });
+    if (user.emailVerifiedAt) return res.json({ ok: true });
+
+    const { raw, hash, expiresAt } = generateEmailVerifyToken();
+    await storage.setEmailVerificationToken(user.id, hash, expiresAt);
+
+    const verifyUrl = `${process.env.APP_URL}/verify-email?token=${raw}`;
+
+    await sendEmail({
+      to: user.email,
+      subject: "Verify your Tooltrace email",
+      html: `
+        <p>Please verify your email by clicking the link below:</p>
+        <p><a href="${verifyUrl}">Verify email</a></p>
+        <p>This link expires in 24 hours.</p>
+      `,
+    });
+
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error("resend-verification error:", error);
+    // Still return ok to avoid enumeration
+    return res.json({ ok: true });
+  }
+});
 
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -226,6 +298,14 @@ try {
           }
         }
       }
+
+if (!user.emailVerifiedAt) {
+  return res.status(403).json({
+    error: "EMAIL_NOT_VERIFIED",
+    message: "Please verify your email before logging in.",
+  });
+}
+
 
       await auditLog(user.id, "login", "user", user.id, {}, req);
 
