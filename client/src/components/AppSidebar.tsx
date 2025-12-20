@@ -45,63 +45,60 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/AuthContext";
-import { useLanguage } from "@/context/LanguageContext";
 
 export function AppSidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
-  const { t } = useLanguage();
   const isPaidPlan = user?.plan === "standard" || user?.plan === "premium";
 
   const mainNavItems = [
     {
-      title: t("dashboard") || "Dashboard",
+      title: "Dashboard",
       url: "/",
       icon: LayoutDashboard,
     },
     {
-      title: t("all_tools") || "All Tools",
+      title: "All Tools",
       url: "/tools",
       icon: Package,
     },
     {
-      title: "Advanced Management", // No key in common dict usually
+      title: "Advanced Management",
       url: "/tools-advanced",
       icon: Sliders,
     },
     {
-      title: t("analytics") || "Analytics",
+      title: "Analytics",
       url: "/analytics",
       icon: BarChart3,
     },
     {
-      title: "Notes", // Often missing
+      title: "Notes",
       url: "/notes",
       icon: StickyNote,
     },
     {
-      title: "Renewals", // Often missing
+      title: "Renewals",
       url: "/renewals",
       icon: Calendar,
     },
     {
-      title: "Low Usage", // Often missing
+      title: "Low Usage",
       url: "/low-usage",
       icon: AlertTriangle,
-    },
-  ];
-
-  const settingsNavItems = [
-    {
-      title: t("pricing") || "Pricing",
-      url: "/pricing",
-      icon: CreditCard,
-      locked: false,
     },
     {
       title: "Receipts & Invoices",
       url: "/receipts",
       icon: FileText,
+    },
+  ];
+
+  const settingsNavItems = [
+    {
+      title: "Pricing",
+      url: "/pricing",
+      icon: CreditCard,
       locked: false,
     },
     {
@@ -123,7 +120,7 @@ export function AppSidebar() {
       locked: true,
     },
     {
-      title: t("settings") || "Settings",
+      title: "Settings",
       url: "/settings",
       icon: Settings,
       locked: false,
@@ -152,7 +149,7 @@ export function AppSidebar() {
     if (isPaidPlan) return "available";
     return "locked";
   };
-  const { state } = useSidebar();
+  const { state, setOpenMobile } = useSidebar();
 
   const getInitials = (name: string) => {
     return name
@@ -181,7 +178,7 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>{t("navigation") || "Navigation"}</SidebarGroupLabel>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNavItems.map((item) => (
@@ -190,6 +187,7 @@ export function AppSidebar() {
                     asChild
                     isActive={location === item.url}
                     tooltip={item.title}
+                    onClick={() => setOpenMobile(false)}
                   >
                     <Link href={item.url} data-testid={`nav-${item.title.toLowerCase().replace(" ", "-")}`}>
                       <item.icon className="h-4 w-4" />
@@ -203,7 +201,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>{t("account") || "Account"}</SidebarGroupLabel>
+          <SidebarGroupLabel>Account</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {settingsNavItems.map((item) => {
@@ -217,6 +215,7 @@ export function AppSidebar() {
                       isActive={location === item.url}
                       tooltip={item.title}
                       className={isLocked ? "opacity-50 hover:opacity-75" : ""}
+                      onClick={() => setOpenMobile(false)}
                     >
                       <Link 
                         href={item.url} 
@@ -319,7 +318,7 @@ export function AppSidebar() {
                 <DropdownMenuItem asChild>
                   <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
                     <Settings className="h-4 w-4" />
-                    {t("settings") || "Settings"}
+                    Settings
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -329,7 +328,7 @@ export function AppSidebar() {
                   data-testid="button-logout"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
-                  {t("logout") || "Log out"}
+                  Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

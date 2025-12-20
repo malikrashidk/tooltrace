@@ -65,6 +65,42 @@ export function adminMiddleware(req: Request, res: Response, next: NextFunction)
   next();
 }
 
+export function emailVerificationMiddleware(req: Request, res: Response, next: NextFunction) {
+  // Allow GET requests (read-only)
+  if (req.method === "GET") {
+    return next();
+  }
+
+  const user = req.user;
+  if (!user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  if (user.isAdmin) {
+    return next();
+  }
+
+  // Exempt specific routes if needed (e.g. resend verification, profile update)
+  const exemptions = [
+    "/api/auth/resend-verification",
+    "/api/auth/profile",
+    "/api/auth/logout"
+  ];
+
+  if (exemptions.some(path => req.path.startsWith(path))) {
+    return next();
+  }
+
+  if (!user.emailVerifiedAt) {
+    return res.status(403).json({
+      error: "EMAIL_NOT_VERIFIED",
+      message: "Please verify your email address to perform this action."
+    });
+  }
+
+  next();
+}
+
 export function rateLimit(maxRequests: number = 100, windowMs: number = 60000) {
   const requests = new Map<string, number[]>();
 

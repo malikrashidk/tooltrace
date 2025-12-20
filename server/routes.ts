@@ -5,10 +5,9 @@ import path from "path";
 import fs from "fs";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import { Strategy as FacebookStrategy } from "passport-facebook";
 import archiver from "archiver";
 import { storage } from "./storage";
-import { authMiddleware, adminMiddleware, rateLimit, auditLog } from "./middleware";
+import { authMiddleware, adminMiddleware, emailVerificationMiddleware, rateLimit, auditLog } from "./middleware";
 import { hashPassword, verifyPassword, generateToken } from "./auth";
 import { insertUserSchema, insertToolSchema, insertNoteSchema } from "@shared/schema";
 import { generateEmailVerifyToken, hashVerifyToken } from "./emailVerification";
@@ -32,8 +31,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============ OAUTH CONFIGURATION ============
   const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
   const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-  const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID;
-  const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET;
   const OAUTH_CALLBACK_URL = process.env.OAUTH_CALLBACK_URL || "http://localhost:5000";
 
   if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
@@ -65,54 +62,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   name: profile.displayName || email.split("@")[0],
                   googleId: profile.id,
                   oauthProvider: "google",
-                  avatarUrl: profile.photos?.[0]?.value,
-                });
-                await storage.createSubscription({
-                  userId: user!.id,
-                  plan: "free",
-                  toolsLimit: "8",
-                });
-              }
-            }
-            done(null, user);
-          } catch (error) {
-            done(error as Error, undefined);
-          }
-        }
-      )
-    );
-  }
-
-  if (FACEBOOK_APP_ID && FACEBOOK_APP_SECRET) {
-    passport.use(
-      new FacebookStrategy(
-        {
-          clientID: FACEBOOK_APP_ID,
-          clientSecret: FACEBOOK_APP_SECRET,
-          callbackURL: `${OAUTH_CALLBACK_URL}/api/auth/facebook/callback`,
-          profileFields: ["id", "emails", "name", "displayName", "photos"],
-        },
-        async (accessToken, refreshToken, profile, done) => {
-          try {
-            let user = await storage.getUserByFacebookId(profile.id);
-            if (!user) {
-              const email = profile.emails?.[0]?.value;
-              if (!email) {
-                return done(new Error("No email from Facebook"), undefined);
-              }
-              const existingUser = await storage.getUserByEmail(email);
-              if (existingUser) {
-                user = await storage.updateUser(existingUser.id, {
-                  facebookId: profile.id,
-                  oauthProvider: existingUser.oauthProvider || "facebook",
-                  avatarUrl: profile.photos?.[0]?.value || existingUser.avatarUrl,
-                });
-              } else {
-                user = await storage.createOAuthUser({
-                  email,
-                  name: profile.displayName || `${profile.name?.givenName} ${profile.name?.familyName}` || email.split("@")[0],
-                  facebookId: profile.id,
-                  oauthProvider: "facebook",
                   avatarUrl: profile.photos?.[0]?.value,
                 });
                 await storage.createSubscription({
@@ -457,23 +406,6 @@ if (!user.emailVerifiedAt) {
     })(req, res, next);
   });
 
-  app.get("/api/auth/facebook", (req, res, next) => {
-    if (!process.env.FACEBOOK_APP_ID) {
-      return res.status(503).json({ error: "Facebook OAuth not configured" });
-    }
-    passport.authenticate("facebook", { scope: ["email"], session: false })(req, res, next);
-  });
-
-  app.get("/api/auth/facebook/callback", (req, res, next) => {
-    passport.authenticate("facebook", { session: false }, (err: any, user: any) => {
-      if (err || !user) {
-        return res.redirect("/?error=oauth_failed");
-      }
-      const token = generateToken(user);
-      res.redirect(`/?token=${token}`);
-    })(req, res, next);
-  });
-
   // ============ 2FA ROUTES ============
   app.post("/api/auth/2fa/setup", authMiddleware, async (req, res) => {
     try {
@@ -719,7 +651,7 @@ if (!user.emailVerifiedAt) {
     }
   });
 
-  app.post("/api/tools", authMiddleware, async (req, res) => {
+  app.post("/api/tools", authMiddleware, emailVerificationMiddleware, async (req, res) => {
     try {
       let subscription = await storage.getUserSubscription(req.userId!);
       
@@ -766,7 +698,7 @@ if (!user.emailVerifiedAt) {
     }
   });
 
-  app.patch("/api/tools/:id", authMiddleware, async (req, res) => {
+  app.patch("/api/tools/:id", authMiddleware, emailVerificationMiddleware, async (req, res) => {
     try {
       const tool = await storage.getTool(req.params.id);
       if (!tool || tool.userId !== req.userId) {
@@ -782,7 +714,7 @@ if (!user.emailVerifiedAt) {
     }
   });
 
-  app.delete("/api/tools/:id", authMiddleware, async (req, res) => {
+  app.delete("/api/tools/:id", authMiddleware, emailVerificationMiddleware, async (req, res) => {
     try {
       const tool = await storage.getTool(req.params.id);
       if (!tool || tool.userId !== req.userId) {
@@ -926,7 +858,7 @@ if (!user.emailVerifiedAt) {
     }
   });
 
-  app.post("/api/notes", authMiddleware, async (req, res) => {
+  app.post("/api/notes", authMiddleware, emailVerificationMiddleware, async (req, res) => {
     try {
       const validated = insertNoteSchema.parse(req.body);
       const note = await storage.createNote({
@@ -942,7 +874,7 @@ if (!user.emailVerifiedAt) {
     }
   });
 
-  app.patch("/api/notes/:id", authMiddleware, async (req, res) => {
+  app.patch("/api/notes/:id", authMiddleware, emailVerificationMiddleware, async (req, res) => {
     try {
       const note = await storage.getNote(req.params.id);
       if (!note || note.userId !== req.userId!) {
@@ -976,7 +908,7 @@ if (!user.emailVerifiedAt) {
     }
   });
 
-  app.delete("/api/notes/:id", authMiddleware, async (req, res) => {
+  app.delete("/api/notes/:id", authMiddleware, emailVerificationMiddleware, async (req, res) => {
     try {
       const note = await storage.getNote(req.params.id);
       if (!note || note.userId !== req.userId!) {

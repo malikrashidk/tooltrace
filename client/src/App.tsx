@@ -8,10 +8,8 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { CurrencyProvider } from "@/context/CurrencyContext";
-import { LanguageProvider } from "@/context/LanguageContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CurrencySelector } from "@/components/CurrencySelector";
-import { LanguageSelector } from "@/components/LanguageSelector";
 import { AppSidebar } from "@/components/AppSidebar";
 import { LoginPage } from "@/components/LoginPage";
 import { SignupPage } from "@/components/SignupPage";
@@ -23,6 +21,7 @@ import { AnalyticsPage } from "@/pages/AnalyticsPage";
 import { RenewalsPage } from "@/pages/RenewalsPage";
 import { NotesPage } from "@/pages/NotesPage";
 import { LowUsagePage } from "@/pages/LowUsagePage";
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { SettingsPage } from "@/components/SettingsPage";
 import { PricingPage } from "@/pages/PricingPage";
 import { AdminDashboard } from "@/pages/AdminDashboard";
@@ -50,10 +49,10 @@ function AuthenticatedApp() {
             <SidebarTrigger data-testid="button-sidebar-toggle" />
             <div className="flex items-center gap-2">
               <CurrencySelector />
-              <LanguageSelector />
               <ThemeToggle />
             </div>
           </header>
+          <EmailVerificationBanner />
           <main className="flex-1 overflow-y-auto bg-background">
             <Switch>
               <Route path="/" component={Dashboard} />
@@ -182,12 +181,10 @@ function App() {
       <ThemeProvider>
         <AuthProvider>
           <CurrencyProvider>
-            <LanguageProvider>
-              <TooltipProvider>
-                <AppContent />
-                <Toaster />
-              </TooltipProvider>
-            </LanguageProvider>
+            <TooltipProvider>
+              <AppContent />
+              <Toaster />
+            </TooltipProvider>
           </CurrencyProvider>
         </AuthProvider>
       </ThemeProvider>

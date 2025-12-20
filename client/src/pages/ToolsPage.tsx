@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Plus, Grid3X3, List, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ToolCard } from "@/components/ToolCard";
@@ -10,7 +10,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { type Tool } from "@/lib/analytics";
 import { useCurrency } from "@/context/CurrencyContext";
-import { useLanguage } from "@/context/LanguageContext";
+import { useAuth } from "@/context/AuthContext";
 
 import {
   Table,
@@ -35,13 +35,45 @@ type ViewMode = "grid" | "list";
 export function ToolsPage() {
   const { toast } = useToast();
   const { formatAmount } = useCurrency();
-  const { t } = useLanguage();
+  const { user } = useAuth();
   
   const { data: toolsData } = useQuery<{ tools: Tool[] }>({
     queryKey: ["/api/tools"],
   });
   
   const tools = toolsData?.tools || [];
+
+  // Check for import param
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const importData = params.get("import");
+    if (importData) {
+      try {
+        const toolsToImport = JSON.parse(atob(importData));
+        if (Array.isArray(toolsToImport) && toolsToImport.length > 0) {
+          let addedCount = 0;
+          toolsToImport.forEach(t => {
+             if (!tools.some(existing => existing.name === t.name)) {
+                addToolMutation.mutate({
+                  name: t.name,
+                  websiteUrl: `https://${t.website}`,
+                  categories: [t.category || "Other"],
+                  isPaid: false
+                });
+                addedCount++;
+             }
+          });
+          if (addedCount > 0) {
+            toast({ title: "Import Successful", description: `Added ${addedCount} new tools from extension.` });
+          }
+          window.history.replaceState({}, "", "/tools");
+        }
+      } catch (e) {
+        console.error("Import failed", e);
+      }
+    }
+  }, [window.location.search, tools]);
+
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<FilterState>({
@@ -210,9 +242,9 @@ export function ToolsPage() {
     <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold">{t("all_tools")}</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold">All Tools</h1>
           <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
-            {t("tools_count").replace("{count}", String(tools.length))}
+            {tools.length} tool{tools.length === 1 ? "" : "s"} tracked
           </p>
         </div>
         <div className="flex gap-2">
@@ -245,12 +277,14 @@ export function ToolsPage() {
               <Package className="h-10 w-10 text-muted-foreground" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-xl sm:text-2xl font-semibold">{t("no_tools")}</h2>
+              <h2 className="text-xl sm:text-2xl font-semibold">No tools yet</h2>
               <p className="text-xs sm:text-sm md:text-base text-muted-foreground max-w-xs">
                 Start by adding your first tool/website/app to begin tracking your subscriptions and much more.
               </p>
             </div>
-            <AddToolDialog categories={categories} onSave={handleAddTool} />
+            {user?.emailVerifiedAt && (
+              <AddToolDialog categories={categories} onSave={handleAddTool} />
+            )}
           </div>
         </div>
       ) : (
@@ -288,11 +322,11 @@ export function ToolsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[140px] sm:w-[200px]">{t("tools")}</TableHead>
-                <TableHead className="hidden md:table-cell">{t("categories")}</TableHead>
-                <TableHead className="hidden md:table-cell">{t("usage")}</TableHead>
-                <TableHead className="text-right w-[80px] sm:w-[100px]">{t("cost")}</TableHead>
-                <TableHead className="hidden sm:table-cell w-[100px] sm:w-[120px]">{t("renewal")}</TableHead>
+                <TableHead className="w-[140px] sm:w-[200px]">Tool</TableHead>
+                <TableHead className="hidden md:table-cell">Categories</TableHead>
+                <TableHead className="hidden md:table-cell">Usage</TableHead>
+                <TableHead className="text-right w-[80px] sm:w-[100px]">Cost</TableHead>
+                <TableHead className="hidden sm:table-cell w-[100px] sm:w-[120px]">Renewal</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>

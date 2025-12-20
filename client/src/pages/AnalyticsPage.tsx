@@ -5,7 +5,6 @@ import { DollarSign, Package, PieChart } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type Tool } from "@/lib/analytics";
 import { useCurrency } from "@/context/CurrencyContext";
-import { useLanguage } from "@/context/LanguageContext";
 import {
   Bar,
   BarChart,
@@ -22,7 +21,6 @@ import {
 
 export function AnalyticsPage() {
   const { formatAmount } = useCurrency();
-  const { t } = useLanguage();
 
   const { data: toolsData, isLoading } = useQuery<{ tools: Tool[] }>({
     queryKey: ["/api/tools"],
@@ -94,8 +92,8 @@ export function AnalyticsPage() {
   return (
     <div className="space-y-6 p-3 sm:p-4 md:p-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-semibold">{t("analytics")}</h1>
-        <p className="text-muted-foreground">{t("insights")}</p>
+        <h1 className="text-2xl sm:text-3xl font-semibold">Analytics</h1>
+        <p className="text-muted-foreground">Insights into your spending and tool usage</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -107,7 +105,7 @@ export function AnalyticsPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">
-                  {t("monthly_spend")}
+                  Monthly Spend
                 </p>
                 <p
                   className="text-2xl font-semibold font-mono"
@@ -127,7 +125,7 @@ export function AnalyticsPage() {
                 <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">{t("total_tools")}</p>
+                <p className="text-sm text-muted-foreground">Total Tools</p>
                 <p
                   className="text-2xl font-semibold"
                   data-testid="text-total-tools"
@@ -150,7 +148,7 @@ export function AnalyticsPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">
-                  {t("yearly_projection")}
+                  Yearly Projection
                 </p>
                 <p
                   className="text-2xl font-semibold font-mono"

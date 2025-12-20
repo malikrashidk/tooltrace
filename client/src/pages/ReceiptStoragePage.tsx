@@ -63,7 +63,10 @@ export function ReceiptStoragePage() {
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate queries to refresh the list immediately
       queryClient.invalidateQueries({ queryKey: ['/api/receipts'] });
+      // Force refetch active queries to ensure UI updates
+      queryClient.refetchQueries({ queryKey: ['/api/receipts'] });
       toast({ title: "Success", description: "Receipt uploaded successfully" });
       handleCloseUploadDialog();
     },

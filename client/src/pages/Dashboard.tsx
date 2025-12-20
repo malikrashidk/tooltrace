@@ -6,12 +6,10 @@ import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type Tool } from "@/lib/analytics";
 import { useCurrency } from "@/context/CurrencyContext";
-import { useLanguage } from "@/context/LanguageContext";
 
 export function Dashboard() {
   const [, setLocation] = useLocation();
   const { formatAmount } = useCurrency();
-  const { t } = useLanguage();
   
   const { data: toolsData, isLoading } = useQuery<{ tools: Tool[] }>({
     queryKey: ["/api/tools"],
@@ -37,8 +35,8 @@ export function Dashboard() {
   return (
     <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-semibold">{t("dashboard")}</h1>
-        <p className="text-xs sm:text-sm md:text-base text-muted-foreground">{t("overview")}</p>
+        <h1 className="text-2xl sm:text-3xl font-semibold">Dashboard</h1>
+        <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Overview of your tools and subscriptions</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
@@ -49,7 +47,7 @@ export function Dashboard() {
                 <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">{t("total_tools")}</p>
+                <p className="text-sm text-muted-foreground">Total Tools</p>
                 <p className="text-xl sm:text-2xl font-semibold" data-testid="text-total-tools">{tools.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {paidTools.length} paid
@@ -66,7 +64,7 @@ export function Dashboard() {
                 <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">{t("monthly_spend")}</p>
+                <p className="text-sm text-muted-foreground">Monthly Spend</p>
                 <p className="text-xl sm:text-2xl font-semibold font-mono" data-testid="text-monthly-spend">
                   {formatAmount(monthlySpend)}
                 </p>
@@ -83,7 +81,7 @@ export function Dashboard() {
                 <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">{t("yearly_projection")}</p>
+                <p className="text-sm text-muted-foreground">Yearly Projection</p>
                 <p className="text-xl sm:text-2xl font-semibold font-mono" data-testid="text-yearly-projection">
                   {formatAmount(monthlySpend * 12)}
                 </p>
@@ -98,19 +96,19 @@ export function Dashboard() {
         <Card>
           <CardContent className="pt-6 pb-6 text-center">
             <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-base sm:text-lg font-semibold mb-2">{t("no_tools")}</h3>
+            <h3 className="text-base sm:text-lg font-semibold mb-2">No tools yet</h3>
             <p className="text-xs sm:text-sm md:text-base text-muted-foreground mb-4">
               Start tracking your SaaS tools and subscriptions
             </p>
             <Button onClick={() => setLocation("/tools")} data-testid="button-add-first-tool">
-              {t("add_tool")}
+              Add Tool
             </Button>
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>{t("recent_tools")}</CardTitle>
+            <CardTitle>Recent Tools</CardTitle>
             <CardDescription>Your recently added tools</CardDescription>
           </CardHeader>
           <CardContent>
@@ -153,7 +151,7 @@ export function Dashboard() {
                 onClick={() => setLocation("/tools")}
                 data-testid="button-view-all-tools"
               >
-                {t("view_all")} ({tools.length})
+                View All ({tools.length})
               </Button>
             )}
           </CardContent>
