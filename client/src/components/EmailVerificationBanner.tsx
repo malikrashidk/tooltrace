@@ -9,7 +9,10 @@ export function EmailVerificationBanner() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  if (!user || user.emailVerifiedAt) {
+  // Hide warning if we are on the success page to avoid double banners
+  const isVerifiedPage = window.location.search.includes("verified=true");
+
+  if (!user || user.emailVerifiedAt || isVerifiedPage) {
     return null;
   }
 
@@ -46,8 +49,7 @@ export function EmailVerificationBanner() {
       <div className="flex items-start gap-3">
         <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5 sm:mt-0" />
         <div className="text-sm text-amber-800 dark:text-amber-200 break-words">
-          Your email address (<strong className="break-all">{user.email}</strong>) is not verified.
-          <span className="block sm:inline"> Some features like adding tools are restricted.</span>
+          A verification email is sent to (<strong className="break-all">{user.email}</strong>). Please verify your email address.
         </div>
       </div>
       <Button
