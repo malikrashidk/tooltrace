@@ -55,13 +55,28 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
       .slice(0, 2);
   };
 
+  // Helper to generate favicon URL if logoUrl is missing
+  const getLogoUrl = (tool: Tool) => {
+      if (tool.logoUrl) return tool.logoUrl;
+      if (tool.websiteUrl) {
+          try {
+             // Extract domain
+             const url = new URL(tool.websiteUrl.startsWith('http') ? tool.websiteUrl : `https://${tool.websiteUrl}`);
+             return `https://www.google.com/s2/favicons?domain=${url.hostname}&sz=128`;
+          } catch (e) {
+              return undefined;
+          }
+      }
+      return undefined;
+  };
+
   return (
     <Card className="group hover-elevate transition-all duration-200" data-testid={`card-tool-${tool.id}`}>
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-4 min-w-0 flex-1">
-            <Avatar className="h-14 w-14 rounded-lg border-2 border-border/50">
-              <AvatarImage src={tool.logoUrl || undefined} alt={tool.name} className="object-contain p-1" />
+            <Avatar className="h-14 w-14 rounded-lg border-2 border-border/50 bg-white dark:bg-zinc-900">
+              <AvatarImage src={getLogoUrl(tool)} alt={tool.name} className="object-contain p-2" />
               <AvatarFallback className="rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 text-sm font-semibold">
                 {getInitials(tool.name)}
               </AvatarFallback>

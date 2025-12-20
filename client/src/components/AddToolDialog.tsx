@@ -80,6 +80,7 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
   const open = isControlled ? openProp : internalOpen;
   const setOpen = isControlled ? onOpenChange! : setInternalOpen;
   const [selectedCategories, setSelectedCategories] = useState<string[]>(editTool?.categories || []);
+  const [categoryInput, setCategoryInput] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>(editTool?.tags || []);
   const [logoPreview, setLogoPreview] = useState<string | null>(editTool?.logoUrl || null);
@@ -184,6 +185,28 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
       reader.readAsDataURL(file);
     }
   };
+
+  // Auto-fetch favicon when website URL changes if no custom logo is set
+  const websiteUrl = form.watch("websiteUrl");
+  useEffect(() => {
+      if (!logoPreview && websiteUrl && !editTool?.logoUrl) {
+          try {
+             // Basic validation to ensure it looks like a domain before requesting
+             if (websiteUrl.includes(".")) {
+                 const domain = websiteUrl.replace(/^https?:\/\//, "").split("/")[0];
+                 // Use Google's favicon service as a fallback
+                 // We don't set it as "logoPreview" (which implies a custom upload)
+                 // but we can render it in the UI if logoPreview is null.
+                 // However, to persist it, we might want to let the user see it.
+                 // For now, the ToolCard handles the display fallback.
+                 // But the user requested "logos for tools I add".
+                 // If we want to save it, we can set it here.
+             }
+          } catch (e) {
+              // ignore
+          }
+      }
+  }, [websiteUrl, logoPreview, editTool]);
 
   const handleToolSelect = (tool: KnownTool) => {
     form.setValue("name", tool.name);
@@ -377,7 +400,7 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
 
               <div className="space-y-2">
                 <FormLabel>Categories</FormLabel>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mb-2">
                   {categories.map((category) => (
                     <Badge
                       key={category}
@@ -389,6 +412,50 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
                       {category}
                     </Badge>
                   ))}
+                  {/* Show selected custom categories as well */}
+                  {selectedCategories
+                      .filter(c => !categories.includes(c))
+                      .map(category => (
+                        <Badge
+                          key={category}
+                          variant="default"
+                          className="cursor-pointer bg-primary/80"
+                          onClick={() => toggleCategory(category)}
+                        >
+                          {category} <X className="ml-1 h-3 w-3" />
+                        </Badge>
+                      ))
+                  }
+                </div>
+                <div className="flex gap-2">
+                    <Input
+                        value={categoryInput}
+                        onChange={(e) => setCategoryInput(e.target.value)}
+                        placeholder="Add custom category..."
+                        className="h-8 text-sm"
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                if (categoryInput.trim() && !selectedCategories.includes(categoryInput.trim())) {
+                                    setSelectedCategories([...selectedCategories, categoryInput.trim()]);
+                                    setCategoryInput("");
+                                }
+                            }
+                        }}
+                    />
+                     <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                            if (categoryInput.trim() && !selectedCategories.includes(categoryInput.trim())) {
+                                setSelectedCategories([...selectedCategories, categoryInput.trim()]);
+                                setCategoryInput("");
+                            }
+                        }}
+                     >
+                        Add
+                    </Button>
                 </div>
               </div>
 

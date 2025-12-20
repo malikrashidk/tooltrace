@@ -42,20 +42,20 @@ export function EmailVerificationBanner() {
   };
 
   return (
-    <div className="bg-amber-100 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-900 px-4 py-3 flex items-center justify-between gap-4">
-      <div className="flex items-center gap-3">
-        <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-500 flex-shrink-0" />
-        <p className="text-sm text-amber-800 dark:text-amber-200">
-          Your email address (<strong>{user.email}</strong>) is not verified.
-          Some features like adding tools are restricted.
-        </p>
+    <div className="bg-amber-100 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-900 px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex items-start gap-3">
+        <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5 sm:mt-0" />
+        <div className="text-sm text-amber-800 dark:text-amber-200 break-words">
+          Your email address (<strong className="break-all">{user.email}</strong>) is not verified.
+          <span className="block sm:inline"> Some features like adding tools are restricted.</span>
+        </div>
       </div>
       <Button
         variant="outline"
         size="sm"
         onClick={handleResend}
         disabled={isLoading}
-        className="shrink-0 border-amber-300 hover:bg-amber-200 text-amber-900 dark:border-amber-700 dark:hover:bg-amber-900 dark:text-amber-100"
+        className="w-full sm:w-auto shrink-0 border-amber-300 hover:bg-amber-200 text-amber-900 dark:border-amber-700 dark:hover:bg-amber-900 dark:text-amber-100"
       >
         <Mail className="h-3 w-3 mr-2" />
         {isLoading ? "Sending..." : "Resend Email"}

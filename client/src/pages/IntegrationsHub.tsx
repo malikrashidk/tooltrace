@@ -1,18 +1,27 @@
 import { useState } from "react";
-import { Copy, Check, ExternalLink, Zap, MessageSquare, Code2, Globe } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Copy, Check, ExternalLink, Zap, MessageSquare, Code2, Globe, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-
-// todo: remove mock functionality - replace with real integration setup
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export function IntegrationsHub() {
   const { user } = useAuth();
   const isPremium = user?.plan === "premium";
   const { toast } = useToast();
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Fetch API Keys to use in webhook generation
+  const { data: apiKeysData } = useQuery<{ apiKeys: any[] }>({
+    queryKey: ["/api/api-keys"],
+    enabled: isPremium,
+  });
+
+  const apiKeys = apiKeysData?.apiKeys || [];
+  const primaryApiKey = apiKeys.find((k: any) => k.isActive)?.key;
 
   if (!isPremium) {
     return (
@@ -50,6 +59,16 @@ export function IntegrationsHub() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const baseUrl = window.location.origin;
+  const webhookBase = `${baseUrl}/api/v1/tools`;
+
+  const getWebhookUrl = (type: string) => {
+    if (!primaryApiKey) return "Create an API Key to generate webhook URL";
+    // Using the same endpoint for now as they all follow similar patterns in this MVP
+    // In a real scenario, you might have specific endpoints like /api/v1/integrations/slack
+    return `${webhookBase}?source=${type}&apiKey=${primaryApiKey}`;
+  };
+
   const integrations = [
     {
       id: "slack",
@@ -64,7 +83,7 @@ export function IntegrationsHub() {
         "Team notifications",
       ],
       status: "active",
-      webhook: "https://api.saazhub.com/webhooks/slack",
+      webhook: getWebhookUrl("slack"),
     },
     {
       id: "zapier",
@@ -79,7 +98,7 @@ export function IntegrationsHub() {
         "Connect with any app",
       ],
       status: "active",
-      webhook: "https://api.saazhub.com/webhooks/zapier",
+      webhook: getWebhookUrl("zapier"),
     },
     {
       id: "make",
@@ -94,11 +113,11 @@ export function IntegrationsHub() {
         "API access",
       ],
       status: "active",
-      webhook: "https://api.saazhub.com/webhooks/make",
+      webhook: getWebhookUrl("make"),
     },
     {
       id: "webhook",
-      name: "Webhooks",
+      name: "Custom Webhooks",
       icon: Globe,
       description: "Send real-time data to your own endpoints",
       features: [
@@ -109,7 +128,7 @@ export function IntegrationsHub() {
         "Custom payloads",
       ],
       status: "active",
-      webhook: "https://api.saazhub.com/webhooks/custom",
+      webhook: getWebhookUrl("custom"),
     },
   ];
 
@@ -132,6 +151,17 @@ export function IntegrationsHub() {
         <h1 className="text-2xl sm:text-3xl font-bold">Integrations Hub</h1>
         <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-1">Connect SaaS Hub to your favorite tools and automate your workflow</p>
       </div>
+
+      {!primaryApiKey && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>API Key Required</AlertTitle>
+          <AlertDescription>
+            You need to generate an API key to use integrations.
+            <a href="/api-keys" className="font-semibold underline ml-1">Go to API Keys</a>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="space-y-4 md:space-y-6">
         <div>

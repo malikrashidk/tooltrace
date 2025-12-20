@@ -32,6 +32,7 @@ import { ReceiptStoragePage } from "@/pages/ReceiptStoragePage";
 import { AdvancedToolsManagement } from "@/pages/AdvancedToolsManagement";
 import { IntegrationsHub } from "@/pages/IntegrationsHub";
 import { HelpPage } from "@/pages/HelpPage";
+import { AcceptInvitePage } from "@/pages/AcceptInvitePage";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedApp() {
@@ -71,6 +72,7 @@ function AuthenticatedApp() {
               <Route path="/integrations" component={IntegrationsHub} />
               <Route path="/help" component={HelpPage} />
               <Route path="/settings" component={SettingsPage} />
+              <Route path="/team/accept" component={AcceptInvitePage} />
               {/* Redirect auth routes to dashboard if already logged in */}
               <Route path="/login"><Redirect to="/" /></Route>
               <Route path="/signup"><Redirect to="/" /></Route>
@@ -143,6 +145,7 @@ function UnauthenticatedApp() {
     <Switch>
       <Route path="/login" component={LoginRoute} />
       <Route path="/signup" component={SignupRoute} />
+      <Route path="/team/accept" component={AcceptInvitePage} />
       <Route path="/reset-password">
           <Redirect to="/login" />
       </Route>

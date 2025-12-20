@@ -6,6 +6,7 @@ import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type Tool } from "@/lib/analytics";
 import { useCurrency } from "@/context/CurrencyContext";
+import { VerificationSuccessBanner } from "@/components/VerificationSuccessBanner";
 
 export function Dashboard() {
   const [, setLocation] = useLocation();
@@ -34,6 +35,7 @@ export function Dashboard() {
 
   return (
     <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
+      <VerificationSuccessBanner />
       <div>
         <h1 className="text-2xl sm:text-3xl font-semibold">Dashboard</h1>
         <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Overview of your tools and subscriptions</p>

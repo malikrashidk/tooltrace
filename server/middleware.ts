@@ -34,7 +34,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     req.userId = decoded.userId;
     if (user) {
       req.user = user;
-      req.isAdmin = user.isAdmin;
+      req.isAdmin = (user as any).isAdmin || false;
     } else {
       // User not in storage (server restart), but token is valid. Create a basic user object for the request.
       req.user = {
@@ -47,7 +47,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
         twoFactorEnabled: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-      };
+      } as any;
       req.isAdmin = decoded.isAdmin || false;
     }
 
@@ -76,7 +76,7 @@ export function emailVerificationMiddleware(req: Request, res: Response, next: N
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  if (user.isAdmin) {
+  if ((user as any).isAdmin) {
     return next();
   }
 
@@ -91,7 +91,7 @@ export function emailVerificationMiddleware(req: Request, res: Response, next: N
     return next();
   }
 
-  if (!user.emailVerifiedAt) {
+  if (!(user as any).emailVerifiedAt) {
     return res.status(403).json({
       error: "EMAIL_NOT_VERIFIED",
       message: "Please verify your email address to perform this action."

@@ -11,7 +11,7 @@ import { authMiddleware, adminMiddleware, emailVerificationMiddleware, rateLimit
 import { hashPassword, verifyPassword, generateToken } from "./auth";
 import { insertUserSchema, insertToolSchema, insertNoteSchema } from "@shared/schema";
 import { generateEmailVerifyToken, hashVerifyToken } from "./emailVerification";
-import { sendWelcomeEmail, sendPasswordResetEmail, sendEmailVerificationEmail } from "./emailTemplates";
+import { sendWelcomeEmail, sendPasswordResetEmail, sendEmailVerificationEmail, sendTeamInvitationEmail } from "./emailTemplates";
 import { z } from "zod";
 import {
   generateSecret,
@@ -159,7 +159,7 @@ app.get("/api/auth/verify-email", async (req, res) => {
       return res.status(400).json({ error: "Invalid or expired token" });
     }
 
-    return res.json({ ok: true });
+    return res.redirect("/?verified=true");
   } catch (error) {
     console.error("verify-email error:", error);
     return res.status(500).json({ error: "Server error" });
@@ -1357,6 +1357,101 @@ if (!user.emailVerifiedAt) {
     }
   });
 
+  app.get("/api/team/verify-invite", async (req, res) => {
+    try {
+      const { token } = req.query;
+      if (!token || typeof token !== 'string') return res.status(400).json({ error: "Missing token" });
+
+      const member = await storage.getTeamMemberByToken(token);
+      if (!member) {
+        return res.status(404).json({ error: "Invalid invitation" });
+      }
+
+      if (member.status === "active") {
+          return res.status(400).json({ error: "Invitation already accepted" });
+      }
+
+      if (member.invitationExpiresAt && new Date(member.invitationExpiresAt) < new Date()) {
+          return res.status(400).json({ error: "Invitation expired" });
+      }
+
+      const inviter = await storage.getUser(member.teamOwnerId);
+
+      res.json({
+        email: member.email,
+        inviterName: inviter?.name || "Unknown",
+        teamId: member.teamOwnerId
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/team/accept-invite", authMiddleware, async (req, res) => {
+    try {
+        const { token } = req.body;
+        const member = await storage.getTeamMemberByToken(token);
+
+        if (!member) return res.status(404).json({ error: "Invalid invitation" });
+        if (member.email !== (req.user as any)?.email) {
+             // For now, let's enforce email match or at least update the member record to the accepting user's ID
+             return res.status(403).json({ error: "Email mismatch. Please login with the invited email address." });
+        }
+
+        await storage.updateTeamMember(member.id, {
+            userId: req.userId!,
+            status: "active",
+            joinedAt: new Date(),
+            invitationToken: null, // clear token so it can't be reused
+        });
+
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/team/register-invite", async (req, res) => {
+     try {
+         const { token, name, password } = req.body;
+         const member = await storage.getTeamMemberByToken(token);
+         if (!member) return res.status(404).json({ error: "Invalid invitation" });
+
+         // Check if user already exists
+         const existingUser = await storage.getUserByEmail(member.email);
+         if (existingUser) return res.status(400).json({ error: "User already exists. Please login to accept." });
+
+         // Create user
+         const hashedPassword = await hashPassword(password);
+         const user = await storage.createUser({
+             email: member.email,
+             password: hashedPassword,
+             name: name,
+         });
+
+         // Create default free subscription
+         await storage.createSubscription({
+             userId: user.id,
+             plan: "free",
+             toolsLimit: "8",
+         });
+
+         // Accept invite
+         await storage.updateTeamMember(member.id, {
+             userId: user.id,
+             status: "active",
+             joinedAt: new Date(),
+             invitationToken: null,
+         });
+
+         // Auto login token not needed here as frontend will call login, but we could return it
+         res.json({ success: true });
+
+     } catch (error: any) {
+         res.status(500).json({ error: error.message });
+     }
+  });
+
   app.post("/api/team/invite", authMiddleware, paidPlanMiddleware, async (req, res) => {
     try {
       const { email, role } = req.body;
@@ -1398,11 +1493,20 @@ if (!user.emailVerifiedAt) {
 
       await auditLog(req.userId!, "create", "team_member", teamMember.id, { email, role }, req);
 
-      // TODO: Send invitation email
-      // For now, return the invitation token in development
+      const inviteUrl = `${process.env.APP_URL || process.env.OAUTH_CALLBACK_URL || "http://localhost:5000"}/team/accept?token=${invitationToken}`;
+      const inviter = await storage.getUser(req.userId!);
+      const inviterName = inviter?.name || "A user";
+
+      try {
+        await sendTeamInvitationEmail(email, inviteUrl, inviterName);
+      } catch (e) {
+        console.error("Failed to send team invitation email:", e);
+        // Continue anyway, the user can maybe retry or copy link if we return it (dev only?)
+      }
+
       res.json({ 
         member: teamMember,
-        invitationLink: existingUser ? null : `${process.env.OAUTH_CALLBACK_URL || "http://localhost:5000"}/team/accept?token=${invitationToken}`
+        message: "Invitation sent successfully"
       });
     } catch (error: any) {
       console.error("Invite team member error:", error);

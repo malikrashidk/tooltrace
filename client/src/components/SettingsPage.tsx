@@ -100,13 +100,13 @@ export function SettingsPage() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="p-8 max-w-4xl mx-auto space-y-6">
+      <div className="p-4 sm:p-6 md:p-8 max-w-4xl mx-auto space-y-6">
         <div>
           <h1 className="text-2xl font-semibold">Settings</h1>
           <p className="text-muted-foreground">Manage your account and preferences</p>
         </div>
 
-        <div className="grid gap-6 max-w-3xl">
+        <div className="grid gap-4 sm:gap-6 w-full max-w-3xl">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -332,15 +332,26 @@ export function SettingsPage() {
               It makes adding tools to Tool Trace quick and effortless.
             </p>
             <div className="flex flex-col gap-3">
+              {/*
+                 TODO: When the extension is published to Chrome Web Store:
+                 1. Replace the download button with:
+                 <a href="CHROME_STORE_URL" target="_blank" rel="noopener noreferrer">
+                   <Button className="w-full sm:w-auto gap-2">
+                     <Chrome className="h-4 w-4" />
+                     Add to Chrome
+                   </Button>
+                 </a>
+                 2. Update the description text to reflect it's in the store.
+              */}
               <a 
-                href="/browser-extension" 
+                href="/api/extension/download"
                 target="_blank" 
                 rel="noopener noreferrer"
                 data-testid="button-download-extension"
               >
                 <Button className="w-full sm:w-auto gap-2">
                   <Download className="h-4 w-4" />
-                  Download Extension
+                  Download Extension (Beta)
                 </Button>
               </a>
               <a 
