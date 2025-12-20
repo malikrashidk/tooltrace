@@ -12,7 +12,7 @@ import { authMiddleware, adminMiddleware, rateLimit, auditLog } from "./middlewa
 import { hashPassword, verifyPassword, generateToken } from "./auth";
 import { insertUserSchema, insertToolSchema, insertNoteSchema } from "@shared/schema";
 import { generateEmailVerifyToken, hashVerifyToken } from "./emailVerification";
-import { sendWelcomeEmail, sendPasswordResetEmail } from "./emailTemplates";
+import { sendWelcomeEmail, sendPasswordResetEmail, sendEmailVerificationEmail } from "./emailTemplates";
 import { z } from "zod";
 import {
   generateSecret,
@@ -153,18 +153,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 const { raw, hash, expiresAt } = generateEmailVerifyToken();
 await storage.setEmailVerificationToken(user.id, hash, expiresAt);
 
-const verifyUrl = `${process.env.APP_URL}/verify-email?token=${raw}`;
+const verifyUrl = `${process.env.APP_URL}/api/auth/verify-email?token=${raw}`;
 
-await sendEmail({
-  to: user.email,
-  subject: "Verify your Tooltrace email",
-  html: `
-    <p>Welcome to Tooltrace!</p>
-    <p>Please verify your email by clicking the link below:</p>
-    <p><a href="${verifyUrl}">Verify email</a></p>
-    <p>This link expires in 24 hours.</p>
-  `,
-});
+try {
+  console.log("[email-verify] sending to", user.email);
+  await sendEmailVerificationEmail(user.email, verifyUrl);
+  console.log("[email-verify] sent to", user.email);
+} catch (e) {
+  console.error("[email-verify] failed for", user.email, e);
+}
+
 
 try {
   await sendWelcomeEmail(user.email, user.name);
@@ -233,17 +231,16 @@ app.post("/api/auth/resend-verification", async (req, res) => {
     const { raw, hash, expiresAt } = generateEmailVerifyToken();
     await storage.setEmailVerificationToken(user.id, hash, expiresAt);
 
-    const verifyUrl = `${process.env.APP_URL}/verify-email?token=${raw}`;
+    const verifyUrl = `${process.env.APP_URL}/api/auth/verify-email?token=${raw}`;
 
-    await sendEmail({
-      to: user.email,
-      subject: "Verify your Tooltrace email",
-      html: `
-        <p>Please verify your email by clicking the link below:</p>
-        <p><a href="${verifyUrl}">Verify email</a></p>
-        <p>This link expires in 24 hours.</p>
-      `,
-    });
+    try {
+  console.log("[email-verify] sending to", user.email);
+  await sendEmailVerificationEmail(user.email, verifyUrl);
+  console.log("[email-verify] sent to", user.email);
+} catch (e) {
+  console.error("[email-verify] failed for", user.email, e);
+}
+
 
     return res.json({ ok: true });
   } catch (error) {
