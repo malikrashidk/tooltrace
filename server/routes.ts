@@ -265,6 +265,7 @@ if (!user.emailVerifiedAt) {
           isAdmin: user.isAdmin,
           twoFactorEnabled: user.twoFactorEnabled,
           avatarUrl: user.avatarUrl,
+          emailVerifiedAt: user.emailVerifiedAt,
         },
         token,
       });
@@ -598,6 +599,7 @@ if (!user.emailVerifiedAt) {
           isAdmin: user.isAdmin,
           currency: user.currency || "USD",
           language: user.language || "en",
+          emailVerifiedAt: user.emailVerifiedAt,
         },
         subscription,
       });
