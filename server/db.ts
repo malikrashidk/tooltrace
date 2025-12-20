@@ -22,6 +22,9 @@ export async function safeQuery<T = any>(queryFn: () => Promise<T[]>): Promise<T
 }
 
 if (!connectionString) {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("DATABASE_URL must be set in production environment");
+  }
   console.warn("[db] DATABASE_URL not set — running without DB (in-memory mode)");
   sql = { __noDb: true } as any;
   db = null as any;
