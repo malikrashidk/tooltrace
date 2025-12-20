@@ -1,0 +1,40 @@
+
+> rest-express@1.0.0 dev
+> cross-env NODE_ENV=development tsx server/index-dev.ts
+
+[db] DATABASE_URL not set — running without DB (in-memory mode)
+2:03:34 PM [express] Body parser limits: JSON=10mb, URLEncoded=10mb
+ðŸ”§ Initializing admin user...
+âœ… Admin user created successfully!
+   Email: malikrashidk55@gmail.com
+   Password: TTAdmin@231!
+   Name: Admin
+   Plan: premium
+   Tools Limit: Unlimited
+
+âš ï¸  Please change the password after first login!
+[smtp] user= undefined host= undefined
+2:03:34 PM [express] serving on port 5000 at http://127.0.0.1:5000
+
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+[email-verify] sending to testuser_1766239479@example.com
+[email-verify] failed for testuser_1766239479@example.com Error: connect ECONNREFUSED ::1:587
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+  errno: -111,
+  code: 'ESOCKET',
+  syscall: 'connect',
+  address: '::1',
+  port: 587,
+  command: 'CONN'
+}
+Welcome email failed: Error: connect ECONNREFUSED ::1:587
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+  errno: -111,
+  code: 'ESOCKET',
+  syscall: 'connect',
+  address: '::1',
+  port: 587,
+  command: 'CONN'
+}
+2:04:40 PM [express] POST /api/auth/register 201 in 120ms :: {"user":{"id":"1465e77c-926a-4a15-a1ba-â€¦
+2:04:40 PM [express] GET /api/tools 200 in 5ms :: {"tools":[],"count":0}

@@ -43,6 +43,9 @@ function mapUser(row: any): User | undefined {
     twoFactorBackupCodes: row.two_factor_backup_codes,
     resetToken: row.reset_token,
     resetTokenExpiry: row.reset_token_expiry,
+    emailVerifiedAt: row.email_verified_at,
+    emailVerifyTokenHash: row.email_verify_token_hash,
+    emailVerifyTokenExpiresAt: row.email_verify_token_expires_at,
     currency: row.currency,
     language: row.language,
     createdAt: row.created_at,
@@ -526,6 +529,35 @@ export class MemStorage implements IStorage {
   async deleteTeamMember(id: string): Promise<boolean> {
     return this.teamMembers.delete(id);
   }
+
+  async setEmailVerificationToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
+    const user = this.users.get(userId);
+    if (user) {
+      const updated = { ...user, emailVerifyTokenHash: tokenHash, emailVerifyTokenExpiresAt: expiresAt };
+      this.users.set(userId, updated);
+    }
+  }
+
+  async verifyEmailByTokenHash(tokenHash: string): Promise<User | null> {
+    const now = new Date();
+    const user = Array.from(this.users.values()).find(
+      (u) =>
+        u.emailVerifyTokenHash === tokenHash &&
+        u.emailVerifyTokenExpiresAt && u.emailVerifyTokenExpiresAt > now &&
+        !u.emailVerifiedAt
+    );
+
+    if (!user) return null;
+
+    const updated = {
+      ...user,
+      emailVerifiedAt: now,
+      emailVerifyTokenHash: null,
+      emailVerifyTokenExpiresAt: null,
+    };
+    this.users.set(user.id, updated);
+    return updated;
+  }
 }
 
 export class DbStorage implements IStorage {
@@ -656,40 +688,42 @@ export class DbStorage implements IStorage {
 // ─────────────────────────────
 
 async setEmailVerificationToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
-  await db
-    .update(users)
-    .set({
-      emailVerifyTokenHash: tokenHash,
-      emailVerifyTokenExpiresAt: expiresAt,
-    })
-    .where(eq(users.id, userId));
+    await sql`
+      UPDATE users
+      SET email_verify_token_hash = ${tokenHash},
+          email_verify_token_expires_at = ${expiresAt},
+          updated_at = NOW()
+      WHERE id = ${userId}
+    `;
 }
 
-async verifyEmailByTokenHash(tokenHash: string): Promise<User | null> {
-  const now = new Date();
+  async verifyEmailByTokenHash(tokenHash: string): Promise<User | null> {
+    const now = new Date();
+    // Using raw SQL for consistency with other methods and to avoid type issues with db.query
+    const result = await sql`
+      SELECT * FROM users
+      WHERE email_verify_token_hash = ${tokenHash}
+      AND email_verify_token_expires_at > ${now}
+      AND email_verified_at IS NULL
+      LIMIT 1
+    `;
 
-  const user = await db.query.users.findFirst({
-    where: (u, { and, eq, gt, isNull }) =>
-      and(
-        eq(u.emailVerifyTokenHash, tokenHash),
-        gt(u.emailVerifyTokenExpiresAt, now),
-        isNull(u.emailVerifiedAt)
-      ),
-  });
+    if (!result || !Array.isArray(result) || result.length === 0) return null;
+    const user = result[0];
 
-  if (!user) return null;
+    await sql`
+      UPDATE users
+      SET email_verified_at = ${now},
+          email_verify_token_hash = NULL,
+          email_verify_token_expires_at = NULL,
+          updated_at = NOW()
+      WHERE id = ${user.id}
+    `;
 
-  await db
-    .update(users)
-    .set({
-      emailVerifiedAt: now,
-      emailVerifyTokenHash: null,
-      emailVerifyTokenExpiresAt: null,
-    })
-    .where(eq(users.id, user.id));
-
-  return mapUser(user as any) || null;
-}
+    // Return the updated user object (with mapped fields)
+    const updatedUser = { ...user, email_verified_at: now, email_verify_token_hash: null, email_verify_token_expires_at: null };
+    return mapUser(updatedUser) || null;
+  }
 
 
   async getUserTools(userId: string): Promise<Tool[]> {
