@@ -11,6 +11,7 @@ interface User {
   avatarUrl?: string | null;
   currency?: string;
   language?: string;
+  emailVerifiedAt?: string | null;
 }
 
 interface AuthContextType {
@@ -20,6 +21,7 @@ interface AuthContextType {
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
   setUser: (user: User | null) => void;
+  refetchUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,7 +36,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Auto-fetch user profile on mount if token exists
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token && !user) {
+    // Always refetch on mount to sync verification status
+    if (token) {
       fetchUserProfile();
     }
   }, []);
@@ -122,6 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signup,
         logout,
         setUser,
+        refetchUser: fetchUserProfile,
       }}
     >
       {children}

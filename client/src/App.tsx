@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import { CurrencyProvider } from "@/context/CurrencyContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CurrencySelector } from "@/components/CurrencySelector";
@@ -166,7 +167,25 @@ function UnauthenticatedApp() {
 }
 
 function AppContent() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, refetchUser } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Check for verification success query param
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("verified") === "true") {
+      toast({
+        title: "Email Verified",
+        description: "Thank you for verifying your email address.",
+        variant: "default",
+        className: "bg-green-600 text-white border-green-700",
+      });
+      // Remove param from URL
+      window.history.replaceState({}, "", "/");
+      // Force refresh user profile to update state
+      refetchUser();
+    }
+  }, [refetchUser, toast]);
 
   if (!isAuthenticated) {
     return <UnauthenticatedApp />;

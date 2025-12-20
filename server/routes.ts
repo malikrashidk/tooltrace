@@ -159,7 +159,7 @@ app.get("/api/auth/verify-email", async (req, res) => {
       return res.status(400).json({ error: "Invalid or expired token" });
     }
 
-    return res.json({ ok: true });
+    return res.redirect("/?verified=true");
   } catch (error) {
     console.error("verify-email error:", error);
     return res.status(500).json({ error: "Server error" });
@@ -245,12 +245,13 @@ app.post("/api/auth/resend-verification", async (req, res) => {
         }
       }
 
-if (!user.emailVerifiedAt) {
-  return res.status(403).json({
-    error: "EMAIL_NOT_VERIFIED",
-    message: "Please verify your email before logging in.",
-  });
-}
+// Allow login but enforce restriction on actions
+// if (!user.emailVerifiedAt) {
+//   return res.status(403).json({
+//     error: "EMAIL_NOT_VERIFIED",
+//     message: "Please verify your email before logging in.",
+//   });
+// }
 
 
       await auditLog(user.id, "login", "user", user.id, {}, req);
