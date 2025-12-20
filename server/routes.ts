@@ -311,6 +311,12 @@ if (!user.emailVerifiedAt) {
       console.log(`   Reset URL: ${resetUrl}`);
       console.log(`   Token expires: ${resetTokenExpiry.toISOString()}\n`);
 
+      try {
+        await sendPasswordResetEmail(email, resetUrl);
+      } catch (e) {
+        console.error("Failed to send password reset email:", e);
+      }
+
       await auditLog(user.id, "password_reset_request", "user", user.id, {}, req);
 
       res.json({ 

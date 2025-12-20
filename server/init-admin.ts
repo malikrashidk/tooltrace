@@ -7,9 +7,15 @@ import { sql } from "./db";
  * Creates the default admin account with specified credentials
  */
 async function initializeAdmin() {
-  const ADMIN_EMAIL = "malikrashidk55@gmail.com";
-  const ADMIN_PASSWORD = "TTAdmin@231!";
+  const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "malikrashidk55@gmail.com";
+  // In production, require ADMIN_PASSWORD env var. In dev, fall back to default.
+  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || (process.env.NODE_ENV === "production" ? undefined : "TTAdmin@231!");
   const ADMIN_NAME = "Admin";
+
+  if (!ADMIN_PASSWORD) {
+    console.warn("⚠️  ADMIN_PASSWORD not set. Skipping admin initialization.");
+    return;
+  }
 
   console.log("ðŸ”§ Initializing admin user...");
 

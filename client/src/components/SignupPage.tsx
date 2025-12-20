@@ -3,7 +3,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Eye, EyeOff, Layers } from "lucide-react";
-import { SiFacebook } from "react-icons/si";
 import { FcGoogle } from "react-icons/fc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -179,7 +178,7 @@ export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
               <Separator className="flex-1" />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <Button
                 type="button"
                 variant="outline"
@@ -190,17 +189,6 @@ export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
               >
                 <FcGoogle className="h-4 w-4" />
                 <span className="text-xs">Google</span>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 gap-2"
-                disabled={isLoading}
-                data-testid="button-facebook-signup"
-                onClick={() => window.location.href = "/api/auth/facebook"}
-              >
-                <SiFacebook className="h-4 w-4" style={{ color: '#1877F2' }} />
-                <span className="text-xs">Facebook</span>
               </Button>
             </div>
           </div>

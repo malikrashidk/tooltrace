@@ -3,7 +3,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Eye, EyeOff, Layers, Shield, Loader2 } from "lucide-react";
-import { SiFacebook } from "react-icons/si";
 import { FcGoogle } from "react-icons/fc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,13 +79,6 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
     const returnTo = sanitizeReturnTo(urlParams.get("returnTo"));
     // We pass returnTo to the backend, assuming backend will also validate or passthrough
     const redirectUrl = returnTo !== "/" ? `/api/auth/google?returnTo=${encodeURIComponent(returnTo)}` : "/api/auth/google";
-    window.location.href = redirectUrl;
-  };
-
-  const handleFacebookSignIn = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const returnTo = sanitizeReturnTo(urlParams.get("returnTo"));
-    const redirectUrl = returnTo !== "/" ? `/api/auth/facebook?returnTo=${encodeURIComponent(returnTo)}` : "/api/auth/facebook";
     window.location.href = redirectUrl;
   };
 
@@ -265,7 +257,7 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
               <Separator className="flex-1" />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <Button
                 type="button"
                 variant="outline"
@@ -276,17 +268,6 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
               >
                 <FcGoogle className="h-4 w-4" />
                 <span className="text-xs">Google</span>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 gap-2"
-                disabled={isLoading}
-                data-testid="button-facebook-signin"
-                onClick={handleFacebookSignIn}
-              >
-                <SiFacebook className="h-4 w-4" style={{ color: '#1877F2' }} />
-                <span className="text-xs">Facebook</span>
               </Button>
             </div>
           </div>
