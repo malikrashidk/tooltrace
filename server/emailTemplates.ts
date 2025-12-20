@@ -26,3 +26,16 @@ export async function sendEmailVerificationEmail(to: string, verifyUrl: string) 
   `;
   return sendEmail({ to, subject, html });
 }
+
+export async function sendTeamInvitationEmail(to: string, inviteUrl: string, inviterName: string) {
+  const subject = `Join ${inviterName}'s team on ToolTrace`;
+  const html = `
+    <p>Hello,</p>
+    <p>${inviterName} has invited you to join their team on ToolTrace.</p>
+    <p>Click the link below to accept the invitation:</p>
+    <p><a href="${inviteUrl}">Accept Invitation</a></p>
+    <p>This link expires in 7 days.</p>
+    <p>If you don't have an account, you'll be able to create one.</p>
+  `;
+  return sendEmail({ to, subject, html });
+}
