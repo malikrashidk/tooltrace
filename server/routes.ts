@@ -52,11 +52,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
               const existingUser = await storage.getUserByEmail(email);
               if (existingUser) {
-                user = await storage.updateUser(existingUser.id, {
+                const updates: any = {
                   googleId: profile.id,
                   oauthProvider: existingUser.oauthProvider || "google",
                   avatarUrl: profile.photos?.[0]?.value || existingUser.avatarUrl,
-                });
+                };
+                // Ensure email is marked as verified if they link Google
+                if (!existingUser.emailVerifiedAt) {
+                  updates.emailVerifiedAt = new Date();
+                }
+                user = await storage.updateUser(existingUser.id, updates);
               } else {
                 user = await storage.createOAuthUser({
                   email,
@@ -407,10 +412,16 @@ if (!user.emailVerifiedAt) {
   app.get("/api/auth/google/callback", (req, res, next) => {
     passport.authenticate("google", { session: false }, (err: any, user: any) => {
       if (err || !user) {
-        return res.redirect("/?error=oauth_failed");
+        return res.redirect("/login?error=oauth_failed");
       }
       const token = generateToken(user);
-      res.redirect(`/?token=${token}`);
+      // Redirect to /login so the LoginPage can process the token and set it in localStorage
+      // LoginPage will then redirect to the intended returnTo path or dashboard
+      const urlParams = new URLSearchParams(req.query as any);
+      const returnTo = urlParams.get("state") || "/"; // Google strategy can pass state, or we default
+      // Note: passport-google-oauth20 supports 'state' parameter but we didn't explicitly set it in the start route.
+      // However, usually we just want to get them into the app.
+      res.redirect(`/login?token=${token}`);
     })(req, res, next);
   });
 

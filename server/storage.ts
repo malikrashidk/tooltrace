@@ -285,6 +285,7 @@ export class MemStorage implements IStorage {
       currency: userData.currency || "USD",
       language: userData.language || "en",
       budgetThreshold: null,
+      emailVerifiedAt: new Date(),
     } as User;
     this.users.set(id, fullUser as any);
     return fullUser;
@@ -638,7 +639,7 @@ export class DbStorage implements IStorage {
 
   async createOAuthUser(userData: Partial<User>): Promise<User> {
     const result = await sql`
-      INSERT INTO users (email, name, password, google_id, facebook_id, oauth_provider, avatar_url)
+      INSERT INTO users (email, name, password, google_id, facebook_id, oauth_provider, avatar_url, email_verified_at)
       VALUES (
         ${userData.email!},
         ${userData.name!},
@@ -646,7 +647,8 @@ export class DbStorage implements IStorage {
         ${userData.googleId || null},
         ${userData.facebookId || null},
         ${userData.oauthProvider || null},
-        ${userData.avatarUrl || null}
+        ${userData.avatarUrl || null},
+        NOW()
       )
       RETURNING *
     `;
