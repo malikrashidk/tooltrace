@@ -48,6 +48,7 @@ function mapUser(row: any): User | undefined {
     emailVerifyTokenExpiresAt: row.email_verify_token_expires_at,
     currency: row.currency,
     language: row.language,
+    budgetThreshold: row.budget_threshold,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -71,6 +72,10 @@ function mapTool(row: any): Tool | undefined {
     usageFrequency: row.usage_frequency,
     paymentMethod: row.payment_method,
     credentials: row.credentials,
+    secureNote: row.secure_note,
+    isPinned: row.is_pinned,
+    lastUsedAt: row.last_used_at,
+    totalUsageTime: row.total_usage_time,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -279,6 +284,8 @@ export class MemStorage implements IStorage {
       updatedAt: new Date(),
       currency: userData.currency || "USD",
       language: userData.language || "en",
+      budgetThreshold: null,
+      emailVerifiedAt: new Date(),
     } as User;
     this.users.set(id, fullUser as any);
     return fullUser;
@@ -286,7 +293,7 @@ export class MemStorage implements IStorage {
 
   async createUser(user: InsertUser): Promise<User> {
     const id = randomUUID();
-    const fullUser = { ...user, id, isAdmin: false, plan: "free", createdAt: new Date(), updatedAt: new Date(), currency: (user as any).currency || "USD", language: (user as any).language || "en" } as any;
+    const fullUser = { ...user, id, isAdmin: false, plan: "free", createdAt: new Date(), updatedAt: new Date(), currency: (user as any).currency || "USD", language: (user as any).language || "en", budgetThreshold: null } as any;
     this.users.set(id, fullUser);
     return fullUser;
   }
@@ -348,7 +355,16 @@ export class MemStorage implements IStorage {
 
   async createTool(tool: InsertTool & { userId: string }): Promise<Tool> {
     const id = randomUUID();
-    const fullTool = { ...tool, id, createdAt: new Date(), updatedAt: new Date() } as Tool;
+    const fullTool = {
+        ...tool,
+        id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        secureNote: (tool as any).secureNote || null,
+        isPinned: (tool as any).isPinned || false,
+        lastUsedAt: null,
+        totalUsageTime: "0"
+    } as Tool;
     this.tools.set(id, fullTool);
     return fullTool;
   }
@@ -623,7 +639,7 @@ export class DbStorage implements IStorage {
 
   async createOAuthUser(userData: Partial<User>): Promise<User> {
     const result = await sql`
-      INSERT INTO users (email, name, password, google_id, facebook_id, oauth_provider, avatar_url)
+      INSERT INTO users (email, name, password, google_id, facebook_id, oauth_provider, avatar_url, email_verified_at)
       VALUES (
         ${userData.email!},
         ${userData.name!},
@@ -631,7 +647,8 @@ export class DbStorage implements IStorage {
         ${userData.googleId || null},
         ${userData.facebookId || null},
         ${userData.oauthProvider || null},
-        ${userData.avatarUrl || null}
+        ${userData.avatarUrl || null},
+        NOW()
       )
       RETURNING *
     `;

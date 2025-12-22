@@ -45,10 +45,11 @@ async function initializeAdmin() {
       name: ADMIN_NAME,
     });
 
-    // Update to admin and premium plan
+    // Update to admin and premium plan, and verify email
     await storage.updateUser(admin.id, {
       isAdmin: true,
       plan: "premium",
+      emailVerifiedAt: new Date(),
     });
 
     // Create premium subscription

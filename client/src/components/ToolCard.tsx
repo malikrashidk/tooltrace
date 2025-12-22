@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ExternalLink, MoreVertical, Pencil, Trash2, Clock, Calendar, Key } from "lucide-react";
+import { ExternalLink, MoreVertical, Pencil, Trash2, Clock, Calendar, Key, Pin, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,9 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
   const { toast } = useToast();
   const { formatAmount } = useCurrency();
   const credentials = tool.credentials as { username?: string; email?: string; password?: string; notes?: string; lastUpdated?: string | Date } | undefined;
+  const hasSecureData = (tool as any).hasCredentials || (tool as any).secureNote;
+  const totalUsageMinutes = (tool as any).totalUsageTime ? parseInt((tool as any).totalUsageTime) : 0;
+
   const getUsageColor = (frequency: string) => {
     switch (frequency) {
       case "daily":
@@ -71,7 +74,12 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
   };
 
   return (
-    <Card className="group hover-elevate transition-all duration-200" data-testid={`card-tool-${tool.id}`}>
+    <Card className="group hover-elevate transition-all duration-200 relative" data-testid={`card-tool-${tool.id}`}>
+      {(tool as any).isPinned && (
+        <div className="absolute top-2 right-2 text-primary opacity-80 rotate-45">
+          <Pin className="h-4 w-4" fill="currentColor" />
+        </div>
+      )}
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-4 min-w-0 flex-1">
@@ -147,6 +155,18 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
             <Clock className="h-3 w-3 mr-1" />
             {tool.usageFrequency}
           </Badge>
+          {hasSecureData && (
+             <Badge variant="outline" className="text-xs font-medium border-amber-200 text-amber-700 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400">
+               <Lock className="h-3 w-3 mr-1" />
+               Secured
+             </Badge>
+          )}
+          {totalUsageMinutes > 0 && (
+             <Badge variant="outline" className="text-xs font-medium border-blue-200 text-blue-700 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400">
+               <Clock className="h-3 w-3 mr-1" />
+               {Math.round(totalUsageMinutes / 60)}h used
+             </Badge>
+          )}
         </div>
 
         {tool.isPaid && tool.nextRenewalDate && (

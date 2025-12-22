@@ -3,7 +3,7 @@
 > cross-env NODE_ENV=development tsx server/index-dev.ts
 
 [db] DATABASE_URL not set — running without DB (in-memory mode)
-6:53:51 PM [express] Body parser limits: JSON=10mb, URLEncoded=10mb
+3:50:44 PM [express] Body parser limits: JSON=10mb, URLEncoded=10mb
 ðŸ”§ Initializing admin user...
 âœ… Admin user created successfully!
    Email: malikrashidk55@gmail.com
@@ -13,6 +13,12 @@
    Tools Limit: Unlimited
 
 âš ï¸  Please change the password after first login!
-6:53:52 PM [express] serving on port 5000 at http://0.0.0.0:5000
+[smtp] user= undefined host= undefined
+3:50:44 PM [express] serving on port 5000 at http://127.0.0.1:5000
+3:51:06 PM [express] GET /api/health 200 in 47ms
 
 A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+3:51:55 PM [express] POST /api/auth/login 200 in 91ms :: {"user":{"id":"3b977777-5569-42c6-a7a4-a216â€¦
+3:51:55 PM [express] GET /api/v1/analytics/spending 401 in 1ms :: {"error":"Invalid or inactive API â€¦
+3:51:55 PM [express] GET /api/tools 200 in 3ms :: {"tools":[],"count":0}
+3:51:55 PM [express] GET /api/user/profile 200 in 1ms :: {"user":{"id":"3b977777-5569-42c6-a7a4-a216â€¦

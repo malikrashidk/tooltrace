@@ -57,8 +57,8 @@ export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center space-y-6 pb-8">
-          <div className="mx-auto w-14 h-14 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg">
-            <Layers className="w-7 h-7 text-primary-foreground" />
+          <div className="mx-auto w-16 h-16 flex items-center justify-center">
+            <img src="/tooltrace-logo.png" alt="ToolTrace Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <CardTitle className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Create an account</CardTitle>

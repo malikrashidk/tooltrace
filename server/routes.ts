@@ -10,6 +10,7 @@ import { storage } from "./storage";
 import { authMiddleware, adminMiddleware, emailVerificationMiddleware, rateLimit, auditLog } from "./middleware";
 import { hashPassword, verifyPassword, generateToken } from "./auth";
 import { insertUserSchema, insertToolSchema, insertNoteSchema } from "@shared/schema";
+import { encrypt, decrypt } from "./lib/crypto";
 import { generateEmailVerifyToken, hashVerifyToken } from "./emailVerification";
 import { sendWelcomeEmail, sendPasswordResetEmail, sendEmailVerificationEmail, sendTeamInvitationEmail } from "./emailTemplates";
 import { z } from "zod";
@@ -51,11 +52,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
               const existingUser = await storage.getUserByEmail(email);
               if (existingUser) {
-                user = await storage.updateUser(existingUser.id, {
+                const updates: any = {
                   googleId: profile.id,
                   oauthProvider: existingUser.oauthProvider || "google",
                   avatarUrl: profile.photos?.[0]?.value || existingUser.avatarUrl,
-                });
+                };
+                // Ensure email is marked as verified if they link Google
+                if (!existingUser.emailVerifiedAt) {
+                  updates.emailVerifiedAt = new Date();
+                }
+                user = await storage.updateUser(existingUser.id, updates);
               } else {
                 user = await storage.createOAuthUser({
                   email,
@@ -406,10 +412,16 @@ if (!user.emailVerifiedAt) {
   app.get("/api/auth/google/callback", (req, res, next) => {
     passport.authenticate("google", { session: false }, (err: any, user: any) => {
       if (err || !user) {
-        return res.redirect("/?error=oauth_failed");
+        return res.redirect("/login?error=oauth_failed");
       }
       const token = generateToken(user);
-      res.redirect(`/?token=${token}`);
+      // Redirect to /login so the LoginPage can process the token and set it in localStorage
+      // LoginPage will then redirect to the intended returnTo path or dashboard
+      const urlParams = new URLSearchParams(req.query as any);
+      const returnTo = urlParams.get("state") || "/"; // Google strategy can pass state, or we default
+      // Note: passport-google-oauth20 supports 'state' parameter but we didn't explicitly set it in the start route.
+      // However, usually we just want to get them into the app.
+      res.redirect(`/login?token=${token}`);
     })(req, res, next);
   });
 
@@ -621,6 +633,7 @@ if (!user.emailVerifiedAt) {
       if (req.body.currency !== undefined) updates.currency = req.body.currency;
       if (req.body.language !== undefined) updates.language = req.body.language;
       if (req.body.name !== undefined) updates.name = req.body.name;
+      if (req.body.budgetThreshold !== undefined) updates.budgetThreshold = req.body.budgetThreshold;
       
       if (Object.keys(updates).length === 0) {
         return res.status(400).json({ error: "No valid fields to update" });
@@ -641,6 +654,7 @@ if (!user.emailVerifiedAt) {
           isAdmin: updated.isAdmin,
           currency: updated.currency || "USD",
           language: updated.language || "en",
+          budgetThreshold: updated.budgetThreshold,
         },
       });
     } catch (error: any) {
@@ -692,14 +706,38 @@ if (!user.emailVerifiedAt) {
         return res.status(400).json({ error: parsed.error.errors });
       }
 
+      const toolData = { ...(parsed.data as any) };
+
+      // Encrypt credentials if provided
+      if (req.body.username && req.body.password) {
+        const credentials = JSON.stringify({
+          username: req.body.username,
+          password: req.body.password,
+        });
+        toolData.credentials = encrypt(credentials);
+      }
+
+      // Encrypt secure note if provided
+      if (req.body.secureNote) {
+        const encryptedNote = encrypt(req.body.secureNote);
+        toolData.secureNote = JSON.stringify(encryptedNote);
+      }
+
+      if (req.body.isPinned !== undefined) {
+        toolData.isPinned = req.body.isPinned;
+      }
+
       const tool = await storage.createTool({
-        ...(parsed.data as any),
+        ...toolData,
         userId: req.userId,
       });
 
+      // Remove sensitive data from response
+      const toolResponse = { ...tool, credentials: null, secureNote: !!tool.secureNote };
+
       await auditLog(req.userId, "create", "tool", tool.id, {}, req);
 
-      res.status(201).json({ tool });
+      res.status(201).json({ tool: toolResponse });
     } catch (error) {
       console.error("[POST /api/tools] Error:", error);
       res.status(500).json({ error: "Failed to create tool" });
@@ -713,12 +751,85 @@ if (!user.emailVerifiedAt) {
         return res.status(404).json({ error: "Tool not found" });
       }
 
-      const updated = await storage.updateTool(req.params.id, req.body);
+      const updates = { ...req.body };
+
+      // Handle credentials update
+      if (updates.username && updates.password) {
+        const credentials = JSON.stringify({
+          username: updates.username,
+          password: updates.password,
+        });
+        updates.credentials = encrypt(credentials);
+        delete updates.username;
+        delete updates.password;
+      } else if (updates.username || updates.password) {
+        // Partial update - decrypt existing, update field, re-encrypt
+        // For simplicity, we require both or assume they are sending the full set.
+        // If the user clears fields, we should probably handle that too.
+        // For now, let's just handle if 'credentials' is being passed explicitly as null to clear
+        if (updates.credentials === null) {
+          updates.credentials = null;
+        }
+      }
+
+      // Handle secure note update
+      if (updates.secureNote) {
+        const encryptedNote = encrypt(updates.secureNote);
+        updates.secureNote = JSON.stringify(encryptedNote);
+      }
+
+      const updated = await storage.updateTool(req.params.id, updates);
+
+      if (!updated) {
+        return res.status(404).json({ error: "Tool not found after update" });
+      }
+
+      // Remove sensitive data
+      const toolResponse = { ...updated, credentials: null, secureNote: !!updated.secureNote };
+
       await auditLog(req.userId, "update", "tool", req.params.id, req.body, req);
 
-      res.json({ tool: updated });
+      res.json({ tool: toolResponse });
     } catch (error) {
+      console.error("Update tool error:", error);
       res.status(500).json({ error: "Failed to update tool" });
+    }
+  });
+
+  app.get("/api/tools/:id/reveal", authMiddleware, async (req, res) => {
+    try {
+      const tool = await storage.getTool(req.params.id);
+      if (!tool || tool.userId !== req.userId) {
+        return res.status(404).json({ error: "Tool not found" });
+      }
+
+      let revealedCredentials = null;
+      let revealedNote = null;
+
+      if (tool.credentials) {
+        try {
+          const decrypted = decrypt(tool.credentials as any);
+          revealedCredentials = JSON.parse(decrypted);
+        } catch (e) {
+          console.error("Failed to decrypt credentials", e);
+        }
+      }
+
+      if (tool.secureNote) {
+        try {
+          const noteData = JSON.parse(tool.secureNote);
+          revealedNote = decrypt(noteData);
+        } catch (e) {
+          console.error("Failed to decrypt note", e);
+        }
+      }
+
+      res.json({
+        credentials: revealedCredentials,
+        secureNote: revealedNote
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to reveal secrets" });
     }
   });
 
@@ -1142,7 +1253,14 @@ if (!user.emailVerifiedAt) {
   app.get("/api/v1/tools", apiKeyAuthMiddleware, async (req, res) => {
     try {
       const tools = await storage.getUserTools(req.userId!);
-      res.json({ tools, count: tools.length });
+      // Sanitize tools to remove raw encrypted blobs from list view
+      const sanitizedTools = tools.map(t => ({
+        ...t,
+        credentials: null,
+        secureNote: !!t.secureNote, // just return boolean indicating existence
+        hasCredentials: !!t.credentials
+      }));
+      res.json({ tools: sanitizedTools, count: tools.length });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch tools" });
     }
@@ -1207,11 +1325,22 @@ if (!user.emailVerifiedAt) {
         return acc;
       }, {});
 
+      const user = await storage.getUser(req.userId!);
+      const budgetThreshold = user?.budgetThreshold ? parseFloat(user.budgetThreshold) : null;
+      const budgetStatus = budgetThreshold
+        ? {
+            threshold: budgetThreshold,
+            isOverBudget: monthlyTotal > budgetThreshold,
+            percentageUsed: (monthlyTotal / budgetThreshold) * 100
+          }
+        : null;
+
       res.json({ 
         monthlyTotal: monthlyTotal.toFixed(2),
         yearlyTotal: yearlyTotal.toFixed(2),
         toolCount: tools.length,
-        byCategory
+        byCategory,
+        budgetStatus
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch analytics" });
@@ -1333,6 +1462,47 @@ if (!user.emailVerifiedAt) {
     } catch (error: any) {
       console.error("API tool deletion error:", error);
       res.status(400).json({ error: error.message || "Failed to delete tool" });
+    }
+  });
+
+  // Usage Tracking Endpoint (Extension)
+  // Accepts either API Key (apiKeyAuthMiddleware) or Session Token (authMiddleware)
+  // We can't chain them easily as they are exclusive strategies usually.
+  // We'll create a custom hybrid middleware for this specific route or just handle the check inside.
+  app.post("/api/tools/usage", async (req, res, next) => {
+    // Try API Key first
+    if (req.headers.authorization?.startsWith('Bearer tt_')) {
+        return apiKeyAuthMiddleware(req, res, next);
+    }
+    // Try Session Token (authMiddleware)
+    return authMiddleware(req, res, next);
+  }, async (req: any, res: any) => {
+    try {
+      const { toolId, durationSeconds } = req.body;
+
+      if (!toolId || !durationSeconds) {
+        return res.status(400).json({ error: "toolId and durationSeconds are required" });
+      }
+
+      const tool = await storage.getTool(toolId);
+      if (!tool || tool.userId !== req.userId!) {
+        return res.status(404).json({ error: "Tool not found" });
+      }
+
+      const currentDuration = parseInt(tool.totalUsageTime || "0");
+      const addedMinutes = Math.floor(durationSeconds / 60);
+
+      if (addedMinutes > 0) {
+        await storage.updateTool(toolId, {
+          totalUsageTime: String(currentDuration + addedMinutes),
+          lastUsedAt: new Date(),
+        });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Usage tracking error:", error);
+      res.status(500).json({ error: "Failed to track usage" });
     }
   });
 
