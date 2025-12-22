@@ -53,7 +53,7 @@ export function AdminDashboard() {
                 <p className="text-sm text-muted-foreground">Total Users</p>
                 <p className="text-xl sm:text-2xl font-semibold">{totalUsers}</p>
                 <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                  {activeUsers} active
+                  {activeUsers} active (30d)
                 </p>
               </div>
             </div>
