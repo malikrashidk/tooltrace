@@ -60,6 +60,10 @@ const toolSchema = z.object({
   billingCycle: z.enum(["monthly", "yearly", "one-time"]).optional(),
   nextRenewalDate: z.string().optional(),
   paymentMethod: z.string().optional(),
+  username: z.string().optional(),
+  password: z.string().optional(),
+  secureNote: z.string().optional(),
+  isPinned: z.boolean().optional(),
 });
 
 type ToolFormData = z.infer<typeof toolSchema>;
@@ -103,6 +107,10 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
             : new Date(editTool.nextRenewalDate).toISOString().split('T')[0])
         : "",
       paymentMethod: editTool?.paymentMethod || "",
+      username: "",
+      password: "",
+      secureNote: "",
+      isPinned: editTool?.isPinned || false,
     },
   });
 
@@ -122,6 +130,10 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
             : new Date(editTool.nextRenewalDate).toISOString().split("T")[0])
         : "",
       paymentMethod: editTool?.paymentMethod || "",
+      username: "",
+      password: "",
+      secureNote: "",
+      isPinned: editTool?.isPinned || false,
     });
     setSelectedCategories(editTool?.categories || []);
     setTags(editTool?.tags || []);
@@ -138,8 +150,19 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
     const paymentMethod = data.paymentMethod && data.paymentMethod.trim() ? data.paymentMethod : null;
     const notes = data.notes && data.notes.trim() ? data.notes : null;
     
+    // Clean up secure fields if they are empty
+    const secureData: any = {};
+    if (data.username && data.password) {
+      secureData.username = data.username;
+      secureData.password = data.password;
+    }
+    if (data.secureNote) {
+      secureData.secureNote = data.secureNote;
+    }
+
     onSave({
       ...data,
+      ...secureData,
       billingAmount,
       billingCycle,
       paymentMethod,
@@ -517,25 +540,100 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="isPaid"
-                render={({ field }) => (
-                  <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Paid Subscription</FormLabel>
-                      <FormDescription>Is this a paid tool?</FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        data-testid="switch-is-paid"
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+              <div className="flex gap-4">
+                <FormField
+                  control={form.control}
+                  name="isPaid"
+                  render={({ field }) => (
+                    <FormItem className="flex-1 flex items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">Paid Subscription</FormLabel>
+                        <FormDescription>Is this a paid tool?</FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="switch-is-paid"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="isPinned"
+                  render={({ field }) => (
+                    <FormItem className="flex-1 flex items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">Pin Tool</FormLabel>
+                        <FormDescription>Show in quick access?</FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="switch-is-pinned"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+                 <h4 className="font-medium flex items-center gap-2">
+                   Secure Credentials
+                   <Badge variant="outline" className="text-xs font-normal">Optional</Badge>
+                 </h4>
+                 <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username / Email</FormLabel>
+                          <FormControl>
+                            <Input placeholder="user@example.com" {...field} autoComplete="off" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                     <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} autoComplete="new-password" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                 </div>
+                 <FormField
+                    control={form.control}
+                    name="secureNote"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Secure Note</FormLabel>
+                         <FormControl>
+                          <Textarea
+                            placeholder="Store recovery codes, API keys, or other secrets here..."
+                            className="resize-none"
+                            rows={2}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+              </div>
 
               {isPaid && (
                 <div className="space-y-4 p-4 bg-muted/50 rounded-lg">

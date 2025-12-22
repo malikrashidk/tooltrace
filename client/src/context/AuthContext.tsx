@@ -12,6 +12,7 @@ interface User {
   currency?: string;
   language?: string;
   emailVerifiedAt?: string | null;
+  budgetThreshold?: string | null;
 }
 
 interface AuthContextType {

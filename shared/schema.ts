@@ -37,6 +37,7 @@ emailVerifyTokenExpiresAt: timestamp("email_verify_token_expires_at", {
     // User preferences
     currency: text("currency").default("USD"),
     language: text("language").default("en"),
+    budgetThreshold: numeric("budget_threshold", { precision: 10, scale: 2 }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -66,7 +67,11 @@ export const tools = pgTable(
     tags: text("tags").array().notNull().default(sql`ARRAY[]::text[]`),
     usageFrequency: text("usage_frequency").notNull().default("weekly"), // daily, weekly, rarely
     paymentMethod: text("payment_method"),
-    credentials: jsonb("credentials"), // encrypted credentials
+    credentials: jsonb("credentials"), // encrypted credentials { ciphertext, iv, tag, salt }
+    secureNote: text("secure_note"), // encrypted note
+    isPinned: boolean("is_pinned").notNull().default(false),
+    lastUsedAt: timestamp("last_used_at"),
+    totalUsageTime: numeric("total_usage_time", { precision: 10, scale: 0 }).default("0"), // in minutes
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -74,6 +79,7 @@ export const tools = pgTable(
     userIdIdx: index("user_id_idx").on(table.userId),
     renewalIdx: index("renewal_date_idx").on(table.nextRenewalDate),
     paidIdx: index("is_paid_idx").on(table.isPaid),
+    pinnedIdx: index("pinned_idx").on(table.isPinned),
   })
 );
 

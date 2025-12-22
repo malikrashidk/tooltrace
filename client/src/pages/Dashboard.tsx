@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Package, TrendingUp, DollarSign, AlertCircle } from "lucide-react";
+import { Package, TrendingUp, DollarSign, AlertCircle, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useLocation } from "wouter";
@@ -12,13 +12,26 @@ export function Dashboard() {
   const [, setLocation] = useLocation();
   const { formatAmount } = useCurrency();
   
-  const { data: toolsData, isLoading } = useQuery<{ tools: Tool[] }>({
+  const { data: analyticsData, isLoading } = useQuery<{
+    tools: Tool[];
+    monthlyTotal: string;
+    budgetStatus?: {
+      threshold: number;
+      isOverBudget: boolean;
+      percentageUsed: number
+    }
+  }>({
+    queryKey: ["/api/v1/analytics/spending"],
+  });
+
+  const { data: toolsData } = useQuery<{ tools: Tool[] }>({
     queryKey: ["/api/tools"],
   });
 
   const tools = toolsData?.tools || [];
   const paidTools = tools.filter(t => t.isPaid);
-  const monthlySpend = paidTools.reduce((sum, t) => sum + Number(t.billingAmount || 0), 0);
+  const monthlySpend = parseFloat(analyticsData?.monthlyTotal || "0");
+  const budgetStatus = analyticsData?.budgetStatus;
 
   if (isLoading) {
     return (
@@ -62,15 +75,42 @@ export function Dashboard() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-green-100 dark:bg-green-900/30">
-                <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <div className={`p-3 rounded-lg ${
+                budgetStatus?.isOverBudget
+                  ? "bg-red-100 dark:bg-red-900/30"
+                  : "bg-green-100 dark:bg-green-900/30"
+              }`}>
+                {budgetStatus?.isOverBudget ? (
+                  <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                ) : (
+                  <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+                )}
               </div>
-              <div>
+              <div className="flex-1">
                 <p className="text-sm text-muted-foreground">Monthly Spend</p>
-                <p className="text-xl sm:text-2xl font-semibold font-mono" data-testid="text-monthly-spend">
-                  {formatAmount(monthlySpend)}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">Current subscriptions</p>
+                <div className="flex items-baseline gap-2">
+                  <p className={`text-xl sm:text-2xl font-semibold font-mono ${
+                    budgetStatus?.isOverBudget ? "text-red-600 dark:text-red-400" : ""
+                  }`} data-testid="text-monthly-spend">
+                    {formatAmount(monthlySpend)}
+                  </p>
+                  {budgetStatus && (
+                    <span className="text-xs text-muted-foreground">
+                      / {formatAmount(budgetStatus.threshold)}
+                    </span>
+                  )}
+                </div>
+                {budgetStatus && (
+                   <div className="w-full h-1.5 bg-secondary rounded-full mt-2 overflow-hidden">
+                     <div
+                        className={`h-full rounded-full ${
+                          budgetStatus.isOverBudget ? "bg-red-500" : "bg-green-500"
+                        }`}
+                        style={{ width: `${Math.min(budgetStatus.percentageUsed, 100)}%` }}
+                     />
+                   </div>
+                )}
+                {!budgetStatus && <p className="text-xs text-muted-foreground mt-1">Current subscriptions</p>}
               </div>
             </div>
           </CardContent>

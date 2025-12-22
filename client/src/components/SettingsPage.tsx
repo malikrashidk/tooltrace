@@ -32,6 +32,7 @@ import { TwoFactorSetup } from "./TwoFactorSetup";
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email"),
+  budgetThreshold: z.number().optional(),
 });
 
 const passwordSchema = z.object({
@@ -61,6 +62,7 @@ export function SettingsPage() {
     defaultValues: {
       name: user?.name || "",
       email: user?.email || "",
+      budgetThreshold: user?.budgetThreshold ? parseFloat(user.budgetThreshold) : undefined,
     },
   });
 
@@ -73,12 +75,30 @@ export function SettingsPage() {
     },
   });
 
-  const onProfileSubmit = (data: ProfileFormData) => {
-    console.log("Profile updated:", data);
-    toast({
-      title: "Profile updated",
-      description: "Your profile has been updated successfully.",
-    });
+  const onProfileSubmit = async (data: ProfileFormData) => {
+    try {
+      const response = await fetch("/api/auth/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) throw new Error("Failed to update profile");
+
+      // Force reload to get fresh data
+      window.location.reload();
+
+      toast({
+        title: "Profile updated",
+        description: "Your profile and budget settings have been updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive"
+      });
+    }
   };
 
   const onPasswordSubmit = (data: PasswordFormData) => {
@@ -140,6 +160,27 @@ export function SettingsPage() {
                       <FormControl>
                         <Input type="email" data-testid="input-settings-email" {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={profileForm.control}
+                  name="budgetThreshold"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Monthly Budget Alert ($)</FormLabel>
+                      <FormControl>
+                        <Input
+                            type="number"
+                            placeholder="e.g. 500"
+                            {...field}
+                            onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                          Set a monthly budget to get alerts when your spending exceeds this amount.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
