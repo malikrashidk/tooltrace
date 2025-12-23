@@ -60,26 +60,38 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
 
   // Helper to generate favicon URL if logoUrl is missing
   const getLogoUrl = (tool: Tool) => {
-      if (tool.logoUrl) return tool.logoUrl;
-      if (tool.websiteUrl) {
-          try {
-             // Extract domain
-             const url = new URL(tool.websiteUrl.startsWith('http') ? tool.websiteUrl : `https://${tool.websiteUrl}`);
-             return `https://www.google.com/s2/favicons?domain=${url.hostname}&sz=128`;
-          } catch (e) {
-              return undefined;
-          }
+    if (tool.logoUrl) return tool.logoUrl;
+    if (tool.websiteUrl) {
+      try {
+        // Extract domain
+        const url = new URL(tool.websiteUrl.startsWith('http') ? tool.websiteUrl : `https://${tool.websiteUrl}`);
+        return `https://www.google.com/s2/favicons?domain=${url.hostname}&sz=128`;
+      } catch (e) {
+        return undefined;
       }
-      return undefined;
+    }
+    return undefined;
   };
 
   return (
-    <Card className="group hover-elevate transition-all duration-200 relative" data-testid={`card-tool-${tool.id}`}>
+    <Card className={`group hover-elevate transition-all duration-200 relative ${tool.isLocked ? 'overflow-hidden' : ''}`} data-testid={`card-tool-${tool.id}`}>
       {(tool as any).isPinned && (
         <div className="absolute top-2 right-2 text-primary opacity-80 rotate-45">
           <Pin className="h-4 w-4" fill="currentColor" />
         </div>
       )}
+
+      {tool.isLocked && (
+        <div className="absolute inset-0 z-20 bg-background/60 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 text-center">
+          <Lock className="h-8 w-8 text-muted-foreground mb-2" />
+          <p className="font-semibold text-sm">Subscription Locked</p>
+          <p className="text-xs text-muted-foreground mt-1 max-w-[150px]">Upgrade your plan to unlock and manage this tool.</p>
+          <Button variant="link" size="sm" className="mt-2 h-auto p-0" onClick={() => window.location.href = '/pricing'}>
+            View Plans
+          </Button>
+        </div>
+      )}
+
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-4 min-w-0 flex-1">
@@ -108,7 +120,7 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
             </div>
           </div>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild disabled={tool.isLocked}>
               <Button
                 variant="ghost"
                 size="icon"
@@ -156,16 +168,16 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
             {tool.usageFrequency}
           </Badge>
           {hasSecureData && (
-             <Badge variant="outline" className="text-xs font-medium border-amber-200 text-amber-700 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400">
-               <Lock className="h-3 w-3 mr-1" />
-               Secured
-             </Badge>
+            <Badge variant="outline" className="text-xs font-medium border-amber-200 text-amber-700 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400">
+              <Lock className="h-3 w-3 mr-1" />
+              Secured
+            </Badge>
           )}
           {totalUsageMinutes > 0 && (
-             <Badge variant="outline" className="text-xs font-medium border-blue-200 text-blue-700 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400">
-               <Clock className="h-3 w-3 mr-1" />
-               {Math.round(totalUsageMinutes / 60)}h used
-             </Badge>
+            <Badge variant="outline" className="text-xs font-medium border-blue-200 text-blue-700 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400">
+              <Clock className="h-3 w-3 mr-1" />
+              {Math.round(totalUsageMinutes / 60)}h used
+            </Badge>
           )}
         </div>
 
@@ -181,6 +193,7 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
             variant="outline"
             className="w-full"
             onClick={() => window.open(tool.websiteUrl, "_blank")}
+            disabled={tool.isLocked}
             data-testid={`button-go-${tool.id}`}
           >
             <ExternalLink className="h-4 w-4 mr-2" />
@@ -190,6 +203,7 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
             <Button
               variant="secondary"
               className="w-full"
+              disabled={tool.isLocked}
               onClick={() => setShowCredentials(true)}
               data-testid={`button-autofill-${tool.id}`}
             >
@@ -213,6 +227,3 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
     </Card>
   );
 }
-
-
-

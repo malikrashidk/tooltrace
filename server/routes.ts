@@ -14,6 +14,9 @@ import { encrypt, decrypt } from "./lib/crypto";
 import { generateEmailVerifyToken, hashVerifyToken } from "./emailVerification";
 import { sendWelcomeEmail, sendPasswordResetEmail, sendEmailVerificationEmail, sendTeamInvitationEmail } from "./emailTemplates";
 import { z } from "zod";
+import { getAuthUrl, getTokensFromCode, getClient } from "./lib/google-auth";
+import { scanInbox } from "./lib/gmail-scanner";
+import { encrypt as encryptToken, decrypt as decryptToken } from "./lib/encryption";
 import {
   generateSecret,
   generateQRCode,
@@ -21,13 +24,12 @@ import {
   generateBackupCodes,
   verifyBackupCode,
 } from "./twoFactor";
+import type { Credentials } from "google-auth-library";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Apply rate limiting only to API routes
   app.use("/api", rateLimit(100, 60000)); // 100 API requests per minute
   app.use(passport.initialize());
-
-
 
   // ============ OAUTH CONFIGURATION ============
   const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -42,7 +44,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           clientSecret: GOOGLE_CLIENT_SECRET,
           callbackURL: `${OAUTH_CALLBACK_URL}/api/auth/google/callback`,
         },
-        async (accessToken, refreshToken, profile, done) => {
+        async (accessToken: string, refreshToken: string, profile: any, done: (err: any, user?: any) => void) => {
           try {
             let user = await storage.getUserByGoogleId(profile.id);
             if (!user) {
@@ -104,26 +106,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...parsed.data,
         password: hashedPassword,
       });
-// Email verification
-const { raw, hash, expiresAt } = generateEmailVerifyToken();
-await storage.setEmailVerificationToken(user.id, hash, expiresAt);
+      // Email verification
+      const { raw, hash, expiresAt } = generateEmailVerifyToken();
+      await storage.setEmailVerificationToken(user.id, hash, expiresAt);
 
-const verifyUrl = `${process.env.APP_URL}/api/auth/verify-email?token=${raw}`;
+      const verifyUrl = `${process.env.APP_URL}/api/auth/verify-email?token=${raw}`;
 
-try {
-  console.log("[email-verify] sending to", user.email);
-  await sendEmailVerificationEmail(user.email, verifyUrl);
-  console.log("[email-verify] sent to", user.email);
-} catch (e) {
-  console.error("[email-verify] failed for", user.email, e);
-}
+      try {
+        console.log("[email-verify] sending to", user.email);
+        await sendEmailVerificationEmail(user.email, verifyUrl);
+        console.log("[email-verify] sent to", user.email);
+      } catch (e) {
+        console.error("[email-verify] failed for", user.email, e);
+      }
 
 
-try {
-  await sendWelcomeEmail(user.email, user.name);
-} catch (e) {
-  console.error("Welcome email failed:", e);
-}
+      try {
+        await sendWelcomeEmail(user.email, user.name);
+      } catch (e) {
+        console.error("Welcome email failed:", e);
+      }
 
       // Create default free subscription
       await storage.createSubscription({
@@ -151,59 +153,59 @@ try {
     }
   });
 
-app.get("/api/auth/verify-email", async (req, res) => {
-  try {
-    const token = String(req.query.token || "");
-    if (!token) {
-      return res.status(400).json({ error: "Missing token" });
-    }
-
-    const tokenHash = hashVerifyToken(token);
-    const user = await storage.verifyEmailByTokenHash(tokenHash);
-
-    if (!user) {
-      return res.status(400).json({ error: "Invalid or expired token" });
-    }
-
-    return res.redirect("/?verified=true");
-  } catch (error) {
-    console.error("verify-email error:", error);
-    return res.status(500).json({ error: "Server error" });
-  }
-});
-
-app.post("/api/auth/resend-verification", async (req, res) => {
-  try {
-    const email = String(req.body.email || "").trim().toLowerCase();
-    if (!email) return res.status(400).json({ error: "Missing email" });
-
-    const user = await storage.getUserByEmail(email);
-
-    // Always return ok to avoid leaking which emails exist
-    if (!user) return res.json({ ok: true });
-    if (user.emailVerifiedAt) return res.json({ ok: true });
-
-    const { raw, hash, expiresAt } = generateEmailVerifyToken();
-    await storage.setEmailVerificationToken(user.id, hash, expiresAt);
-
-    const verifyUrl = `${process.env.APP_URL}/api/auth/verify-email?token=${raw}`;
-
+  app.get("/api/auth/verify-email", async (req, res) => {
     try {
-  console.log("[email-verify] sending to", user.email);
-  await sendEmailVerificationEmail(user.email, verifyUrl);
-  console.log("[email-verify] sent to", user.email);
-} catch (e) {
-  console.error("[email-verify] failed for", user.email, e);
-}
+      const token = String(req.query.token || "");
+      if (!token) {
+        return res.status(400).json({ error: "Missing token" });
+      }
+
+      const tokenHash = hashVerifyToken(token);
+      const user = await storage.verifyEmailByTokenHash(tokenHash);
+
+      if (!user) {
+        return res.status(400).json({ error: "Invalid or expired token" });
+      }
+
+      return res.redirect("/?verified=true");
+    } catch (error) {
+      console.error("verify-email error:", error);
+      return res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  app.post("/api/auth/resend-verification", async (req, res) => {
+    try {
+      const email = String(req.body.email || "").trim().toLowerCase();
+      if (!email) return res.status(400).json({ error: "Missing email" });
+
+      const user = await storage.getUserByEmail(email);
+
+      // Always return ok to avoid leaking which emails exist
+      if (!user) return res.json({ ok: true });
+      if (user.emailVerifiedAt) return res.json({ ok: true });
+
+      const { raw, hash, expiresAt } = generateEmailVerifyToken();
+      await storage.setEmailVerificationToken(user.id, hash, expiresAt);
+
+      const verifyUrl = `${process.env.APP_URL}/api/auth/verify-email?token=${raw}`;
+
+      try {
+        console.log("[email-verify] sending to", user.email);
+        await sendEmailVerificationEmail(user.email, verifyUrl);
+        console.log("[email-verify] sent to", user.email);
+      } catch (e) {
+        console.error("[email-verify] failed for", user.email, e);
+      }
 
 
-    return res.json({ ok: true });
-  } catch (error) {
-    console.error("resend-verification error:", error);
-    // Still return ok to avoid enumeration
-    return res.json({ ok: true });
-  }
-});
+      return res.json({ ok: true });
+    } catch (error) {
+      console.error("resend-verification error:", error);
+      // Still return ok to avoid enumeration
+      return res.json({ ok: true });
+    }
+  });
 
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -214,7 +216,7 @@ app.post("/api/auth/resend-verification", async (req, res) => {
       }
 
       const user = await storage.getUserByEmail(email);
-      
+
       if (!user) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
@@ -251,12 +253,12 @@ app.post("/api/auth/resend-verification", async (req, res) => {
         }
       }
 
-if (!user.emailVerifiedAt) {
-  return res.status(403).json({
-    error: "EMAIL_NOT_VERIFIED",
-    message: "Please verify your email before logging in.",
-  });
-}
+      if (!user.emailVerifiedAt) {
+        return res.status(403).json({
+          error: "EMAIL_NOT_VERIFIED",
+          message: "Please verify your email before logging in.",
+        });
+      }
 
       // Update last login time
       await storage.updateUser(user.id, { lastLoginAt: new Date() });
@@ -293,7 +295,7 @@ if (!user.emailVerifiedAt) {
       }
 
       const user = await storage.getUserByEmail(email);
-      
+
       // Always return success to prevent email enumeration
       if (!user) {
         return res.json({ message: "If an account exists with this email, a password reset link has been sent." });
@@ -327,7 +329,7 @@ if (!user.emailVerifiedAt) {
 
       await auditLog(user.id, "password_reset_request", "user", user.id, {}, req);
 
-      res.json({ 
+      res.json({
         message: "If an account exists with this email, a password reset link has been sent.",
         // For self-hosted demo purposes, include the reset URL in dev mode
         ...(process.env.NODE_ENV === "development" && { resetUrl })
@@ -493,7 +495,7 @@ if (!user.emailVerifiedAt) {
   app.post("/api/auth/2fa/disable", authMiddleware, async (req, res) => {
     try {
       const { password, code } = req.body;
-      
+
       const user = await storage.getUser(req.userId!);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
@@ -566,7 +568,7 @@ if (!user.emailVerifiedAt) {
   app.post("/api/auth/2fa/regenerate-backup", authMiddleware, async (req, res) => {
     try {
       const { password, code } = req.body;
-      
+
       const user = await storage.getUser(req.userId!);
       if (!user || !user.twoFactorEnabled) {
         return res.status(400).json({ error: "2FA is not enabled" });
@@ -644,7 +646,7 @@ if (!user.emailVerifiedAt) {
           updates.budgetThreshold = String(req.body.budgetThreshold);
         }
       }
-      
+
       if (Object.keys(updates).length === 0) {
         return res.status(400).json({ error: "No valid fields to update" });
       }
@@ -654,7 +656,7 @@ if (!user.emailVerifiedAt) {
         return res.status(404).json({ error: "User not found" });
       }
       await auditLog(req.userId!, "update", "user", req.userId!, updates, req);
-      
+
       res.json({
         user: {
           id: updated.id,
@@ -677,8 +679,24 @@ if (!user.emailVerifiedAt) {
   app.get("/api/tools", authMiddleware, async (req, res) => {
     try {
       const tools = await storage.getUserTools(req.userId!);
-      res.json({ tools, count: tools.length });
+      const user = await storage.getUser(req.userId!);
+      const subscription = await storage.getUserSubscription(req.userId!);
+
+      const limit = subscription?.toolsLimit ? parseInt(String(subscription.toolsLimit)) : 8;
+
+      // Sort tools by creation date and mark those above the limit as locked
+      const sortedTools = [...tools].sort((a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+
+      const enrichedTools = sortedTools.map((tool, index) => ({
+        ...tool,
+        isLocked: index >= limit
+      }));
+
+      res.json({ tools: enrichedTools, count: enrichedTools.length, limit });
     } catch (error) {
+      console.error("[GET /api/tools] Error:", error);
       res.status(500).json({ error: "Failed to fetch tools" });
     }
   });
@@ -686,7 +704,7 @@ if (!user.emailVerifiedAt) {
   app.post("/api/tools", authMiddleware, emailVerificationMiddleware, async (req, res) => {
     try {
       let subscription = await storage.getUserSubscription(req.userId!);
-      
+
       // Auto-create subscription if missing (fallback for edge cases)
       if (!subscription) {
         const user = await storage.getUser(req.userId!);
@@ -880,7 +898,7 @@ if (!user.emailVerifiedAt) {
   app.post("/api/admin/users", authMiddleware, adminMiddleware, async (req, res) => {
     try {
       const { email, password, name, plan } = req.body;
-      
+
       if (!email || !password || !name) {
         return res.status(400).json({ error: "Email, password, and name required" });
       }
@@ -896,7 +914,7 @@ if (!user.emailVerifiedAt) {
         password: hashedPassword,
         name,
       });
-      
+
       // Set user plan after creation
       await storage.updateUser(user.id, { plan: plan || "free" });
 
@@ -944,12 +962,12 @@ if (!user.emailVerifiedAt) {
 
       const { plan, name } = req.body;
       const updates: any = {};
-      
+
       if (name) updates.name = name;
       if (plan) updates.plan = plan;
 
       const updated = await storage.updateUser(req.params.id, updates);
-      
+
       if (plan) {
         const subscription = await storage.getUserSubscription(req.params.id);
         const toolsLimit = String(plan === "standard" ? 15 : plan === "premium" ? 999999 : 8);
@@ -1070,7 +1088,7 @@ if (!user.emailVerifiedAt) {
   });
 
   // ============ RECEIPT ROUTES (Paid Members Only) ============
-  
+
   // Middleware to check if user has paid plan
   const paidPlanMiddleware = async (req: any, res: any, next: any) => {
     try {
@@ -1106,7 +1124,7 @@ if (!user.emailVerifiedAt) {
   app.post("/api/receipts", authMiddleware, paidPlanMiddleware, async (req, res) => {
     try {
       const { fileName, fileData, toolId, amount, receiptDate } = req.body;
-      
+
       if (!fileName || !fileData) {
         return res.status(400).json({ error: "File name and file data are required" });
       }
@@ -1145,8 +1163,8 @@ if (!user.emailVerifiedAt) {
       if (error.code === '23502' || error.message?.includes('null value') || error.message?.includes('violates not-null constraint')) {
         const columnMatch = error.message?.match(/column "(\w+)" of relation/);
         const column = columnMatch ? columnMatch[1] : 'unknown';
-        return res.status(400).json({ 
-          error: `Missing required field: ${column}. Please ensure all required fields are provided.` 
+        return res.status(400).json({
+          error: `Missing required field: ${column}. Please ensure all required fields are provided.`
         });
       }
       res.status(500).json({ error: error.message || "Failed to upload receipt" });
@@ -1157,7 +1175,7 @@ if (!user.emailVerifiedAt) {
     try {
       const receipts = await storage.getUserReceipts(req.userId!);
       const receipt = receipts.find(r => r.id === req.params.id);
-      
+
       if (!receipt) {
         return res.status(404).json({ error: "Receipt not found" });
       }
@@ -1189,7 +1207,7 @@ if (!user.emailVerifiedAt) {
   app.post("/api/api-keys", authMiddleware, paidPlanMiddleware, async (req, res) => {
     try {
       const { name } = req.body;
-      
+
       if (!name || typeof name !== "string" || name.trim().length === 0) {
         return res.status(400).json({ error: "API key name is required" });
       }
@@ -1212,9 +1230,9 @@ if (!user.emailVerifiedAt) {
       } as any);
 
       await auditLog(req.userId!, "create", "api_key", apiKey.id, { name: apiKey.name }, req);
-      
+
       // Return full key and secret only on creation
-      res.json({ 
+      res.json({
         apiKey: {
           ...apiKey,
           // Note: this is the only time secret is visible
@@ -1231,7 +1249,7 @@ if (!user.emailVerifiedAt) {
     try {
       const apiKeys = await storage.getUserApiKeys(req.userId!);
       const apiKey = apiKeys.find(k => k.id === req.params.id);
-      
+
       if (!apiKey) {
         return res.status(404).json({ error: "API key not found" });
       }
@@ -1245,7 +1263,7 @@ if (!user.emailVerifiedAt) {
   });
 
   // ============ EXTERNAL API ENDPOINTS (for Pabbly/Make integrations) ============
-  
+
   // Middleware to verify API key for external access AND check paid plan
   const apiKeyAuthMiddleware = async (req: any, res: any, next: any) => {
     try {
@@ -1256,7 +1274,7 @@ if (!user.emailVerifiedAt) {
 
       const key = authHeader.substring(7);
       const apiKey = await storage.getApiKeyByKey(key);
-      
+
       if (!apiKey || !apiKey.isActive) {
         return res.status(401).json({ error: "Invalid or inactive API key" });
       }
@@ -1312,7 +1330,7 @@ if (!user.emailVerifiedAt) {
       const tools = await storage.getUserTools(req.userId!);
       const today = new Date();
       const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
-      
+
       const upcomingRenewals = tools
         .filter(tool => {
           if (!tool.nextRenewalDate) return false;
@@ -1320,7 +1338,7 @@ if (!user.emailVerifiedAt) {
           return renewalDate >= today && renewalDate <= thirtyDaysFromNow;
         })
         .sort((a, b) => new Date(a.nextRenewalDate!).getTime() - new Date(b.nextRenewalDate!).getTime());
-      
+
       res.json({ renewals: upcomingRenewals, count: upcomingRenewals.length });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch renewals" });
@@ -1331,7 +1349,7 @@ if (!user.emailVerifiedAt) {
   app.get("/api/v1/analytics/spending", apiKeyAuthMiddleware, async (req, res) => {
     try {
       const tools = await storage.getUserTools(req.userId!);
-      
+
       const monthlyTotal = tools.reduce((sum, tool) => {
         if (tool.billingAmount && tool.billingCycle === "monthly") {
           return sum + parseFloat(tool.billingAmount);
@@ -1345,8 +1363,8 @@ if (!user.emailVerifiedAt) {
       const yearlyTotal = monthlyTotal * 12;
       const byCategory = tools.reduce((acc: Record<string, number>, tool) => {
         const category = tool.categories?.[0] || "Uncategorized";
-        const monthly = tool.billingCycle === "yearly" 
-          ? parseFloat(tool.billingAmount || "0") / 12 
+        const monthly = tool.billingCycle === "yearly"
+          ? parseFloat(tool.billingAmount || "0") / 12
           : parseFloat(tool.billingAmount || "0");
         acc[category] = (acc[category] || 0) + monthly;
         return acc;
@@ -1356,13 +1374,13 @@ if (!user.emailVerifiedAt) {
       const budgetThreshold = user?.budgetThreshold ? parseFloat(user.budgetThreshold) : null;
       const budgetStatus = budgetThreshold
         ? {
-            threshold: budgetThreshold,
-            isOverBudget: monthlyTotal > budgetThreshold,
-            percentageUsed: (monthlyTotal / budgetThreshold) * 100
-          }
+          threshold: budgetThreshold,
+          isOverBudget: monthlyTotal > budgetThreshold,
+          percentageUsed: (monthlyTotal / budgetThreshold) * 100
+        }
         : null;
 
-      res.json({ 
+      res.json({
         monthlyTotal: monthlyTotal.toFixed(2),
         yearlyTotal: yearlyTotal.toFixed(2),
         toolCount: tools.length,
@@ -1375,11 +1393,11 @@ if (!user.emailVerifiedAt) {
   });
 
   // ============ BROWSER EXTENSION DOWNLOAD ============
-  
+
   app.get("/api/extension/download", async (req, res) => {
     try {
       const extensionPath = path.join(process.cwd(), "browser-extension");
-      
+
       // Check if browser-extension folder exists
       if (!fs.existsSync(extensionPath)) {
         return res.status(404).json({ error: "Extension files not found" });
@@ -1391,7 +1409,7 @@ if (!user.emailVerifiedAt) {
 
       // Create zip archive
       const archive = archiver('zip', { zlib: { level: 9 } });
-      
+
       archive.on('error', (err: any) => {
         console.error("Archive error:", err);
         res.status(500).json({ error: "Failed to create extension archive" });
@@ -1412,12 +1430,12 @@ if (!user.emailVerifiedAt) {
   });
 
   // ============ WEBHOOK ENDPOINTS FOR AUTOMATION (Zapier/Make/Pabbly) ============
-  
+
   // Webhook: Create a new tool
   app.post("/api/v1/tools", apiKeyAuthMiddleware, async (req, res) => {
     try {
       const { name, websiteUrl, isPaid, billingAmount, billingCycle, categories, usageFrequency, nextRenewalDate, notes } = req.body;
-      
+
       if (!name || !websiteUrl) {
         return res.status(400).json({ error: "Name and websiteUrl are required" });
       }
@@ -1452,7 +1470,7 @@ if (!user.emailVerifiedAt) {
     try {
       const tools = await storage.getUserTools(req.userId!);
       const existingTool = tools.find(t => t.id === req.params.id);
-      
+
       if (!existingTool) {
         return res.status(404).json({ error: "Tool not found" });
       }
@@ -1464,7 +1482,7 @@ if (!user.emailVerifiedAt) {
 
       const updatedTool = await storage.updateTool(req.params.id, updates);
       await auditLog(req.userId!, "update", "tool", req.params.id, { source: "api", changes: Object.keys(updates) }, req);
-      
+
       res.json({ tool: updatedTool, message: "Tool updated successfully" });
     } catch (error: any) {
       console.error("API tool update error:", error);
@@ -1477,14 +1495,14 @@ if (!user.emailVerifiedAt) {
     try {
       const tools = await storage.getUserTools(req.userId!);
       const existingTool = tools.find(t => t.id === req.params.id);
-      
+
       if (!existingTool) {
         return res.status(404).json({ error: "Tool not found" });
       }
 
       await storage.deleteTool(req.params.id);
       await auditLog(req.userId!, "delete", "tool", req.params.id, { name: existingTool.name, source: "api" }, req);
-      
+
       res.json({ success: true, message: "Tool deleted successfully" });
     } catch (error: any) {
       console.error("API tool deletion error:", error);
@@ -1499,7 +1517,7 @@ if (!user.emailVerifiedAt) {
   app.post("/api/tools/usage", async (req, res, next) => {
     // Try API Key first
     if (req.headers.authorization?.startsWith('Bearer tt_')) {
-        return apiKeyAuthMiddleware(req, res, next);
+      return apiKeyAuthMiddleware(req, res, next);
     }
     // Try Session Token (authMiddleware)
     return authMiddleware(req, res, next);
@@ -1543,7 +1561,7 @@ if (!user.emailVerifiedAt) {
 
       // Get team members (including owner)
       const teamMembers = await storage.getTeamMembers(req.userId!);
-      
+
       // Add owner as first member
       const ownerMember = {
         id: user.id,
@@ -1573,11 +1591,11 @@ if (!user.emailVerifiedAt) {
       }
 
       if (member.status === "active") {
-          return res.status(400).json({ error: "Invitation already accepted" });
+        return res.status(400).json({ error: "Invitation already accepted" });
       }
 
       if (member.invitationExpiresAt && new Date(member.invitationExpiresAt) < new Date()) {
-          return res.status(400).json({ error: "Invitation expired" });
+        return res.status(400).json({ error: "Invitation expired" });
       }
 
       const inviter = await storage.getUser(member.teamOwnerId);
@@ -1594,67 +1612,67 @@ if (!user.emailVerifiedAt) {
 
   app.post("/api/team/accept-invite", authMiddleware, async (req, res) => {
     try {
-        const { token } = req.body;
-        const member = await storage.getTeamMemberByToken(token);
+      const { token } = req.body;
+      const member = await storage.getTeamMemberByToken(token);
 
-        if (!member) return res.status(404).json({ error: "Invalid invitation" });
-        if (member.email !== (req.user as any)?.email) {
-             // For now, let's enforce email match or at least update the member record to the accepting user's ID
-             return res.status(403).json({ error: "Email mismatch. Please login with the invited email address." });
-        }
+      if (!member) return res.status(404).json({ error: "Invalid invitation" });
+      if (member.email !== (req.user as any)?.email) {
+        // For now, let's enforce email match or at least update the member record to the accepting user's ID
+        return res.status(403).json({ error: "Email mismatch. Please login with the invited email address." });
+      }
 
-        await storage.updateTeamMember(member.id, {
-            userId: req.userId!,
-            status: "active",
-            joinedAt: new Date(),
-            invitationToken: null, // clear token so it can't be reused
-        });
+      await storage.updateTeamMember(member.id, {
+        userId: req.userId!,
+        status: "active",
+        joinedAt: new Date(),
+        invitationToken: null, // clear token so it can't be reused
+      });
 
-        res.json({ success: true });
+      res.json({ success: true });
     } catch (error: any) {
-        res.status(500).json({ error: error.message });
+      res.status(500).json({ error: error.message });
     }
   });
 
   app.post("/api/team/register-invite", async (req, res) => {
-     try {
-         const { token, name, password } = req.body;
-         const member = await storage.getTeamMemberByToken(token);
-         if (!member) return res.status(404).json({ error: "Invalid invitation" });
+    try {
+      const { token, name, password } = req.body;
+      const member = await storage.getTeamMemberByToken(token);
+      if (!member) return res.status(404).json({ error: "Invalid invitation" });
 
-         // Check if user already exists
-         const existingUser = await storage.getUserByEmail(member.email);
-         if (existingUser) return res.status(400).json({ error: "User already exists. Please login to accept." });
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(member.email);
+      if (existingUser) return res.status(400).json({ error: "User already exists. Please login to accept." });
 
-         // Create user
-         const hashedPassword = await hashPassword(password);
-         const user = await storage.createUser({
-             email: member.email,
-             password: hashedPassword,
-             name: name,
-         });
+      // Create user
+      const hashedPassword = await hashPassword(password);
+      const user = await storage.createUser({
+        email: member.email,
+        password: hashedPassword,
+        name: name,
+      });
 
-         // Create default free subscription
-         await storage.createSubscription({
-             userId: user.id,
-             plan: "free",
-             toolsLimit: "8",
-         });
+      // Create default free subscription
+      await storage.createSubscription({
+        userId: user.id,
+        plan: "free",
+        toolsLimit: "8",
+      });
 
-         // Accept invite
-         await storage.updateTeamMember(member.id, {
-             userId: user.id,
-             status: "active",
-             joinedAt: new Date(),
-             invitationToken: null,
-         });
+      // Accept invite
+      await storage.updateTeamMember(member.id, {
+        userId: user.id,
+        status: "active",
+        joinedAt: new Date(),
+        invitationToken: null,
+      });
 
-         // Auto login token not needed here as frontend will call login, but we could return it
-         res.json({ success: true });
+      // Auto login token not needed here as frontend will call login, but we could return it
+      res.json({ success: true });
 
-     } catch (error: any) {
-         res.status(500).json({ error: error.message });
-     }
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
   });
 
   app.post("/api/team/invite", authMiddleware, paidPlanMiddleware, async (req, res) => {
@@ -1671,7 +1689,7 @@ if (!user.emailVerifiedAt) {
 
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(email);
-      
+
       // Check if already a team member
       const existingMembers = await storage.getTeamMembers(req.userId!);
       if (existingMembers.some(m => m.email === email)) {
@@ -1709,7 +1727,7 @@ if (!user.emailVerifiedAt) {
         // Continue anyway, the user can maybe retry or copy link if we return it (dev only?)
       }
 
-      res.json({ 
+      res.json({
         member: teamMember,
         message: "Invitation sent successfully"
       });
@@ -1785,7 +1803,7 @@ if (!user.emailVerifiedAt) {
       const tools = await storage.getUserTools(req.userId!);
       const today = new Date();
       const futureDate = new Date(today.getTime() + days * 24 * 60 * 60 * 1000);
-      
+
       const upcomingRenewals = tools
         .filter(tool => {
           if (!tool.nextRenewalDate || !tool.isPaid) return false;
@@ -1800,9 +1818,9 @@ if (!user.emailVerifiedAt) {
           billingCycle: tool.billingCycle,
           daysUntilRenewal: Math.ceil((new Date(tool.nextRenewalDate!).getTime() - today.getTime()) / (24 * 60 * 60 * 1000)),
         }));
-      
-      res.json({ 
-        renewals: upcomingRenewals, 
+
+      res.json({
+        renewals: upcomingRenewals,
         count: upcomingRenewals.length,
         queryDays: days,
         generatedAt: new Date().toISOString()
@@ -1814,12 +1832,152 @@ if (!user.emailVerifiedAt) {
 
   // Webhook: Test endpoint to verify API key
   app.get("/api/v1/test", apiKeyAuthMiddleware, async (req, res) => {
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: "API key is valid",
       userId: req.userId,
       timestamp: new Date().toISOString()
     });
+  });
+
+  // ============ INBOX DISCOVERY ROUTES ============
+  app.get("/api/inbox/google/connect", authMiddleware, (req, res) => {
+    try {
+      const url = getAuthUrl(req.userId!);
+      res.json({ url });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/inbox/google/callback", async (req, res) => {
+    const { code, state } = req.query;
+    if (!code || !state) {
+      return res.redirect("/dashboard?error=gmail_connect_failed");
+    }
+
+    try {
+      const tokens = await getTokensFromCode(code as string);
+
+      const accessTokenEnc = encryptToken(tokens.access_token || "");
+      const refreshTokenEnc = tokens.refresh_token ? encryptToken(tokens.refresh_token) : null;
+
+      // Upsert OAuth connection
+      const userId = state as string;
+      const existing = await storage.getOAuthConnection(userId, "google");
+      if (existing) {
+        await storage.updateOAuthConnection(existing.id, {
+          accessTokenEnc,
+          refreshTokenEnc: refreshTokenEnc || existing.refreshTokenEnc,
+          tokenExpiry: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
+          scope: tokens.scope || existing.scope,
+        });
+      } else {
+        await storage.createOAuthConnection({
+          userId: userId,
+          provider: "google",
+          accessTokenEnc,
+          refreshTokenEnc,
+          scope: tokens.scope || "",
+          tokenExpiry: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
+        });
+      }
+
+      res.redirect("/dashboard?gmail_connected=true");
+    } catch (error) {
+      console.error("Gmail callback error:", error);
+      res.redirect("/dashboard?error=gmail_connect_failed");
+    }
+  });
+
+  app.post("/api/inbox/scan", authMiddleware, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.userId!);
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      // Monthly limit check
+      const runCount = await storage.getDiscoveryRunsThisMonth(user.id);
+      const userPlan = (user.plan || "free").toLowerCase();
+      const limits: Record<string, number> = { free: 1, standard: 10, premium: 50 };
+
+      if (runCount >= (limits[userPlan] || 1)) {
+        return res.status(403).json({
+          error: `Monthly scan limit reached for your ${userPlan} plan.`
+        });
+      }
+
+      const conn = await storage.getOAuthConnection(user.id, "google");
+      if (!conn) return res.status(400).json({ error: "Please connect your Gmail account first" });
+
+      const auth = getClient({
+        access_token: decryptToken(conn.accessTokenEnc),
+        refresh_token: conn.refreshTokenEnc ? decryptToken(conn.refreshTokenEnc) : undefined,
+        expiry_date: conn.tokenExpiry?.getTime(),
+      });
+
+      // Log run start
+      const run = await storage.createDiscoveryRun({
+        userId: user.id,
+        provider: "google",
+        status: "running",
+      });
+
+      const suggestions = await scanInbox(auth);
+
+      // Update results
+      await storage.clearDiscoveryResults(user.id);
+      for (const suggestion of suggestions) {
+        await storage.createDiscoveryResult({
+          ...suggestion,
+          userId: user.id,
+          provider: "google",
+        });
+      }
+
+      // Finalize run
+      await storage.updateDiscoveryRun(run.id, {
+        status: "completed",
+        finishedAt: new Date(),
+        itemsFoundCount: suggestions.length,
+      });
+
+      res.json({
+        success: true,
+        count: suggestions.length,
+        suggestions
+      });
+    } catch (error: any) {
+      console.error("Inbox scan error:", error);
+      res.status(500).json({ error: "Failed to scan inbox" });
+    }
+  });
+
+  app.get("/api/inbox/results", authMiddleware, async (req, res) => {
+    try {
+      const results = await storage.getDiscoveryResults(req.userId!);
+      res.json({ results });
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to fetch scan results" });
+    }
+  });
+
+  app.post("/api/inbox/results/clear", authMiddleware, async (req, res) => {
+    try {
+      await storage.clearDiscoveryResults(req.userId!);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to clear results" });
+    }
+  });
+
+  app.post("/api/inbox/disconnect", authMiddleware, async (req, res) => {
+    try {
+      await storage.deleteOAuthConnection(req.userId!, "google");
+      await storage.clearDiscoveryResults(req.userId!);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to disconnect account" });
+    }
   });
 
   const httpServer = createServer(app);

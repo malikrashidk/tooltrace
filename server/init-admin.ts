@@ -17,7 +17,7 @@ async function initializeAdmin() {
     return;
   }
 
-  console.log("ðŸ”§ Initializing admin user...");
+  console.log("🛠️ Initializing admin user...");
 
   try {
     // Check if admin already exists
@@ -25,11 +25,11 @@ async function initializeAdmin() {
     if (existingUser) {
       // Ensure admin user has correct flags set
       if (!existingUser.isAdmin || existingUser.plan !== "premium") {
-        console.log("ðŸ”„ Fixing admin user permissions...");
+        console.log("🔄 Fixing admin user permissions...");
         await sql`UPDATE users SET is_admin = true, plan = 'premium', updated_at = NOW() WHERE email = ${ADMIN_EMAIL}`;
-        console.log("âœ… Admin permissions fixed");
+        console.log("✅ Admin permissions fixed");
       }
-      console.log("âœ… Admin user already exists");
+      console.log("✅ Admin user already exists");
       console.log(`   Email: ${ADMIN_EMAIL}`);
       console.log(`   Name: ${existingUser.name}`);
       console.log(`   Plan: premium`);
@@ -60,16 +60,15 @@ async function initializeAdmin() {
       status: "active",
     });
 
-    console.log("âœ… Admin user created successfully!");
+    console.log("✅ Admin user created successfully!");
     console.log(`   Email: ${ADMIN_EMAIL}`);
-    console.log(`   Password: ${ADMIN_PASSWORD}`);
     console.log(`   Name: ${ADMIN_NAME}`);
     console.log(`   Plan: premium`);
     console.log(`   Tools Limit: Unlimited`);
     console.log("");
-    console.log("âš ï¸  Please change the password after first login!");
+    console.log("⚠️  Please change the password after first login!");
   } catch (error) {
-    console.error("âŒ Failed to initialize admin user:", error);
+    console.error("❌ Failed to initialize admin user:", error);
     process.exit(1);
   }
 }
@@ -78,14 +77,13 @@ async function initializeAdmin() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   initializeAdmin()
     .then(() => {
-      console.log("âœ… Admin initialization complete");
+      console.log("✅ Admin initialization complete");
       process.exit(0);
     })
     .catch((error) => {
-      console.error("âŒ Error:", error);
+      console.error("❌ Error:", error);
       process.exit(1);
     });
 }
 
 export { initializeAdmin };
-

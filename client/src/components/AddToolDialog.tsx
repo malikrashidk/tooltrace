@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -101,10 +102,10 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
       usageFrequency: (editTool?.usageFrequency as "daily" | "weekly" | "rarely") || "weekly",
       billingAmount: editTool?.billingAmount ? parseFloat(editTool.billingAmount) : undefined,
       billingCycle: (editTool?.billingCycle as "monthly" | "yearly" | "one-time") || "monthly",
-      nextRenewalDate: editTool?.nextRenewalDate 
-        ? (editTool.nextRenewalDate instanceof Date 
-            ? editTool.nextRenewalDate.toISOString().split('T')[0] 
-            : new Date(editTool.nextRenewalDate).toISOString().split('T')[0])
+      nextRenewalDate: editTool?.nextRenewalDate
+        ? (editTool.nextRenewalDate instanceof Date
+          ? editTool.nextRenewalDate.toISOString().split('T')[0]
+          : new Date(editTool.nextRenewalDate).toISOString().split('T')[0])
         : "",
       paymentMethod: editTool?.paymentMethod || "",
       username: "",
@@ -126,8 +127,8 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
       billingCycle: (editTool?.billingCycle as "monthly" | "yearly" | "one-time") || "monthly",
       nextRenewalDate: editTool?.nextRenewalDate
         ? (editTool.nextRenewalDate instanceof Date
-            ? editTool.nextRenewalDate.toISOString().split("T")[0]
-            : new Date(editTool.nextRenewalDate).toISOString().split("T")[0])
+          ? editTool.nextRenewalDate.toISOString().split("T")[0]
+          : new Date(editTool.nextRenewalDate).toISOString().split("T")[0])
         : "",
       paymentMethod: editTool?.paymentMethod || "",
       username: "",
@@ -149,7 +150,7 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
     const billingCycle = data.billingCycle && data.billingCycle.trim() ? data.billingCycle : null;
     const paymentMethod = data.paymentMethod && data.paymentMethod.trim() ? data.paymentMethod : null;
     const notes = data.notes && data.notes.trim() ? data.notes : null;
-    
+
     // Clean up secure fields if they are empty
     const secureData: any = {};
     if (data.username && data.password) {
@@ -212,23 +213,23 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
   // Auto-fetch favicon when website URL changes if no custom logo is set
   const websiteUrl = form.watch("websiteUrl");
   useEffect(() => {
-      if (!logoPreview && websiteUrl && !editTool?.logoUrl) {
-          try {
-             // Basic validation to ensure it looks like a domain before requesting
-             if (websiteUrl.includes(".")) {
-                 const domain = websiteUrl.replace(/^https?:\/\//, "").split("/")[0];
-                 // Use Google's favicon service as a fallback
-                 // We don't set it as "logoPreview" (which implies a custom upload)
-                 // but we can render it in the UI if logoPreview is null.
-                 // However, to persist it, we might want to let the user see it.
-                 // For now, the ToolCard handles the display fallback.
-                 // But the user requested "logos for tools I add".
-                 // If we want to save it, we can set it here.
-             }
-          } catch (e) {
-              // ignore
-          }
+    if (!logoPreview && websiteUrl && !editTool?.logoUrl) {
+      try {
+        // Basic validation to ensure it looks like a domain before requesting
+        if (websiteUrl.includes(".")) {
+          const domain = websiteUrl.replace(/^https?:\/\//, "").split("/")[0];
+          // Use Google's favicon service as a fallback
+          // We don't set it as "logoPreview" (which implies a custom upload)
+          // but we can render it in the UI if logoPreview is null.
+          // However, to persist it, we might want to let the user see it.
+          // For now, the ToolCard handles the display fallback.
+          // But the user requested "logos for tools I add".
+          // If we want to save it, we can set it here.
+        }
+      } catch (e) {
+        // ignore
       }
+    }
   }, [websiteUrl, logoPreview, editTool]);
 
   const handleToolSelect = (tool: KnownTool) => {
@@ -238,6 +239,9 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
     if (tool.category && !selectedCategories.includes(tool.category)) {
       setSelectedCategories(prev => [...prev, tool.category]);
     }
+
+    // Automatically set logo preview from external favicon service (not stored on server)
+    setLogoPreview(`https://www.google.com/s2/favicons?domain=${tool.website}&sz=128`);
 
     setComboboxOpen(false);
   };
@@ -252,10 +256,10 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{editTool ? "Edit Tool" : "Add New Tool"}</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+        <DialogHeader className="mb-4 sm:mb-6">
+          <DialogTitle className="text-xl sm:text-2xl">{editTool ? "Edit Tool" : "Add New Tool"}</DialogTitle>
+          <DialogDescription className="text-sm sm:text-base">
             {editTool
               ? "Update the details of your SaaS tool."
               : "Add a new SaaS tool to your collection."}
@@ -264,19 +268,19 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-4">
-              <div className="flex gap-4">
-                <div className="flex-shrink-0">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                <div className="flex flex-col items-center sm:items-start flex-shrink-0">
                   <label className="cursor-pointer" data-testid="input-logo-upload">
-                    <div className="w-20 h-20 border-2 border-dashed border-border rounded-lg flex items-center justify-center bg-muted/50 hover:bg-muted transition-colors">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 border-2 border-dashed border-border rounded-xl flex items-center justify-center bg-muted/30 hover:bg-muted/50 transition-colors">
                       {logoPreview ? (
                         <img
                           src={logoPreview}
                           alt="Logo preview"
-                          className="w-full h-full object-contain rounded-lg p-1"
+                          className="w-full h-full object-contain rounded-lg p-2"
                         />
                       ) : (
-                        <Upload className="h-6 w-6 text-muted-foreground" />
+                        <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
                       )}
                     </div>
                     <input
@@ -286,7 +290,7 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
                       onChange={handleLogoUpload}
                     />
                   </label>
-                  <p className="text-xs text-muted-foreground mt-1 text-center">Logo</p>
+                  <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground mt-2 text-center sm:text-left">Brand Logo</p>
                 </div>
 
                 <div className="flex-1 space-y-4">
@@ -295,7 +299,7 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
                     name="name"
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
-                        <FormLabel>Tool Name</FormLabel>
+                        <FormLabel className="font-semibold">Tool Name</FormLabel>
                         <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
                           <PopoverTrigger asChild>
                             <FormControl>
@@ -304,7 +308,7 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
                                 role="combobox"
                                 aria-expanded={comboboxOpen}
                                 className={cn(
-                                  "w-full justify-between",
+                                  "w-full justify-between h-11 text-base sm:text-sm",
                                   !field.value && "text-muted-foreground"
                                 )}
                                 data-testid="input-tool-name"
@@ -314,7 +318,7 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
                               </Button>
                             </FormControl>
                           </PopoverTrigger>
-                          <PopoverContent className="w-[400px] p-0" align="start">
+                          <PopoverContent className="w-[calc(100vw-2.5rem)] sm:w-[400px] p-0" align="start">
                             <Command filter={(value, search) => {
                               const item = knownTools.find(t => t.name.toLowerCase() === value.toLowerCase());
                               if (!item) return 0;
@@ -332,43 +336,50 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
                                   setSearchValue(search);
                                 }}
                               />
-                              <CommandList>
-                                <CommandEmpty className="py-2 px-4 text-sm">
-                                  <p className="text-muted-foreground mb-2">No known tool found.</p>
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    className="w-full"
-                                    onClick={() => {
-                                      // Use the custom search value
-                                      field.onChange(searchValue);
-                                      setComboboxOpen(false);
-                                    }}
-                                  >
-                                    Use "{searchValue}"
-                                  </Button>
-                                </CommandEmpty>
-                                <CommandGroup>
+                              <CommandEmpty className="py-2 px-4 text-sm">
+                                <p className="text-muted-foreground mb-2">No known tool found.</p>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  className="w-full"
+                                  onClick={() => {
+                                    // Use the custom search value
+                                    field.onChange(searchValue);
+                                    setComboboxOpen(false);
+                                  }}
+                                >
+                                  Use "{searchValue}"
+                                </Button>
+                              </CommandEmpty>
+                              <CommandGroup heading="Suggestions">
+                                <CommandList className="max-h-[300px] overflow-y-auto overflow-x-hidden pb-10 md:pb-0">
                                   {knownTools.map((tool) => (
                                     <CommandItem
                                       key={tool.name}
                                       value={tool.name}
                                       onSelect={() => handleToolSelect(tool)}
+                                      className="cursor-pointer py-3 md:py-2"
                                     >
-                                      <Check
-                                        className={cn(
-                                          "mr-2 h-4 w-4",
-                                          field.value === tool.name ? "opacity-100" : "opacity-0"
-                                        )}
-                                      />
-                                      <div className="flex flex-col">
-                                        <span>{tool.name}</span>
-                                        <span className="text-xs text-muted-foreground">{tool.website}</span>
+                                      <div className="flex items-center w-full">
+                                        <Avatar className="h-8 w-8 mr-3 rounded-md border bg-white flex-shrink-0">
+                                          <AvatarImage src={`https://www.google.com/s2/favicons?domain=${tool.website}&sz=64`} alt={tool.name} />
+                                          <AvatarFallback className="text-[10px]">{tool.name.slice(0, 2)}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex flex-col min-w-0 flex-1">
+                                          <span className="font-medium truncate">{tool.name}</span>
+                                          <span className="text-xs text-muted-foreground truncate">{tool.website}</span>
+                                        </div>
+                                        <Check
+                                          className={cn(
+                                            "ml-auto h-4 w-4",
+                                            field.value === tool.name ? "opacity-100" : "opacity-0"
+                                          )}
+                                        />
                                       </div>
                                     </CommandItem>
                                   ))}
-                                </CommandGroup>
-                              </CommandList>
+                                </CommandList>
+                              </CommandGroup>
                             </Command>
                           </PopoverContent>
                         </Popover>
@@ -382,13 +393,13 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
                     name="websiteUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Website URL</FormLabel>
+                        <FormLabel className="font-semibold">Website URL</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                               placeholder="https://example.com"
-                              className="pl-9"
+                              className="pl-9 h-11 text-base sm:text-sm"
                               data-testid="input-website-url"
                               {...field}
                             />
@@ -437,48 +448,48 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
                   ))}
                   {/* Show selected custom categories as well */}
                   {selectedCategories
-                      .filter(c => !categories.includes(c))
-                      .map(category => (
-                        <Badge
-                          key={category}
-                          variant="default"
-                          className="cursor-pointer bg-primary/80"
-                          onClick={() => toggleCategory(category)}
-                        >
-                          {category} <X className="ml-1 h-3 w-3" />
-                        </Badge>
-                      ))
+                    .filter(c => !categories.includes(c))
+                    .map(category => (
+                      <Badge
+                        key={category}
+                        variant="default"
+                        className="cursor-pointer bg-primary/80"
+                        onClick={() => toggleCategory(category)}
+                      >
+                        {category} <X className="ml-1 h-3 w-3" />
+                      </Badge>
+                    ))
                   }
                 </div>
                 <div className="flex gap-2">
-                    <Input
-                        value={categoryInput}
-                        onChange={(e) => setCategoryInput(e.target.value)}
-                        placeholder="Add custom category..."
-                        className="h-8 text-sm"
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                e.preventDefault();
-                                if (categoryInput.trim() && !selectedCategories.includes(categoryInput.trim())) {
-                                    setSelectedCategories([...selectedCategories, categoryInput.trim()]);
-                                    setCategoryInput("");
-                                }
-                            }
-                        }}
-                    />
-                     <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                            if (categoryInput.trim() && !selectedCategories.includes(categoryInput.trim())) {
-                                setSelectedCategories([...selectedCategories, categoryInput.trim()]);
-                                setCategoryInput("");
-                            }
-                        }}
-                     >
-                        Add
-                    </Button>
+                  <Input
+                    value={categoryInput}
+                    onChange={(e) => setCategoryInput(e.target.value)}
+                    placeholder="Add custom category..."
+                    className="h-8 text-sm"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (categoryInput.trim() && !selectedCategories.includes(categoryInput.trim())) {
+                          setSelectedCategories([...selectedCategories, categoryInput.trim()]);
+                          setCategoryInput("");
+                        }
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      if (categoryInput.trim() && !selectedCategories.includes(categoryInput.trim())) {
+                        setSelectedCategories([...selectedCategories, categoryInput.trim()]);
+                        setCategoryInput("");
+                      }
+                    }}
+                  >
+                    Add
+                  </Button>
                 </div>
               </div>
 
@@ -582,78 +593,78 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
                 />
               </div>
 
-              <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
-                 <h4 className="font-medium flex items-center gap-2">
-                   Secure Credentials
-                   <Badge variant="outline" className="text-xs font-normal">Optional</Badge>
-                 </h4>
-                 <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="username"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Username / Email</FormLabel>
-                          <FormControl>
-                            <Input placeholder="user@example.com" {...field} autoComplete="off" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                     <FormField
-                      control={form.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} autoComplete="new-password" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                 </div>
-                 <FormField
+              <div className="space-y-4 p-4 sm:p-5 bg-muted/20 rounded-xl border border-border/50">
+                <h4 className="font-bold flex items-center gap-2 text-sm sm:text-base">
+                  Secure Credentials
+                  <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-tight py-0">Optional</Badge>
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
                     control={form.control}
-                    name="secureNote"
+                    name="username"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Secure Note</FormLabel>
-                         <FormControl>
-                          <Textarea
-                            placeholder="Store recovery codes, API keys, or other secrets here..."
-                            className="resize-none"
-                            rows={2}
-                            {...field}
-                          />
+                        <FormLabel className="text-xs sm:text-sm">Username / Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="user@example.com" {...field} autoComplete="off" className="h-10 sm:h-9" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs sm:text-sm">Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="••••••••" {...field} autoComplete="new-password" className="h-10 sm:h-9" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="secureNote"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Secure Note</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Store recovery codes, API keys, or other secrets here..."
+                          className="resize-none"
+                          rows={2}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               {isPaid && (
-                <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                  <h4 className="font-medium">Billing Details</h4>
-                  <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-4 p-4 sm:p-5 bg-primary/5 rounded-xl border border-primary/10">
+                  <h4 className="font-bold text-sm sm:text-base text-primary">Billing Details</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="billingAmount"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Amount</FormLabel>
+                          <FormLabel className="text-xs sm:text-sm">Amount</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium text-sm">
                                 $
                               </span>
                               <Input
                                 type="number"
                                 step="0.01"
-                                className="pl-7"
+                                className="pl-7 h-10 sm:h-9"
                                 placeholder="0.00"
                                 data-testid="input-billing-amount"
                                 {...field}
@@ -671,10 +682,10 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
                       name="billingCycle"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Billing Cycle</FormLabel>
+                          <FormLabel className="text-xs sm:text-sm">Billing Cycle</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
-                              <SelectTrigger data-testid="select-billing-cycle">
+                              <SelectTrigger data-testid="select-billing-cycle" className="h-10 sm:h-9">
                                 <SelectValue />
                               </SelectTrigger>
                             </FormControl>
@@ -690,7 +701,7 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="nextRenewalDate"

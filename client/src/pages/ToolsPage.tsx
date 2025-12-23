@@ -11,6 +11,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { type Tool } from "@/lib/analytics";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useAuth } from "@/context/AuthContext";
+import { InboxDiscovery } from "@/components/InboxDiscovery";
 
 import {
   Table,
@@ -36,11 +37,11 @@ export function ToolsPage() {
   const { toast } = useToast();
   const { formatAmount } = useCurrency();
   const { user } = useAuth();
-  
+
   const { data: toolsData } = useQuery<{ tools: Tool[] }>({
     queryKey: ["/api/tools"],
   });
-  
+
   const tools = toolsData?.tools || [];
 
   // Check for import param
@@ -53,15 +54,15 @@ export function ToolsPage() {
         if (Array.isArray(toolsToImport) && toolsToImport.length > 0) {
           let addedCount = 0;
           toolsToImport.forEach(t => {
-             if (!tools.some(existing => existing.name === t.name)) {
-                addToolMutation.mutate({
-                  name: t.name,
-                  websiteUrl: `https://${t.website}`,
-                  categories: [t.category || "Other"],
-                  isPaid: false
-                });
-                addedCount++;
-             }
+            if (!tools.some(existing => existing.name === t.name)) {
+              addToolMutation.mutate({
+                name: t.name,
+                websiteUrl: `https://${t.website}`,
+                categories: [t.category || "Other"],
+                isPaid: false
+              });
+              addedCount++;
+            }
           });
           if (addedCount > 0) {
             toast({ title: "Import Successful", description: `Added ${addedCount} new tools from extension.` });
@@ -270,182 +271,189 @@ export function ToolsPage() {
         </div>
       </div>
 
-      {tools.length === 0 ? (
-        <div className="flex items-center justify-center min-h-[500px]">
-          <div className="text-center space-y-6">
-            <div className="mx-auto w-20 h-20 bg-muted rounded-full flex items-center justify-center">
-              <Package className="h-10 w-10 text-muted-foreground" />
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-xl sm:text-2xl font-semibold">No tools yet</h2>
-              <p className="text-xs sm:text-sm md:text-base text-muted-foreground max-w-xs">
-                Start by adding your first tool/website/app to begin tracking your subscriptions and much more.
-              </p>
-            </div>
-            {user?.emailVerifiedAt && (
-              <AddToolDialog categories={categories} onSave={handleAddTool} />
-            )}
-          </div>
-        </div>
-      ) : (
-        <>
-          <SearchFilter
-            categories={categories}
-            onSearch={setSearchQuery}
-            onFilterChange={setFilters}
-            activeFilters={filters}
-          />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
 
-          {filteredTools.length === 0 ? (
-            <div className="text-center py-12 bg-muted/30 rounded-lg border border-dashed">
-              <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
-                <Plus className="h-6 w-6 text-muted-foreground" />
+          {tools.length === 0 ? (
+            <div className="flex items-center justify-center min-h-[500px]">
+              <div className="text-center space-y-6">
+                <div className="mx-auto w-20 h-20 bg-muted rounded-full flex items-center justify-center">
+                  <Package className="h-10 w-10 text-muted-foreground" />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-xl sm:text-2xl font-semibold">No tools yet</h2>
+                  <p className="text-xs sm:text-sm md:text-base text-muted-foreground max-w-xs">
+                    Start by adding your first tool/website/app to begin tracking your subscriptions and much more.
+                  </p>
+                </div>
+                {user?.emailVerifiedAt && (
+                  <AddToolDialog categories={categories} onSave={handleAddTool} />
+                )}
               </div>
-              <h3 className="font-medium mb-1">No tools found</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Try adjusting your search or filters
-              </p>
             </div>
-          ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredTools.map((tool) => (
-            <ToolCard
-              key={tool.id}
-              tool={tool}
-              onEdit={handleEditTool}
-              onDelete={handleDeleteTool}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="border rounded-lg overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[140px] sm:w-[200px]">Tool</TableHead>
-                <TableHead className="hidden md:table-cell">Categories</TableHead>
-                <TableHead className="hidden md:table-cell">Usage</TableHead>
-                <TableHead className="text-right w-[80px] sm:w-[100px]">Cost</TableHead>
-                <TableHead className="hidden sm:table-cell w-[100px] sm:w-[120px]">Renewal</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredTools.map((tool) => (
-                <TableRow key={tool.id} data-testid={`table-row-${tool.id}`}>
-                  <TableCell>
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <Avatar className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg border flex-shrink-0">
-                        <AvatarImage src={tool.logoUrl || undefined} alt={tool.name} className="object-contain p-0.5" />
-                        <AvatarFallback className="rounded-lg text-xs">
-                          {getInitials(tool.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-sm sm:text-base break-words">{tool.name}</p>
-                        <a
-                          href={tool.websiteUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 mt-0.5"
-                        >
-                          Visit <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <div className="flex flex-wrap gap-1">
-                      {tool.categories?.slice(0, 2).map((cat) => (
-                        <Badge key={cat} variant="outline" className="text-xs">
-                          {cat}
-                        </Badge>
-                      ))}
-                      {(tool.categories?.length || 0) > 2 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{(tool.categories?.length || 0) - 2}
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Badge
-                      variant="secondary"
-                      className={`text-xs ${
-                        tool.usageFrequency === "daily"
-                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                          : tool.usageFrequency === "weekly"
-                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                          : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                      }`}
-                    >
-                      {tool.usageFrequency}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right font-mono text-xs sm:text-sm whitespace-nowrap">
-                    {tool.isPaid && tool.billingAmount
-                      ? formatAmount(typeof tool.billingAmount === 'string' ? parseFloat(tool.billingAmount) : tool.billingAmount)
-                      : "Free"}
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell text-sm text-muted-foreground whitespace-nowrap">
-                    {tool.nextRenewalDate
-                      ? new Date(tool.nextRenewalDate).toLocaleDateString()
-                      : "-"}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEditTool(tool)}>
-                          <Pencil className="h-4 w-4 mr-2" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDeleteTool(tool)}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-          )}
+          ) : (
+            <>
+              <SearchFilter
+                categories={categories}
+                onSearch={setSearchQuery}
+                onFilterChange={setFilters}
+                activeFilters={filters}
+              />
 
-        {/* Edit dialog (controlled) - open when user chooses to edit a tool */}
-        <AddToolDialog
-          categories={categories}
-          editTool={editDialog.tool || null}
-          open={editDialog.open}
-          onOpenChange={(open) => {
-            if (!open) setEditDialog({ open: false, tool: null });
-            else setEditDialog((s) => ({ ...s, open }));
-          }}
-          onSave={(data) => {
-            if (editDialog.tool) {
-              // Only send the fields that need to be updated, plus the ID
-              const updates = {
-                ...data,
-                id: editDialog.tool.id
-              };
-              updateToolMutation.mutate(updates as Tool);
-            } else {
-              addToolMutation.mutate(data);
-            }
-            setEditDialog({ open: false, tool: null });
-          }}
-        />
-        </>
-      )}
+              {filteredTools.length === 0 ? (
+                <div className="text-center py-12 bg-muted/30 rounded-lg border border-dashed">
+                  <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
+                    <Plus className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-medium mb-1">No tools found</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Try adjusting your search or filters
+                  </p>
+                </div>
+              ) : viewMode === "grid" ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {filteredTools.map((tool) => (
+                    <ToolCard
+                      key={tool.id}
+                      tool={tool}
+                      onEdit={handleEditTool}
+                      onDelete={handleDeleteTool}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="border rounded-lg overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[140px] sm:w-[200px]">Tool</TableHead>
+                        <TableHead className="hidden md:table-cell">Categories</TableHead>
+                        <TableHead className="hidden md:table-cell">Usage</TableHead>
+                        <TableHead className="text-right w-[80px] sm:w-[100px]">Cost</TableHead>
+                        <TableHead className="hidden sm:table-cell w-[100px] sm:w-[120px]">Renewal</TableHead>
+                        <TableHead className="w-[50px]"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredTools.map((tool) => (
+                        <TableRow key={tool.id} data-testid={`table-row-${tool.id}`}>
+                          <TableCell>
+                            <div className="flex items-center gap-2 sm:gap-3">
+                              <Avatar className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg border flex-shrink-0">
+                                <AvatarImage src={tool.logoUrl || undefined} alt={tool.name} className="object-contain p-0.5" />
+                                <AvatarFallback className="rounded-lg text-xs">
+                                  {getInitials(tool.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-sm sm:text-base break-words">{tool.name}</p>
+                                <a
+                                  href={tool.websiteUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 mt-0.5"
+                                >
+                                  Visit <ExternalLink className="h-3 w-3" />
+                                </a>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            <div className="flex flex-wrap gap-1">
+                              {tool.categories?.slice(0, 2).map((cat) => (
+                                <Badge key={cat} variant="outline" className="text-xs">
+                                  {cat}
+                                </Badge>
+                              ))}
+                              {(tool.categories?.length || 0) > 2 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{(tool.categories?.length || 0) - 2}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            <Badge
+                              variant="secondary"
+                              className={`text-xs ${tool.usageFrequency === "daily"
+                                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                  : tool.usageFrequency === "weekly"
+                                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                                    : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                                }`}
+                            >
+                              {tool.usageFrequency}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-xs sm:text-sm whitespace-nowrap">
+                            {tool.isPaid && tool.billingAmount
+                              ? formatAmount(typeof tool.billingAmount === 'string' ? parseFloat(tool.billingAmount) : tool.billingAmount)
+                              : "Free"}
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell text-sm text-muted-foreground whitespace-nowrap">
+                            {tool.nextRenewalDate
+                              ? new Date(tool.nextRenewalDate).toLocaleDateString()
+                              : "-"}
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleEditTool(tool)}>
+                                  <Pencil className="h-4 w-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleDeleteTool(tool)}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+
+              {/* Edit dialog (controlled) - open when user chooses to edit a tool */}
+              <AddToolDialog
+                categories={categories}
+                editTool={editDialog.tool || null}
+                open={editDialog.open}
+                onOpenChange={(open) => {
+                  if (!open) setEditDialog({ open: false, tool: null });
+                  else setEditDialog((s) => ({ ...s, open }));
+                }}
+                onSave={(data) => {
+                  if (editDialog.tool) {
+                    // Only send the fields that need to be updated, plus the ID
+                    const updates = {
+                      ...data,
+                      id: editDialog.tool.id
+                    };
+                    updateToolMutation.mutate(updates as Tool);
+                  } else {
+                    addToolMutation.mutate(data);
+                  }
+                  setEditDialog({ open: false, tool: null });
+                }}
+              />
+            </>
+          )}
+        </div>
+        <div className="lg:col-span-1">
+          <InboxDiscovery onAddTool={handleAddTool} />
+        </div>
+      </div>
 
       <DeleteConfirmDialog
         open={deleteDialog.open}

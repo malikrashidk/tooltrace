@@ -1,5 +1,5 @@
 ﻿import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, numeric, timestamp, boolean, jsonb, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, numeric, timestamp, boolean, jsonb, index, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -27,12 +27,12 @@ export const users = pgTable(
     // Password reset fields
     resetToken: text("reset_token"),
     resetTokenExpiry: timestamp("reset_token_expiry"),
-// Email verification fields
-emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
-emailVerifyTokenHash: text("email_verify_token_hash"),
-emailVerifyTokenExpiresAt: timestamp("email_verify_token_expires_at", {
-  withTimezone: true,
-}),
+    // Email verification fields
+    emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
+    emailVerifyTokenHash: text("email_verify_token_hash"),
+    emailVerifyTokenExpiresAt: timestamp("email_verify_token_expires_at", {
+      withTimezone: true,
+    }),
 
     // User preferences
     currency: text("currency").default("USD"),
@@ -350,4 +350,69 @@ export type TeamMember = typeof teamMembers.$inferSelect;
 
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
 export type AuditLog = typeof auditLogs.$inferSelect;
+
+// ============ OAUTH CONNECTIONS TABLE ============
+export const oauthConnections = pgTable(
+  "oauth_connections",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(), // 'google'
+    accessTokenEnc: text("access_token_enc").notNull(),
+    refreshTokenEnc: text("refresh_token_enc"),
+    scope: text("scope"),
+    tokenExpiry: timestamp("token_expiry"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("oauth_user_id_idx").on(table.userId),
+  })
+);
+
+// ============ INBOX DISCOVERY RESULTS TABLE ============
+export const inboxDiscoveryResults = pgTable(
+  "inbox_discovery_results",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(), // 'google'
+    vendorName: text("vendor_name").notNull(),
+    vendorDomain: text("vendor_domain").notNull(),
+    evidenceSender: text("evidence_sender"),
+    evidenceSubject: text("evidence_subject"),
+    confidence: integer("confidence").notNull(),
+    lastSeenAt: timestamp("last_seen_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("discovery_user_id_idx").on(table.userId),
+  })
+);
+
+// ============ INBOX DISCOVERY RUNS TABLE ============
+export const inboxDiscoveryRuns = pgTable(
+  "inbox_discovery_runs",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(),
+    startedAt: timestamp("started_at").defaultNow().notNull(),
+    finishedAt: timestamp("finished_at"),
+    status: text("status").notNull(), // 'running', 'completed', 'failed'
+    itemsFoundCount: integer("items_found_count").default(0),
+  },
+  (table) => ({
+    discoveryRunUserIdIdx: index("discovery_run_user_id_idx").on(table.userId),
+  })
+);
+
+export type OAuthConnection = typeof oauthConnections.$inferSelect;
+export type InsertOAuthConnection = typeof oauthConnections.$inferInsert;
+
+export type InboxDiscoveryResult = typeof inboxDiscoveryResults.$inferSelect;
+export type InsertInboxDiscoveryResult = typeof inboxDiscoveryResults.$inferInsert;
+
+export type InboxDiscoveryRun = typeof inboxDiscoveryRuns.$inferSelect;
+export type InsertInboxDiscoveryRun = typeof inboxDiscoveryRuns.$inferInsert;
 

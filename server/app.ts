@@ -42,14 +42,14 @@ log(`Body parser limits: JSON=${jsonLimit}, URLEncoded=${urlencodedLimit}`);
 
 // Middleware to catch body parser errors (happens before routes)
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  if (err.type === 'entity.too.large' || 
-      err.message?.includes('too large') || 
-      err.message?.includes('request entity too large') ||
-      err.status === 413 ||
-      err.statusCode === 413) {
+  if (err.type === 'entity.too.large' ||
+    err.message?.includes('too large') ||
+    err.message?.includes('request entity too large') ||
+    err.status === 413 ||
+    err.statusCode === 413) {
     log(`Entity too large error caught: ${err.message}`);
-    return res.status(413).json({ 
-      error: "File is too large. Maximum file size is 2MB. Please compress your file and try again." 
+    return res.status(413).json({
+      error: "File is too large. Maximum file size is 2MB. Please compress your file and try again."
     });
   }
   next(err);
@@ -90,26 +90,26 @@ export default async function runApp(
 ) {
   // Auto-initialize admin user on startup
   await initializeAdmin();
-  
+
   const server = await registerRoutes(app);
 
   // Final error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     // Handle "entity too large" errors specifically (happens at body parser level)
-    if (err.type === 'entity.too.large' || 
-        err.message?.includes('too large') || 
-        err.message?.includes('request entity too large') ||
-        err.status === 413 ||
-        err.statusCode === 413) {
+    if (err.type === 'entity.too.large' ||
+      err.message?.includes('too large') ||
+      err.message?.includes('request entity too large') ||
+      err.status === 413 ||
+      err.statusCode === 413) {
       log(`Entity too large error: ${err.message}`);
-      return res.status(413).json({ 
-        error: "File is too large. Maximum file size is 2MB. Please compress your file and try again." 
+      return res.status(413).json({
+        error: "File is too large. Maximum file size is 2MB. Please compress your file and try again."
       });
     }
 
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-    
+
     log(`Error ${status}: ${message}`);
     if (err.stack && process.env.NODE_ENV === 'development') {
       console.error("Error stack:", err.stack);
@@ -127,18 +127,17 @@ export default async function runApp(
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
 
-  // Bind to localhost only (Apache is the public entry point)
-const host = '127.0.0.1';
+  // Bind to all network interfaces for VPS/Docker accessibility
+  const host = '0.0.0.0';
 
-console.log("[smtp] user=", process.env.SMTP_USER, "host=", process.env.SMTP_HOST);
 
-server.listen({
-  port,
-  host,
-  reusePort: process.platform !== 'win32',
-}, () => {
-  log(`serving on port ${port} at http://${host}:${port}`);
-});
+  server.listen({
+    port,
+    host,
+    reusePort: process.platform !== 'win32',
+  }, () => {
+    log(`serving on port ${port} at http://${host}:${port}`);
+  });
 
 }
 
