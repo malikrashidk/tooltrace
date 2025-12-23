@@ -1,80 +1,53 @@
 import Stripe from 'stripe';
 
-let connectionSettings: any;
-
-async function getCredentials() {
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
-  const xReplitToken = process.env.REPL_IDENTITY
-    ? 'repl ' + process.env.REPL_IDENTITY
-    : process.env.WEB_REPL_RENEWAL
-      ? 'depl ' + process.env.WEB_REPL_RENEWAL
-      : null;
-
-  if (!xReplitToken) {
-    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
+export async function getStripeSecretKey() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('STRIPE_SECRET_KEY not found in environment variables');
   }
-
-  const connectorName = 'stripe';
-  const isProduction = process.env.REPLIT_DEPLOYMENT === '1';
-  const targetEnvironment = isProduction ? 'production' : 'development';
-
-  const url = new URL(`https://${hostname}/api/v2/connection`);
-  url.searchParams.set('include_secrets', 'true');
-  url.searchParams.set('connector_names', connectorName);
-  url.searchParams.set('environment', targetEnvironment);
-
-  const response = await fetch(url.toString(), {
-    headers: {
-      'Accept': 'application/json',
-      'X_REPLIT_TOKEN': xReplitToken
-    }
-  });
-
-  const data = await response.json();
-  connectionSettings = data.items?.[0];
-
-  if (!connectionSettings || (!connectionSettings.settings.publishable || !connectionSettings.settings.secret)) {
-    throw new Error(`Stripe ${targetEnvironment} connection not found`);
-  }
-
-  return {
-    publishableKey: connectionSettings.settings.publishable,
-    secretKey: connectionSettings.settings.secret,
-  };
-}
-
-export async function getUncachableStripeClient() {
-  const { secretKey } = await getCredentials();
-  return new Stripe(secretKey, {
-    apiVersion: '2025-08-27.basil',
-  });
+  return process.env.STRIPE_SECRET_KEY;
 }
 
 export async function getStripePublishableKey() {
-  const { publishableKey } = await getCredentials();
-  return publishableKey;
+   // Assuming there might be a publishable key in env, or we don't need it on server side often.
+   // But for consistency with old code interface:
+   return process.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
 }
 
-export async function getStripeSecretKey() {
-  const { secretKey } = await getCredentials();
-  return secretKey;
+
+// Replacement for getUncachableStripeClient that uses standard Stripe
+export async function getUncachableStripeClient() {
+  const secretKey = await getStripeSecretKey();
+  return new Stripe(secretKey, {
+    apiVersion: '2025-08-27.basil', // Keep the version from the old file or use latest
+  });
 }
 
-let stripeSync: any = null;
+// Replacement for getStripeSync - We can't use StripeSync (Replit specific).
+// We should expose a way to process webhooks if needed, but the old StripeSync
+// handled DB syncing. Since we are moving away from Replit, we might need to
+// implement standard webhook handling or just leave a placeholder if the user
+// hasn't implemented the sync logic yet.
+// However, to avoid build errors in webhookHandlers.ts, we need to provide something.
+
+export class StripeSyncPlaceholder {
+    async processWebhook(payload: Buffer, signature: string, uuid: string) {
+        console.warn("StripeSync is deprecated and removed for VPS deployment. Please implement standard Stripe Webhook handling.");
+        // In a real migration, we would parse the webhook event and update the database accordingly.
+        // For now, we just log it to prevent crashes.
+        const stripe = await getUncachableStripeClient();
+        // Verify signature if secret is available
+        if (process.env.STRIPE_WEBHOOK_SECRET) {
+             try {
+                const event = stripe.webhooks.constructEvent(payload, signature, process.env.STRIPE_WEBHOOK_SECRET);
+                console.log("Received Stripe Webhook:", event.type);
+             } catch (err: any) {
+                 console.error(`Webhook signature verification failed: ${err.message}`);
+                 throw err;
+             }
+        }
+    }
+}
 
 export async function getStripeSync() {
-  if (!stripeSync) {
-    const { StripeSync } = await import('stripe-replit-sync');
-    const secretKey = await getStripeSecretKey();
-
-    stripeSync = new StripeSync({
-      poolConfig: {
-        connectionString: process.env.DATABASE_URL!,
-        max: 2,
-      },
-      stripeSecretKey: secretKey,
-    });
-  }
-  return stripeSync;
+    return new StripeSyncPlaceholder();
 }
-
