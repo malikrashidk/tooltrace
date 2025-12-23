@@ -258,6 +258,8 @@ if (!user.emailVerifiedAt) {
   });
 }
 
+      // Update last login time
+      await storage.updateUser(user.id, { lastLoginAt: new Date() });
 
       await auditLog(user.id, "login", "user", user.id, {}, req);
 
@@ -633,7 +635,15 @@ if (!user.emailVerifiedAt) {
       if (req.body.currency !== undefined) updates.currency = req.body.currency;
       if (req.body.language !== undefined) updates.language = req.body.language;
       if (req.body.name !== undefined) updates.name = req.body.name;
-      if (req.body.budgetThreshold !== undefined) updates.budgetThreshold = req.body.budgetThreshold;
+
+      // Handle budgetThreshold explicitly to ensure correct type for DB (numeric/string)
+      if (req.body.budgetThreshold !== undefined) {
+        if (req.body.budgetThreshold === "" || req.body.budgetThreshold === null) {
+          updates.budgetThreshold = null;
+        } else {
+          updates.budgetThreshold = String(req.body.budgetThreshold);
+        }
+      }
       
       if (Object.keys(updates).length === 0) {
         return res.status(400).json({ error: "No valid fields to update" });
@@ -853,7 +863,15 @@ if (!user.emailVerifiedAt) {
   app.get("/api/admin/users", authMiddleware, adminMiddleware, async (req, res) => {
     try {
       const users = await storage.getAllUsers();
-      res.json({ users });
+      // Enrich users with tool count
+      const usersWithCounts = await Promise.all(users.map(async (user) => {
+        const count = await storage.getUserToolsCount(user.id);
+        return {
+          ...user,
+          toolsCount: count
+        };
+      }));
+      res.json({ users: usersWithCounts });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch users" });
     }
@@ -957,10 +975,19 @@ if (!user.emailVerifiedAt) {
         return sum + (plan === "standard" ? 9.99 * 12 : plan === "premium" ? 19.99 * 12 : 0);
       }, 0);
 
+      // Active users: Logged in within last 30 days
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const activeUsers = users.filter(u => {
+        if (!u.lastLoginAt) return false;
+        return new Date(u.lastLoginAt) > thirtyDaysAgo;
+      }).length;
+
       res.json({
         totalUsers,
         totalRevenue: Math.round(totalRevenue * 100) / 100,
-        activeSubscriptions: users.filter((u) => u.plan !== "free").length,
+        activeSubscriptions: activeUsers, // Using "activeSubscriptions" key for compatibility with frontend, but logic is now active users
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch stats" });

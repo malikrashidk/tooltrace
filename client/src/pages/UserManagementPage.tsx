@@ -47,6 +47,7 @@ interface User {
   name: string;
   plan: string;
   createdAt: string;
+  toolsCount: number;
 }
 
 export function UserManagementPage() {
@@ -232,6 +233,7 @@ export function UserManagementPage() {
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
+                      <TableHead>Tools</TableHead>
                       <TableHead>Plan</TableHead>
                       <TableHead>Joined</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
@@ -242,6 +244,7 @@ export function UserManagementPage() {
                       <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
                         <TableCell className="font-medium">{user.name}</TableCell>
                         <TableCell>{user.email}</TableCell>
+                        <TableCell>{user.toolsCount || 0}</TableCell>
                         <TableCell>
                           <Badge className={getPlanColor(user.plan)}>
                             {user.plan.charAt(0).toUpperCase() + user.plan.slice(1)}

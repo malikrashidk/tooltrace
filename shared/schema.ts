@@ -38,6 +38,7 @@ emailVerifyTokenExpiresAt: timestamp("email_verify_token_expires_at", {
     currency: text("currency").default("USD"),
     language: text("language").default("en"),
     budgetThreshold: numeric("budget_threshold", { precision: 10, scale: 2 }),
+    lastLoginAt: timestamp("last_login_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

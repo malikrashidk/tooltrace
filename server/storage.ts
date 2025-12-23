@@ -49,6 +49,7 @@ function mapUser(row: any): User | undefined {
     currency: row.currency,
     language: row.language,
     budgetThreshold: row.budget_threshold,
+    lastLoginAt: row.last_login_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -285,6 +286,7 @@ export class MemStorage implements IStorage {
       currency: userData.currency || "USD",
       language: userData.language || "en",
       budgetThreshold: null,
+      lastLoginAt: new Date(),
       emailVerifiedAt: new Date(),
     } as User;
     this.users.set(id, fullUser as any);
@@ -293,7 +295,7 @@ export class MemStorage implements IStorage {
 
   async createUser(user: InsertUser): Promise<User> {
     const id = randomUUID();
-    const fullUser = { ...user, id, isAdmin: false, plan: "free", createdAt: new Date(), updatedAt: new Date(), currency: (user as any).currency || "USD", language: (user as any).language || "en", budgetThreshold: null } as any;
+    const fullUser = { ...user, id, isAdmin: false, plan: "free", createdAt: new Date(), updatedAt: new Date(), currency: (user as any).currency || "USD", language: (user as any).language || "en", budgetThreshold: null, lastLoginAt: new Date() } as any;
     this.users.set(id, fullUser);
     return fullUser;
   }
@@ -798,13 +800,19 @@ async setEmailVerificationToken(userId: string, tokenHash: string, expiresAt: Da
 
       console.log("[DbStorage.createTool] Insert data:", insertData);
 
-      const result = await db.insert(tools).values(insertData).returning();
+      let result;
+      try {
+        result = await db.insert(tools).values(insertData).returning();
+      } catch (insertError: any) {
+         console.error("[DbStorage.createTool] Insert failed:", insertError);
+         throw insertError;
+      }
       
       console.log("[DbStorage.createTool] Raw result:", result);
 
       // Drizzle returns array, handle empty/null edge cases
       if (result && Array.isArray(result) && result.length > 0) {
-        return result[0];
+        return mapTool(result[0])!;
       }
 
       // If no result from RETURNING, fetch the most recently created tool for this user

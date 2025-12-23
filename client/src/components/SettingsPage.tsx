@@ -340,24 +340,6 @@ export function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5" />
-              Email Configuration
-            </CardTitle>
-            <CardDescription>Configure SMTP settings for sending notifications</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-muted/50 rounded-lg p-4 text-sm">
-              <p className="font-medium mb-2">SMTP Configuration</p>
-              <p className="text-muted-foreground">
-                Email settings are configured through environment variables on your VPS. 
-                Set SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS in your .env file.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
 
         <Card>
           <CardHeader>
