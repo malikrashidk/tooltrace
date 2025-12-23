@@ -58,7 +58,8 @@ export function InboxDiscovery({ onAddTool }: { onAddTool: (tool: Partial<Tool>)
     const connectMutation = useMutation({
         mutationFn: async () => {
             const res = await apiRequest("GET", "/api/inbox/google/connect");
-            return res.url as string;
+            const data = await res.json();
+            return data.url as string;
         },
         onSuccess: (url: string) => {
             window.location.href = url;
