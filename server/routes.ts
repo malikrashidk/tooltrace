@@ -37,12 +37,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const OAUTH_CALLBACK_URL = process.env.OAUTH_CALLBACK_URL || "http://localhost:5000";
 
   if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
+    const callbackURL = process.env.GOOGLE_REDIRECT_URL || `${OAUTH_CALLBACK_URL}/api/auth/google/callback`;
+
     passport.use(
       new GoogleStrategy(
         {
           clientID: GOOGLE_CLIENT_ID,
           clientSecret: GOOGLE_CLIENT_SECRET,
-          callbackURL: `${OAUTH_CALLBACK_URL}/api/auth/google/callback`,
+          callbackURL,
         },
         async (accessToken: string, refreshToken: string, profile: any, done: (err: any, user?: any) => void) => {
           try {
