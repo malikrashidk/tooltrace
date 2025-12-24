@@ -30,7 +30,9 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     // Note: In development with in-memory storage, the user may not exist if server restarted.
     // We still set the userId from the decoded token so the request can proceed.
     const user = await storage.getUser(decoded.userId);
-    
+
+    console.log(`[Auth] User lookup for ${decoded.userId}: ${user ? 'Success' : 'Failed'}`);
+
     req.userId = decoded.userId;
     if (user) {
       req.user = user;

@@ -632,6 +632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Update user profile (currency, language, etc.)
   app.patch("/api/auth/profile", authMiddleware, async (req, res) => {
+    console.log(`[ProfileUpdate] Request received from user ${req.userId}`);
     try {
       const updates: any = {};
       if (req.body.currency !== undefined) updates.currency = req.body.currency;
@@ -1917,14 +1918,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      console.log(`[Scan] Starting scan for user ${user.id}`);
       const conn = await storage.getOAuthConnection(user.id, "google");
-      if (!conn) return res.status(400).json({ error: "Please connect your Gmail account first" });
+      if (!conn) {
+        console.log(`[Scan] No OAuth connection found for user ${user.id}`);
+        return res.status(400).json({ error: "Please connect your Gmail account first" });
+      }
+
+      console.log(`[Scan] Found OAuth connection, decrypting tokens...`);
+      let access_token, refresh_token;
+      try {
+        access_token = decryptToken(conn.accessTokenEnc);
+        refresh_token = conn.refreshTokenEnc ? decryptToken(conn.refreshTokenEnc) : undefined;
+        console.log(`[Scan] Tokens decrypted successfully`);
+      } catch (e: any) {
+        console.error(`[Scan] Token decryption failed for user ${user.id}:`, e.message);
+        return res.status(500).json({ error: "Authentication token decryption failed. Please reconnect your Gmail." });
+      }
 
       const auth = getClient({
-        access_token: decryptToken(conn.accessTokenEnc),
-        refresh_token: conn.refreshTokenEnc ? decryptToken(conn.refreshTokenEnc) : undefined,
+        access_token,
+        refresh_token,
         expiry_date: conn.tokenExpiry?.getTime(),
       });
+
+      console.log(`[Scan] Initiating Gmail API scan...`);
 
       // Log run start
       const run = await storage.createDiscoveryRun({
@@ -1933,7 +1951,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "running",
       });
 
+      console.log(`[Scan] Discovery run ${run.id} started`);
       const suggestions = await scanInbox(auth);
+      console.log(`[Scan] Scan completed, found ${suggestions.length} suggestions`);
 
       // Update results
       await storage.clearDiscoveryResults(user.id);
@@ -1952,14 +1972,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         itemsFoundCount: suggestions.length,
       });
 
+      console.log(`[Scan] Discovery run ${run.id} finalized successfully`);
       res.json({
         success: true,
         count: suggestions.length,
         suggestions
       });
     } catch (error: any) {
-      console.error("Inbox scan error:", error);
-      res.status(500).json({ error: "Failed to scan inbox" });
+      console.error("[Scan] Fatal error during inbox scan:", error);
+      res.status(500).json({ error: `Failed to scan inbox: ${error.message}` });
     }
   });
 
