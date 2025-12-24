@@ -1862,7 +1862,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/inbox/google/callback", async (req, res) => {
     const { code, state } = req.query;
     if (!code || !state) {
-      return res.redirect("/dashboard?error=gmail_connect_failed");
+      return res.redirect("/smart-scan?error=gmail_connect_failed");
     }
 
     try {
@@ -1894,10 +1894,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      res.redirect("/dashboard?gmail_connected=true");
+      res.redirect("/smart-scan?gmail_connected=true");
     } catch (error) {
       console.error("Gmail callback error:", error);
-      res.redirect("/dashboard?error=gmail_connect_failed");
+      res.redirect("/smart-scan?error=gmail_connect_failed");
     }
   });
 
