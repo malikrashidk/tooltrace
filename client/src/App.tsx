@@ -33,6 +33,7 @@ import { AdvancedToolsManagement } from "@/pages/AdvancedToolsManagement";
 import { IntegrationsHub } from "@/pages/IntegrationsHub";
 import { HelpPage } from "@/pages/HelpPage";
 import { AcceptInvitePage } from "@/pages/AcceptInvitePage";
+import SmartScanPage from "@/pages/SmartScanPage";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedApp() {
@@ -72,6 +73,7 @@ function AuthenticatedApp() {
               <Route path="/integrations" component={IntegrationsHub} />
               <Route path="/help" component={HelpPage} />
               <Route path="/settings" component={SettingsPage} />
+              <Route path="/smart-scan" component={SmartScanPage} />
               <Route path="/team/accept" component={AcceptInvitePage} />
               {/* Redirect auth routes to dashboard if already logged in */}
               <Route path="/login"><Redirect to="/" /></Route>
@@ -130,12 +132,12 @@ function UnauthenticatedApp() {
   if (isResetPasswordRoute) {
     return (
       <div className="min-h-screen bg-background">
-        <ResetPasswordPage 
-          token={resetToken} 
+        <ResetPasswordPage
+          token={resetToken}
           onBackToLogin={() => {
             // If they navigate back, go to login
             window.location.href = "/login";
-          }} 
+          }}
         />
       </div>
     );
@@ -147,21 +149,21 @@ function UnauthenticatedApp() {
       <Route path="/signup" component={SignupRoute} />
       <Route path="/team/accept" component={AcceptInvitePage} />
       <Route path="/reset-password">
-          <Redirect to="/login" />
+        <Redirect to="/login" />
       </Route>
       {/* Catch-all: Redirect to Login with returnTo */}
       <Route>
         {() => {
-           // We can't access params here directly if wouter doesn't pass it in the way we expect for a catch-all
-           // But since we are inside a Route component (or fallback), we can rely on the outer hook if needed.
-           // However, wouter's Route `component` or `children` render prop usually receives params.
-           // If it's a catch-all (no path), it matches everything.
-           // Let's use window.location directly to be safe and avoid type errors with 'location' prop not existing on params.
-           const currentPath = window.location.pathname;
-           if (currentPath === "/login" || currentPath === "/signup") return null;
+          // We can't access params here directly if wouter doesn't pass it in the way we expect for a catch-all
+          // But since we are inside a Route component (or fallback), we can rely on the outer hook if needed.
+          // However, wouter's Route `component` or `children` render prop usually receives params.
+          // If it's a catch-all (no path), it matches everything.
+          // Let's use window.location directly to be safe and avoid type errors with 'location' prop not existing on params.
+          const currentPath = window.location.pathname;
+          if (currentPath === "/login" || currentPath === "/signup") return null;
 
-           const returnTo = currentPath + window.location.search;
-           return <Redirect to={`/login?returnTo=${encodeURIComponent(returnTo)}`} />;
+          const returnTo = currentPath + window.location.search;
+          return <Redirect to={`/login?returnTo=${encodeURIComponent(returnTo)}`} />;
         }}
       </Route>
     </Switch>
