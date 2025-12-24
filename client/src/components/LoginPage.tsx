@@ -57,13 +57,17 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get("token");
     const error = urlParams.get("error");
-    
+
+    console.log("[LoginPage] URL params:", { hasToken: !!token, error });
+
     if (token) {
+      console.log("[LoginPage] Token found, setting in localStorage");
       localStorage.setItem("token", token);
       const returnTo = sanitizeReturnTo(urlParams.get("returnTo"));
+      console.log("[LoginPage] Redirecting to:", returnTo);
       window.location.href = returnTo;
     }
-    
+
     if (error === "oauth_failed") {
       toast({
         title: "Sign-in Failed",
@@ -90,20 +94,20 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: data.email, password: data.password }),
       });
-      
+
       const result = await response.json();
       console.log("Login response:", { status: response.status, ok: response.ok, result });
-      
+
       if (result.requiresTwoFactor) {
         setPendingCredentials({ email: data.email, password: data.password });
         setRequires2FA(true);
         return;
       }
-      
+
       if (!response.ok || !result.token || !result.user) {
         throw new Error(result.error || "Login failed");
       }
-      
+
       localStorage.setItem("token", result.token);
       localStorage.setItem("user", JSON.stringify(result.user));
       const urlParams = new URLSearchParams(window.location.search);
@@ -123,7 +127,7 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
 
   const handle2FAVerify = async () => {
     if (!pendingCredentials) return;
-    
+
     setIsLoading(true);
     try {
       const response = await fetch("/api/auth/login", {
@@ -135,13 +139,13 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
           twoFactorCode,
         }),
       });
-      
+
       const result = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(result.error || "Invalid 2FA code");
       }
-      
+
       localStorage.setItem("token", result.token);
       window.location.reload();
     } catch (error: any) {
@@ -225,7 +229,7 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
                   </FormItem>
                 )}
               />
-              
+
               {onForgotPassword && (
                 <div className="text-right">
                   <button
@@ -238,7 +242,7 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
                   </button>
                 </div>
               )}
-              
+
               <Button
                 type="submit"
                 className="w-full h-10 font-semibold"
@@ -298,7 +302,7 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
               Enter the 6-digit code from your authenticator app or a backup code.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="2fa-code">Verification Code</Label>
