@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useSearch } from "wouter";
 import { Mail, RefreshCw, Plus, Check, Loader2, Info, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -20,7 +21,17 @@ interface DiscoveryResult {
 
 export function InboxDiscovery({ onAddTool }: { onAddTool: (tool: Partial<Tool>) => void }) {
     const { toast } = useToast();
+    const searchString = useSearch();
     const [isScanning, setIsScanning] = useState(false);
+
+    useEffect(() => {
+        const params = new URLSearchParams(searchString);
+        if (params.get("gmail_connected") === "true") {
+            // Remove the param from URL to prevent multiple scans on refresh
+            window.history.replaceState({}, "", window.location.pathname);
+            scanMutation.mutate();
+        }
+    }, [searchString]);
 
     const { data: resultsData, isLoading: isLoadingResults } = useQuery({
         queryKey: ["/api/inbox/results"],
