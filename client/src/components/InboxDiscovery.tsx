@@ -49,8 +49,12 @@ export function InboxDiscovery({ onAddTool }: { onAddTool: (tool: Partial<Tool>)
             const res = await apiRequest("POST", "/api/inbox/scan");
             return await res.json() as { count: number };
         },
-        onSuccess: (data: { count: number }) => {
-            queryClient.invalidateQueries({ queryKey: ["/api/inbox/results"] });
+        onSuccess: (data: { count: number, results?: DiscoveryResult[] }) => {
+            if (data.results) {
+                queryClient.setQueryData(["/api/inbox/results"], { results: data.results });
+            } else {
+                queryClient.invalidateQueries({ queryKey: ["/api/inbox/results"] });
+            }
             toast({
                 title: "Scan Complete",
                 description: `Found ${data.count || 0} potential subscriptions.`,

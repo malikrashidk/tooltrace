@@ -1973,11 +1973,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         itemsFoundCount: suggestions.length,
       });
 
-      console.log(`[Scan] Discovery run ${run.id} finalized successfully`);
+      console.log(`[Scan] Discovery run ${run.id} finalized successfully. Found ${suggestions.length} items.`);
+
+      // Fetch the mapped results to ensure they match what the frontend expects
+      const finalResults = await storage.getDiscoveryResults(user.id);
+
       res.json({
         success: true,
         count: suggestions.length,
-        suggestions
+        results: finalResults
       });
     } catch (error: any) {
       console.error("[Scan] Fatal error during inbox scan:", error);
