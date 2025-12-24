@@ -622,6 +622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currency: user.currency || "USD",
           language: user.language || "en",
           emailVerifiedAt: user.emailVerifiedAt,
+          budgetThreshold: user.budgetThreshold,
         },
         subscription,
       });
@@ -1987,6 +1988,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/inbox/results", authMiddleware, async (req, res) => {
     try {
       const results = await storage.getDiscoveryResults(req.userId!);
+      console.log(`[ScanResults] Fetched ${results.length} results for user ${req.userId}`);
       res.json({ results });
     } catch (error: any) {
       res.status(500).json({ error: "Failed to fetch scan results" });

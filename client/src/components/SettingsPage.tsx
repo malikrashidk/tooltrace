@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -61,11 +61,22 @@ export function SettingsPage() {
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: user?.name || "",
-      email: user?.email || "",
-      budgetThreshold: user?.budgetThreshold ? parseFloat(user.budgetThreshold) : undefined,
+      name: "",
+      email: "",
+      budgetThreshold: undefined,
     },
   });
+
+  // Reset form when user data is available
+  useEffect(() => {
+    if (user) {
+      profileForm.reset({
+        name: user.name || "",
+        email: user.email || "",
+        budgetThreshold: user.budgetThreshold ? parseFloat(user.budgetThreshold) : undefined,
+      });
+    }
+  }, [user, profileForm.reset]);
 
   const passwordForm = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),
