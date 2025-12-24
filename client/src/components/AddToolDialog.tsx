@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -318,7 +319,11 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
                               </Button>
                             </FormControl>
                           </PopoverTrigger>
-                          <PopoverContent className="w-[calc(100vw-2.5rem)] sm:w-[400px] p-0" align="start">
+                          <PopoverContent
+                            className="w-[calc(100vw-2.5rem)] sm:w-[400px] p-0"
+                            align="start"
+                            onOpenAutoFocus={(e) => e.preventDefault()}
+                          >
                             <Command filter={(value, search) => {
                               const item = knownTools.find(t => t.name.toLowerCase() === value.toLowerCase());
                               if (!item) return 0;
@@ -352,33 +357,35 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
                                 </Button>
                               </CommandEmpty>
                               <CommandGroup heading="Suggestions">
-                                <CommandList className="max-h-[300px] overflow-y-auto overflow-x-hidden pb-10 md:pb-0">
-                                  {knownTools.map((tool) => (
-                                    <CommandItem
-                                      key={tool.name}
-                                      value={tool.name}
-                                      onSelect={() => handleToolSelect(tool)}
-                                      className="cursor-pointer py-3 md:py-2"
-                                    >
-                                      <div className="flex items-center w-full">
-                                        <Avatar className="h-8 w-8 mr-3 rounded-md border bg-white flex-shrink-0">
-                                          <AvatarImage src={`https://www.google.com/s2/favicons?domain=${tool.website}&sz=64`} alt={tool.name} />
-                                          <AvatarFallback className="text-[10px]">{tool.name.slice(0, 2)}</AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex flex-col min-w-0 flex-1">
-                                          <span className="font-medium truncate">{tool.name}</span>
-                                          <span className="text-xs text-muted-foreground truncate">{tool.website}</span>
+                                <ScrollArea className="h-[300px]">
+                                  <CommandList className="pb-10 md:pb-0">
+                                    {knownTools.map((tool) => (
+                                      <CommandItem
+                                        key={tool.name}
+                                        value={tool.name}
+                                        onSelect={() => handleToolSelect(tool)}
+                                        className="cursor-pointer py-3 md:py-2"
+                                      >
+                                        <div className="flex items-center w-full">
+                                          <Avatar className="h-8 w-8 mr-3 rounded-md border bg-white flex-shrink-0">
+                                            <AvatarImage src={`https://www.google.com/s2/favicons?domain=${tool.website}&sz=64`} alt={tool.name} />
+                                            <AvatarFallback className="text-[10px]">{tool.name.slice(0, 2)}</AvatarFallback>
+                                          </Avatar>
+                                          <div className="flex flex-col min-w-0 flex-1">
+                                            <span className="font-medium truncate">{tool.name}</span>
+                                            <span className="text-xs text-muted-foreground truncate">{tool.website}</span>
+                                          </div>
+                                          <Check
+                                            className={cn(
+                                              "ml-auto h-4 w-4",
+                                              field.value === tool.name ? "opacity-100" : "opacity-0"
+                                            )}
+                                          />
                                         </div>
-                                        <Check
-                                          className={cn(
-                                            "ml-auto h-4 w-4",
-                                            field.value === tool.name ? "opacity-100" : "opacity-0"
-                                          )}
-                                        />
-                                      </div>
-                                    </CommandItem>
-                                  ))}
-                                </CommandList>
+                                      </CommandItem>
+                                    ))}
+                                  </CommandList>
+                                </ScrollArea>
                               </CommandGroup>
                             </Command>
                           </PopoverContent>

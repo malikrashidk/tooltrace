@@ -127,235 +127,243 @@ export function SettingsPage() {
         </div>
 
         <div className="grid gap-4 sm:gap-6 w-full max-w-3xl">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Profile
-            </CardTitle>
-            <CardDescription>Update your personal information</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...profileForm}>
-              <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
-                <FormField
-                  control={profileForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Full Name</FormLabel>
-                      <FormControl>
-                        <Input data-testid="input-settings-name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={profileForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input type="email" data-testid="input-settings-email" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={profileForm.control}
-                  name="budgetThreshold"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Monthly Budget Alert ($)</FormLabel>
-                      <FormControl>
-                        <Input
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Profile
+              </CardTitle>
+              <CardDescription>Update your personal information</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...profileForm}>
+                <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
+                  <FormField
+                    control={profileForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Full Name</FormLabel>
+                        <FormControl>
+                          <Input data-testid="input-settings-name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={profileForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input type="email" data-testid="input-settings-email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={profileForm.control}
+                    name="budgetThreshold"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Monthly Budget Alert ($)</FormLabel>
+                        <FormControl>
+                          <Input
                             type="number"
                             placeholder="e.g. 500"
                             {...field}
-                            onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
-                        />
-                      </FormControl>
-                      <FormDescription>
+                            onChange={e => {
+                              const val = e.target.value;
+                              if (val === "") {
+                                field.onChange(null);
+                              } else {
+                                const parsed = parseFloat(val);
+                                field.onChange(isNaN(parsed) ? null : parsed);
+                              }
+                            }}
+                          />
+                        </FormControl>
+                        <FormDescription>
                           Set a monthly budget to get alerts when your spending exceeds this amount.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" data-testid="button-save-profile">
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Changes
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" data-testid="button-save-profile">
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Key className="h-5 w-5" />
-              Change Password
-            </CardTitle>
-            <CardDescription>Update your password</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...passwordForm}>
-              <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
-                <FormField
-                  control={passwordForm.control}
-                  name="currentPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Current Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" data-testid="input-current-password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={passwordForm.control}
-                  name="newPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>New Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" data-testid="input-new-password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={passwordForm.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Confirm New Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" data-testid="input-confirm-new-password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" data-testid="button-change-password">
-                  <Key className="h-4 w-4 mr-2" />
-                  Change Password
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Key className="h-5 w-5" />
+                Change Password
+              </CardTitle>
+              <CardDescription>Update your password</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...passwordForm}>
+                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
+                  <FormField
+                    control={passwordForm.control}
+                    name="currentPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Current Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" data-testid="input-current-password" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={passwordForm.control}
+                    name="newPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>New Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" data-testid="input-new-password" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={passwordForm.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm New Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" data-testid="input-confirm-new-password" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" data-testid="button-change-password">
+                    <Key className="h-4 w-4 mr-2" />
+                    Change Password
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
 
-        <TwoFactorSetup />
+          <TwoFactorSetup />
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              Notifications
-            </CardTitle>
-            <CardDescription>Configure email notifications and alerts</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="email-reminders">Renewal Reminders</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receive email reminders before subscriptions renew
-                </p>
-              </div>
-              <Switch
-                id="email-reminders"
-                checked={notificationSettings.emailReminders}
-                onCheckedChange={(checked) => handleNotificationChange("emailReminders", checked)}
-                data-testid="switch-email-reminders"
-              />
-            </div>
-
-            {notificationSettings.emailReminders && (
-              <div className="flex items-center justify-between pl-4 border-l-2 border-muted">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5" />
+                Notifications
+              </CardTitle>
+              <CardDescription>Configure email notifications and alerts</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Reminder Timing</Label>
+                  <Label htmlFor="email-reminders">Renewal Reminders</Label>
                   <p className="text-sm text-muted-foreground">
-                    How many days before renewal to send reminder
+                    Receive email reminders before subscriptions renew
                   </p>
                 </div>
-                <Select
-                  value={notificationSettings.reminderDays}
-                  onValueChange={(value) => handleNotificationChange("reminderDays", value)}
-                >
-                  <SelectTrigger className="w-[120px]" data-testid="select-reminder-days">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 day</SelectItem>
-                    <SelectItem value="3">3 days</SelectItem>
-                    <SelectItem value="7">7 days</SelectItem>
-                    <SelectItem value="14">14 days</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Switch
+                  id="email-reminders"
+                  checked={notificationSettings.emailReminders}
+                  onCheckedChange={(checked) => handleNotificationChange("emailReminders", checked)}
+                  data-testid="switch-email-reminders"
+                />
               </div>
-            )}
 
-            <Separator />
+              {notificationSettings.emailReminders && (
+                <div className="flex items-center justify-between pl-4 border-l-2 border-muted">
+                  <div className="space-y-0.5">
+                    <Label>Reminder Timing</Label>
+                    <p className="text-sm text-muted-foreground">
+                      How many days before renewal to send reminder
+                    </p>
+                  </div>
+                  <Select
+                    value={notificationSettings.reminderDays}
+                    onValueChange={(value) => handleNotificationChange("reminderDays", value)}
+                  >
+                    <SelectTrigger className="w-[120px]" data-testid="select-reminder-days">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 day</SelectItem>
+                      <SelectItem value="3">3 days</SelectItem>
+                      <SelectItem value="7">7 days</SelectItem>
+                      <SelectItem value="14">14 days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="low-usage">Low Usage Alerts</Label>
-                <p className="text-sm text-muted-foreground">
-                  Get notified about rarely used paid subscriptions
-                </p>
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="low-usage">Low Usage Alerts</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Get notified about rarely used paid subscriptions
+                  </p>
+                </div>
+                <Switch
+                  id="low-usage"
+                  checked={notificationSettings.lowUsageAlerts}
+                  onCheckedChange={(checked) => handleNotificationChange("lowUsageAlerts", checked)}
+                  data-testid="switch-low-usage-alerts"
+                />
               </div>
-              <Switch
-                id="low-usage"
-                checked={notificationSettings.lowUsageAlerts}
-                onCheckedChange={(checked) => handleNotificationChange("lowUsageAlerts", checked)}
-                data-testid="switch-low-usage-alerts"
-              />
-            </div>
 
-            <Separator />
+              <Separator />
 
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="weekly-report">Weekly Report</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receive a weekly summary of your subscriptions
-                </p>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="weekly-report">Weekly Report</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive a weekly summary of your subscriptions
+                  </p>
+                </div>
+                <Switch
+                  id="weekly-report"
+                  checked={notificationSettings.weeklyReport}
+                  onCheckedChange={(checked) => handleNotificationChange("weeklyReport", checked)}
+                  data-testid="switch-weekly-report"
+                />
               </div>
-              <Switch
-                id="weekly-report"
-                checked={notificationSettings.weeklyReport}
-                onCheckedChange={(checked) => handleNotificationChange("weeklyReport", checked)}
-                data-testid="switch-weekly-report"
-              />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5" />
-              Browser Extension
-            </CardTitle>
-            <CardDescription>Auto-detect and add SaaS tools while browsing</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Install our browser extension to automatically detect SaaS tools as you browse the web. 
-              It makes adding tools to Tool Trace quick and effortless.
-            </p>
-            <div className="flex flex-col gap-3">
-              {/*
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5" />
+                Browser Extension
+              </CardTitle>
+              <CardDescription>Auto-detect and add SaaS tools while browsing</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Install our browser extension to automatically detect SaaS tools as you browse the web.
+                It makes adding tools to Tool Trace quick and effortless.
+              </p>
+              <div className="flex flex-col gap-3">
+                {/*
                  TODO: When the extension is published to Chrome Web Store:
                  1. Replace the download button with:
                  <a href="CHROME_STORE_URL" target="_blank" rel="noopener noreferrer">
@@ -366,31 +374,31 @@ export function SettingsPage() {
                  </a>
                  2. Update the description text to reflect it's in the store.
               */}
-              <a 
-                href="/api/extension/download"
-                target="_blank" 
-                rel="noopener noreferrer"
-                data-testid="button-download-extension"
-              >
-                <Button className="w-full sm:w-auto gap-2">
-                  <Download className="h-4 w-4" />
-                  Download Extension (Beta)
-                </Button>
-              </a>
-              <a 
-                href="https://github.com/yourusername/tooltrace-extension" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-sm text-primary hover:underline"
-                data-testid="link-extension-docs"
-              >
-                View Installation Instructions …†’
-              </a>
-            </div>
-          </CardContent>
-        </Card>
+                <a
+                  href="/api/extension/download"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="button-download-extension"
+                >
+                  <Button className="w-full sm:w-auto gap-2">
+                    <Download className="h-4 w-4" />
+                    Download Extension (Beta)
+                  </Button>
+                </a>
+                <a
+                  href="https://github.com/yourusername/tooltrace-extension"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary hover:underline"
+                  data-testid="link-extension-docs"
+                >
+                  View Installation Instructions …†’
+                </a>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
     </div>
   );
 }

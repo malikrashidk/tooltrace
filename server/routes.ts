@@ -643,7 +643,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (req.body.budgetThreshold === "" || req.body.budgetThreshold === null) {
           updates.budgetThreshold = null;
         } else {
-          updates.budgetThreshold = String(req.body.budgetThreshold);
+          const val = parseFloat(String(req.body.budgetThreshold));
+          updates.budgetThreshold = isNaN(val) ? null : String(val);
         }
       }
 
@@ -1346,7 +1347,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // External API: Get spending analytics
-  app.get("/api/v1/analytics/spending", apiKeyAuthMiddleware, async (req, res) => {
+  app.get("/api/v1/analytics/spending", async (req, res, next) => {
+    // Try session auth first, fall back to API key
+    if (req.headers.authorization?.startsWith('Bearer ')) {
+      return authMiddleware(req, res, next);
+    }
+    return apiKeyAuthMiddleware(req, res, next);
+  }, async (req, res) => {
     try {
       const tools = await storage.getUserTools(req.userId!);
 
@@ -1843,7 +1850,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============ INBOX DISCOVERY ROUTES ============
   app.get("/api/inbox/google/connect", authMiddleware, (req, res) => {
     try {
-      const url = getAuthUrl(req.userId!);
+      const callbackUrl = `${process.env.OAUTH_CALLBACK_URL || process.env.APP_URL}/api/inbox/google/callback`;
+      const url = getAuthUrl(req.userId!, callbackUrl);
       res.json({ url });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -1857,7 +1865,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const tokens = await getTokensFromCode(code as string);
+      const callbackUrl = `${process.env.OAUTH_CALLBACK_URL || process.env.APP_URL}/api/inbox/google/callback`;
+      const tokens = await getTokensFromCode(code as string, callbackUrl);
 
       const accessTokenEnc = encryptToken(tokens.access_token || "");
       const refreshTokenEnc = tokens.refresh_token ? encryptToken(tokens.refresh_token) : null;

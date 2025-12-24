@@ -340,7 +340,11 @@ export function ToolsPage() {
                           <TableCell>
                             <div className="flex items-center gap-2 sm:gap-3">
                               <Avatar className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg border flex-shrink-0">
-                                <AvatarImage src={tool.logoUrl || undefined} alt={tool.name} className="object-contain p-0.5" />
+                                <AvatarImage
+                                  src={tool.logoUrl || (tool.websiteUrl ? `https://www.google.com/s2/favicons?domain=${new URL(tool.websiteUrl.startsWith('http') ? tool.websiteUrl : `https://${tool.websiteUrl}`).hostname}&sz=128` : undefined)}
+                                  alt={tool.name}
+                                  className="object-contain p-0.5"
+                                />
                                 <AvatarFallback className="rounded-lg text-xs">
                                   {getInitials(tool.name)}
                                 </AvatarFallback>
@@ -376,10 +380,10 @@ export function ToolsPage() {
                             <Badge
                               variant="secondary"
                               className={`text-xs ${tool.usageFrequency === "daily"
-                                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                  : tool.usageFrequency === "weekly"
-                                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                                    : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                : tool.usageFrequency === "weekly"
+                                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                                  : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                                 }`}
                             >
                               {tool.usageFrequency}
