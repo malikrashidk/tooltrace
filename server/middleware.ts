@@ -15,9 +15,11 @@ declare global {
 
 export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   try {
-    const token = extractTokenFromHeader(req.headers.authorization);
+    const authHeader = req.headers.authorization || (req.headers as any).Authorization;
+    const token = extractTokenFromHeader(authHeader);
     if (!token) {
-      console.log(`[Auth] No token provided for ${req.method} ${req.path}. Headers:`, JSON.stringify(req.headers));
+      console.log(`[Auth] No token provided for ${req.method} ${req.path}.`);
+      console.log(`[Auth] Headers:`, JSON.stringify(req.headers));
       return res.status(401).json({ error: "No token provided" });
     }
 

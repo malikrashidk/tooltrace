@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { apiRequest } from "@/lib/queryClient";
 import { TwoFactorSetup } from "./TwoFactorSetup";
 
 const profileSchema = z.object({
@@ -77,11 +78,7 @@ export function SettingsPage() {
 
   const onProfileSubmit = async (data: ProfileFormData) => {
     try {
-      const response = await fetch("/api/auth/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest("PATCH", "/api/auth/profile", data);
 
       if (!response.ok) throw new Error("Failed to update profile");
 
