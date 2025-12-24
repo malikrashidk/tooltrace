@@ -1939,7 +1939,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const auth = getClient({
         access_token,
         refresh_token,
-        expiry_date: conn.tokenExpiry?.getTime(),
+        expiry_date: conn.tokenExpiry ? new Date(conn.tokenExpiry).getTime() : undefined,
       });
 
       console.log(`[Scan] Initiating Gmail API scan...`);

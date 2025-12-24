@@ -17,7 +17,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
   try {
     const token = extractTokenFromHeader(req.headers.authorization);
     if (!token) {
-      console.log(`[Auth] No token provided for ${req.method} ${req.path}`);
+      console.log(`[Auth] No token provided for ${req.method} ${req.path}. Headers:`, JSON.stringify(req.headers));
       return res.status(401).json({ error: "No token provided" });
     }
 
@@ -30,8 +30,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     // Note: In development with in-memory storage, the user may not exist if server restarted.
     // We still set the userId from the decoded token so the request can proceed.
     const user = await storage.getUser(decoded.userId);
-
-    console.log(`[Auth] User lookup for ${decoded.userId}: ${user ? 'Success' : 'Failed'}`);
+    console.log(`[Auth] ${req.method} ${req.path} :: User lookup for ${decoded.userId}: ${user ? 'Success' : 'Failed'}`);
 
     req.userId = decoded.userId;
     if (user) {
