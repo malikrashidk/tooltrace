@@ -39,6 +39,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
     const callbackURL = process.env.GOOGLE_REDIRECT_URL || `${OAUTH_CALLBACK_URL}/api/auth/google/callback`;
 
+    console.log("[OAuth Setup] Using callback URL:", callbackURL);
+    console.log("[OAuth Setup] GOOGLE_REDIRECT_URL:", process.env.GOOGLE_REDIRECT_URL);
+    console.log("[OAuth Setup] OAUTH_CALLBACK_URL:", OAUTH_CALLBACK_URL);
+
     passport.use(
       new GoogleStrategy(
         {
@@ -434,7 +438,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Note: passport-google-oauth20 supports 'state' parameter but we didn't explicitly set it in the start route.
       // However, usually we just want to get them into the app.
       console.log("[OAuth] Redirecting to /login with token");
-      res.redirect(`/login?token=${token}`);
+      const redirectUrl = `/login?token=${token}`;
+      console.log("[OAuth] Full redirect URL:", redirectUrl);
+      console.log("[OAuth] Token preview:", token.substring(0, 20) + "...");
+      res.redirect(redirectUrl);
     })(req, res, next);
   });
 
