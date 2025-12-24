@@ -1850,7 +1850,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============ INBOX DISCOVERY ROUTES ============
   app.get("/api/inbox/google/connect", authMiddleware, (req, res) => {
     try {
-      const callbackUrl = `${process.env.OAUTH_CALLBACK_URL || process.env.APP_URL}/api/inbox/google/callback`;
+      const baseUrl = (process.env.OAUTH_CALLBACK_URL || process.env.APP_URL || "").replace(/\/api\/.*$/, "").replace(/\/$/, "");
+      const callbackUrl = `${baseUrl}/api/inbox/google/callback`;
       const url = getAuthUrl(req.userId!, callbackUrl);
       res.json({ url });
     } catch (error: any) {
@@ -1865,7 +1866,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const callbackUrl = `${process.env.OAUTH_CALLBACK_URL || process.env.APP_URL}/api/inbox/google/callback`;
+      const baseUrl = (process.env.OAUTH_CALLBACK_URL || process.env.APP_URL || "").replace(/\/api\/.*$/, "").replace(/\/$/, "");
+      const callbackUrl = `${baseUrl}/api/inbox/google/callback`;
       const tokens = await getTokensFromCode(code as string, callbackUrl);
 
       const accessTokenEnc = encryptToken(tokens.access_token || "");
