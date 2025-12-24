@@ -129,7 +129,7 @@ export function InboxDiscovery({ onAddTool }: { onAddTool: (tool: Partial<Tool>)
                         <Button
                             onClick={() => connectMutation.mutate()}
                             disabled={connectMutation.isPending}
-                            className="w-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
+                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/20 transition-all duration-300 transform hover:scale-[1.02] font-semibold h-11"
                         >
                             {connectMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
                             Connect Gmail

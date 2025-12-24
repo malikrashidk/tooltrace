@@ -65,7 +65,8 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
       try {
         // Extract domain
         const url = new URL(tool.websiteUrl.startsWith('http') ? tool.websiteUrl : `https://${tool.websiteUrl}`);
-        return `https://www.google.com/s2/favicons?domain=${url.hostname}&sz=128`;
+        // Prefer Clearbit for better quality logos
+        return `https://logo.clearbit.com/${url.hostname}`;
       } catch (e) {
         return undefined;
       }

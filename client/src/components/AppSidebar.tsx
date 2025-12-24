@@ -1,9 +1,9 @@
-import { 
-  LayoutDashboard, 
-  Package, 
-  BarChart3, 
-  Settings, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  Package,
+  BarChart3,
+  Settings,
+  LogOut,
   ChevronLeft,
   Calendar,
   AlertTriangle,
@@ -18,7 +18,8 @@ import {
   Zap,
   HelpCircle,
   MessageSquare,
-  StickyNote
+  StickyNote,
+  Sparkles
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import {
@@ -61,6 +62,12 @@ export function AppSidebar() {
       title: "All Tools",
       url: "/tools",
       icon: Package,
+    },
+    {
+      title: "Smart Scan",
+      url: "/smart-scan",
+      icon: Sparkles,
+      badge: "BETA",
     },
     {
       title: "Advanced Management",
@@ -165,7 +172,7 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-3 px-2 py-2">
           <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
-             <img src="/tooltrace-logo.png" alt="ToolTrace Logo" className="w-full h-full object-contain" />
+            <img src="/tooltrace-logo.png" alt="ToolTrace Logo" className="w-full h-full object-contain" />
           </div>
           {state === "expanded" && (
             <div className="flex flex-col min-w-0">
@@ -189,9 +196,14 @@ export function AppSidebar() {
                     tooltip={item.title}
                     onClick={() => setOpenMobile(false)}
                   >
-                    <Link href={item.url} data-testid={`nav-${item.title.toLowerCase().replace(" ", "-")}`}>
+                    <Link href={item.url} data-testid={`nav-${item.title.toLowerCase().replace(" ", "-")}`} className="relative">
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
+                      {(item as any).badge && (
+                        <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                          {(item as any).badge}
+                        </span>
+                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -207,7 +219,7 @@ export function AppSidebar() {
               {settingsNavItems.map((item) => {
                 const status = getItemStatus(item);
                 const isLocked = status === "locked";
-                
+
                 return (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
@@ -217,8 +229,8 @@ export function AppSidebar() {
                       className={isLocked ? "opacity-50 hover:opacity-75" : ""}
                       onClick={() => setOpenMobile(false)}
                     >
-                      <Link 
-                        href={item.url} 
+                      <Link
+                        href={item.url}
                         data-testid={`nav-${item.title.toLowerCase().replace(" ", "-")}`}
                         className="relative"
                       >
