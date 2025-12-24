@@ -41,6 +41,13 @@ export function InboxDiscovery({ onAddTool }: { onAddTool: (tool: Partial<Tool>)
         queryKey: ["/api/user/profile"],
     });
 
+    // Check if Gmail OAuth connection exists for Smart Scan
+    const { data: connectionData } = useQuery<any>({
+        queryKey: ["/api/inbox/connection-status"],
+    });
+
+    const isGmailConnected = connectionData?.connected || false;
+
     const results = (resultsData as any)?.results || [];
 
     const scanMutation = useMutation({
@@ -108,7 +115,7 @@ export function InboxDiscovery({ onAddTool }: { onAddTool: (tool: Partial<Tool>)
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                {!profileData?.googleId ? (
+                {!isGmailConnected ? (
                     <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
                         <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
                             <Mail className="h-6 w-6 text-primary" />

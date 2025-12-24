@@ -1866,6 +1866,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============ INBOX DISCOVERY ROUTES ============
+  app.get("/api/inbox/connection-status", authMiddleware, async (req, res) => {
+    try {
+      const connection = await storage.getOAuthConnection(req.userId!, "google");
+      res.json({ connected: !!connection });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/inbox/google/connect", authMiddleware, (req, res) => {
     try {
       // If OAUTH_CALLBACK_URL already contains the callback path, use it directly
