@@ -1852,8 +1852,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============ INBOX DISCOVERY ROUTES ============
   app.get("/api/inbox/google/connect", authMiddleware, (req, res) => {
     try {
-      const baseUrl = (process.env.OAUTH_CALLBACK_URL || process.env.APP_URL || "").replace(/\/api\/.*$/, "").replace(/\/$/, "");
-      const callbackUrl = `${baseUrl}/api/inbox/google/callback`;
+      // If OAUTH_CALLBACK_URL already contains the callback path, use it directly
+      // Otherwise, construct it from the base URL
+      let callbackUrl = process.env.OAUTH_CALLBACK_URL || "";
+
+      if (!callbackUrl.includes("/api/inbox/google/callback")) {
+        const baseUrl = (process.env.APP_URL || "").replace(/\/$/, "");
+        callbackUrl = `${baseUrl}/api/inbox/google/callback`;
+      }
+
       const url = getAuthUrl(req.userId!, callbackUrl);
       res.json({ url });
     } catch (error: any) {
@@ -1868,8 +1875,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const baseUrl = (process.env.OAUTH_CALLBACK_URL || process.env.APP_URL || "").replace(/\/api\/.*$/, "").replace(/\/$/, "");
-      const callbackUrl = `${baseUrl}/api/inbox/google/callback`;
+      // Use the same URL construction logic as the connect endpoint
+      let callbackUrl = process.env.OAUTH_CALLBACK_URL || "";
+
+      if (!callbackUrl.includes("/api/inbox/google/callback")) {
+        const baseUrl = (process.env.APP_URL || "").replace(/\/$/, "");
+        callbackUrl = `${baseUrl}/api/inbox/google/callback`;
+      }
+
       const tokens = await getTokensFromCode(code as string, callbackUrl);
 
       const accessTokenEnc = encryptToken(tokens.access_token || "");
