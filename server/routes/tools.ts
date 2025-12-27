@@ -112,31 +112,40 @@ router.patch("/tools/:id", authMiddleware, emailVerificationMiddleware, async (r
       return res.status(404).json({ error: "Tool not found" });
     }
 
-    const updates = { ...req.body };
+    // Whitelist allowed fields to prevent "column does not exist" errors
+    // and to strip out any extra data the frontend might send (like isLocked, user, etc.)
+    const allowedFields = [
+      "name", "websiteUrl", "logoUrl", "notes", "isPaid",
+      "billingAmount", "billingCycle", "nextRenewalDate",
+      "categories", "tags", "usageFrequency", "paymentMethod",
+      "isPinned", "lastUsedAt", "totalUsageTime"
+    ];
+
+    const updates: any = {};
+    Object.keys(req.body).forEach(key => {
+      if (allowedFields.includes(key)) {
+        updates[key] = req.body[key];
+      }
+    });
 
     // Handle credentials update
-    if (updates.username && updates.password) {
+    if (req.body.username && req.body.password) {
       const credentials = JSON.stringify({
-        username: updates.username,
-        password: updates.password,
+        username: req.body.username,
+        password: req.body.password,
       });
       updates.credentials = encrypt(credentials);
-      delete updates.username;
-      delete updates.password;
-    } else if (updates.username || updates.password) {
-      // Partial update - decrypt existing, update field, re-encrypt
-      // For simplicity, we require both or assume they are sending the full set.
-      // If the user clears fields, we should probably handle that too.
-      // For now, let's just handle if 'credentials' is being passed explicitly as null to clear
-      if (updates.credentials === null) {
-        updates.credentials = null;
-      }
+    } else if (req.body.credentials === null) {
+      // Allow clearing credentials
+      updates.credentials = null;
     }
 
     // Handle secure note update
-    if (updates.secureNote) {
-      const encryptedNote = encrypt(updates.secureNote);
+    if (req.body.secureNote) {
+      const encryptedNote = encrypt(req.body.secureNote);
       updates.secureNote = JSON.stringify(encryptedNote);
+    } else if (req.body.secureNote === null) {
+      updates.secureNote = null;
     }
 
     const updated = await storage.updateTool(req.params.id, updates);
@@ -377,11 +386,10 @@ router.post("/receipts", authMiddleware, paidPlanMiddleware, async (req, res) =>
         const key = await uploadToR2(fileName, buffer, contentType);
         storageUrl = key; // Store the key in DB
       } catch (e) {
-        console.error("R2 Upload failed, falling back to database storage:", e);
-        // Fallback or fail? Let's fail for now to ensure we don't bloat DB if that's the goal.
-        // But if user hasn't set up R2 yet, we might want to fallback.
-        // Given the requirement "I don't want to fill my vps space", we should probably warn or fail.
-        // For now, let's allow fallback but log error.
+        console.error("R2 Upload failed:", e);
+        // Strict Fail-Loud Policy: If R2 is configured but fails, DO NOT fallback to database.
+        // This ensures the user knows something is wrong with their R2 config or connection.
+        return res.status(500).json({ error: "R2 Upload Failed: " + (e as Error).message });
       }
     }
 
