@@ -39,6 +39,8 @@ const sanitizeReturnTo = (path: string | null): string => {
 export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  // New state to track if we are processing a token from URL
+  const [isProcessingToken, setIsProcessingToken] = useState(false);
   const [requires2FA, setRequires2FA] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState("");
   const [pendingCredentials, setPendingCredentials] = useState<{ email: string; password: string } | null>(null);
@@ -61,10 +63,15 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
     console.log("[LoginPage] URL params:", { hasToken: !!token, error });
 
     if (token) {
+      // Indicate we are processing so the form doesn't show up
+      setIsProcessingToken(true);
       console.log("[LoginPage] Token found, setting in localStorage");
       localStorage.setItem("token", token);
+
       const returnTo = sanitizeReturnTo(urlParams.get("returnTo"));
       console.log("[LoginPage] Redirecting to:", returnTo);
+      // Small delay to ensure storage write and visual feedback? 
+      // Actually immediate redirect is better if possible, but window.location change is async-like in UX.
       window.location.href = returnTo;
     }
 
@@ -74,9 +81,22 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
         description: "Unable to sign in with social account. Please try again.",
         variant: "destructive",
       });
-      window.history.replaceState({}, "", "/");
+      // Clean up URL
+      window.history.replaceState({}, "", "/login");
     }
   }, [toast]);
+
+  // If processing token, show a full screen loader instead of the form
+  if (isProcessingToken) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Completing sign in...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleGoogleSignIn = () => {
     const urlParams = new URLSearchParams(window.location.search);

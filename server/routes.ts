@@ -416,7 +416,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!process.env.GOOGLE_CLIENT_ID) {
       return res.status(503).json({ error: "Google OAuth not configured" });
     }
-    passport.authenticate("google", { scope: ["profile", "email"], session: false })(req, res, next);
+    const returnTo = req.query.returnTo as string;
+    passport.authenticate("google", {
+      scope: ["profile", "email"],
+      session: false,
+      state: returnTo
+    })(req, res, next);
   });
 
   app.get("/api/auth/google/callback", (req, res, next) => {
@@ -434,11 +439,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Redirect to /login so the LoginPage can process the token and set it in localStorage
       // LoginPage will then redirect to the intended returnTo path or dashboard
       const urlParams = new URLSearchParams(req.query as any);
-      const returnTo = urlParams.get("state") || "/"; // Google strategy can pass state, or we default
-      // Note: passport-google-oauth20 supports 'state' parameter but we didn't explicitly set it in the start route.
-      // However, usually we just want to get them into the app.
+      const returnTo = req.query.state as string || "/";
+
       console.log("[OAuth] Redirecting to /login with token");
-      const redirectUrl = `/login?token=${token}`;
+      const redirectUrl = `/login?token=${token}&returnTo=${encodeURIComponent(returnTo)}`;
       console.log("[OAuth] Full redirect URL:", redirectUrl);
       console.log("[OAuth] Token preview:", token.substring(0, 20) + "...");
       res.redirect(redirectUrl);
