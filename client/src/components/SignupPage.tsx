@@ -27,6 +27,15 @@ interface SignupPageProps {
   onSwitchToLogin?: () => void;
 }
 
+// Helper to sanitize returnTo path to prevent open redirects
+const sanitizeReturnTo = (path: string | null): string => {
+  if (!path) return "/";
+  if (path.startsWith("/") && !path.startsWith("//")) {
+    return path;
+  }
+  return "/";
+};
+
 export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -41,6 +50,13 @@ export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
       confirmPassword: "",
     },
   });
+
+  const handleGoogleSignIn = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const returnTo = sanitizeReturnTo(urlParams.get("returnTo"));
+    const redirectUrl = returnTo !== "/" ? `/api/auth/google?returnTo=${encodeURIComponent(returnTo)}` : "/api/auth/google";
+    window.location.href = redirectUrl;
+  };
 
   const onSubmit = async (data: SignupFormData) => {
     setIsLoading(true);
@@ -185,7 +201,7 @@ export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
                 className="h-10 gap-2"
                 disabled={isLoading}
                 data-testid="button-google-signup"
-                onClick={() => window.location.href = "/api/auth/google"}
+                onClick={handleGoogleSignIn}
               >
                 <FcGoogle className="h-4 w-4" />
                 <span className="text-xs">Google</span>

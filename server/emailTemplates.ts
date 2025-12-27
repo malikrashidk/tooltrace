@@ -3,33 +3,50 @@ import { sendEmail } from "./mailer";
 const APP_URL = process.env.APP_URL || "https://app.tooltrace.io";
 const LOGO_URL = `${APP_URL}/tooltrace-logo.png`;
 
+const COLORS = {
+  primary: "#6366f1", // Indigo 500
+  background: "#f3f4f6", // Gray 100
+  surface: "#ffffff",
+  text: "#1f2937", // Gray 800
+  textMuted: "#6b7280", // Gray 500
+  border: "#e5e7eb", // Gray 200
+};
+
 function getEmailTemplate(content: string, title: string) {
   return `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { text-align: center; padding-bottom: 20px; border-bottom: 1px solid #eee; }
-    .logo { height: 40px; }
-    .content { padding: 30px 0; }
-    .button { display: inline-block; padding: 12px 24px; background-color: #000; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 500; }
-    .footer { text-align: center; font-size: 12px; color: #666; padding-top: 20px; border-top: 1px solid #eee; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: ${COLORS.text}; background-color: ${COLORS.background}; margin: 0; padding: 0; }
+    .wrapper { width: 100%; background-color: ${COLORS.background}; padding: 40px 0; }
+    .container { max-width: 600px; margin: 0 auto; background-color: ${COLORS.surface}; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+    .header { text-align: center; padding: 30px 20px; border-bottom: 1px solid ${COLORS.border}; background-color: ${COLORS.surface}; }
+    .logo { height: 40px; width: auto; }
+    .content { padding: 40px 30px; }
+    .button { display: inline-block; padding: 14px 28px; background-color: ${COLORS.primary}; color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; text-align: center; font-size: 16px; transition: background-color 0.2s; }
+    .button:hover { background-color: #4f46e5; }
+    .footer { text-align: center; font-size: 12px; color: ${COLORS.textMuted}; padding: 20px; background-color: #f9fafb; border-top: 1px solid ${COLORS.border}; }
+    h2 { margin-top: 0; color: ${COLORS.text}; font-size: 24px; font-weight: 700; }
+    p { margin-bottom: 16px; font-size: 16px; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <img src="${LOGO_URL}" alt="ToolTrace" class="logo" />
-    </div>
-    <div class="content">
-      <h2>${title}</h2>
-      ${content}
-    </div>
-    <div class="footer">
-      <p>&copy; ${new Date().getFullYear()} ToolTrace. All rights reserved.</p>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <img src="${LOGO_URL}" alt="ToolTrace" class="logo" />
+      </div>
+      <div class="content">
+        <h2>${title}</h2>
+        ${content}
+      </div>
+      <div class="footer">
+        <p style="margin-bottom: 8px;">&copy; ${new Date().getFullYear()} ToolTrace. All rights reserved.</p>
+        <p style="margin: 0;">Automate your SaaS management.</p>
+      </div>
     </div>
   </div>
 </body>

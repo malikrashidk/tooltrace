@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Package, PieChart } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { DollarSign, Package, TrendingUp, BarChart3 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type Tool } from "@/lib/analytics";
 import { useCurrency } from "@/context/CurrencyContext";
@@ -30,34 +30,67 @@ export function AnalyticsPage() {
 
   const stats = useMemo(() => {
     const paid = tools.filter((t) => t.isPaid);
-    const monthlySpend = paid.reduce(
-      (sum, t) => sum + Number(t.billingAmount || 0),
-      0
-    );
+
+    // Normalize monthly spend
+    const monthlySpend = paid.reduce((sum, t) => {
+      const amount = Number(t.billingAmount || 0);
+      let monthlyAmount = amount;
+      if (t.billingCycle === 'yearly') {
+        monthlyAmount = amount / 12;
+      }
+      // one-time payments don't count towards monthly recurring revenue (MRR) typically,
+      // or we could amortize them. Let's exclude or count as 0 for MRR to be safe, 
+      // or maybe divide by 12/24? Let's just exclude one-time from MRR for now.
+      if (t.billingCycle === 'one-time') {
+        monthlyAmount = 0;
+      }
+      return sum + monthlyAmount;
+    }, 0);
 
     // Calculate category spending
     const categorySpend: Record<string, number> = {};
     paid.forEach((tool) => {
       const amount = Number(tool.billingAmount || 0);
-      const categories = tool.categories?.length ? tool.categories : ["Uncategorized"];
-      categories.forEach((cat) => {
-        // If a tool has multiple categories, split the cost (simplification) or assign to first?
-        // Let's assign full cost to each for visibility, or first.
-        // For accurate total, maybe assign to the first category.
-        const primaryCat = categories[0];
-        categorySpend[primaryCat] = (categorySpend[primaryCat] || 0) + amount;
-      });
+      let monthlyAmount = amount;
+      if (tool.billingCycle === 'yearly') monthlyAmount = amount / 12;
+      if (tool.billingCycle === 'one-time') monthlyAmount = 0; // Exclude one-time from monthly pie
+
+      if (monthlyAmount > 0) {
+        const categories = tool.categories?.length ? tool.categories : ["Uncategorized"];
+        categories.forEach((cat) => {
+          // Assign full cost to primary category to avoid double counting in pie chart total
+          // or split it? To keep it simple and accurate sum, usage: first category.
+          if (cat === categories[0]) {
+            categorySpend[cat] = (categorySpend[cat] || 0) + monthlyAmount;
+          }
+        });
+      }
     });
 
     const categoryData = Object.entries(categorySpend)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
 
-    // Calculate daily/weekly/monthly/yearly breakdown
+    // Top 5 most expensive tools (monthly normalized)
+    const expensiveTools = [...paid]
+      .map(t => {
+        let cost = Number(t.billingAmount || 0);
+        if (t.billingCycle === 'yearly') cost = cost / 12;
+        return {
+          name: t.name,
+          cost: cost,
+          cycle: t.billingCycle
+        };
+      })
+      .filter(t => t.cost > 0 && t.cycle !== 'one-time')
+      .sort((a, b) => b.cost - a.cost)
+      .slice(0, 5);
+
+    // Calculate daily/weekly/monthly/yearly breakdown count
     const frequencySpend = {
-        Daily: paid.filter(t => t.usageFrequency === 'daily').reduce((s, t) => s + Number(t.billingAmount || 0), 0),
-        Weekly: paid.filter(t => t.usageFrequency === 'weekly').reduce((s, t) => s + Number(t.billingAmount || 0), 0),
-        Rarely: paid.filter(t => t.usageFrequency === 'rarely').reduce((s, t) => s + Number(t.billingAmount || 0), 0),
+      Daily: paid.filter(t => t.usageFrequency === 'daily').length,
+      Weekly: paid.filter(t => t.usageFrequency === 'weekly').length,
+      Rarely: paid.filter(t => t.usageFrequency === 'rarely').length,
     };
 
     const usageData = Object.entries(frequencySpend).map(([name, value]) => ({ name, value }));
@@ -69,7 +102,8 @@ export function AnalyticsPage() {
       monthlySpend,
       yearlySpend: monthlySpend * 12,
       categoryData,
-      usageData
+      usageData,
+      expensiveTools
     };
   }, [tools]);
 
@@ -113,6 +147,7 @@ export function AnalyticsPage() {
                 >
                   {formatAmount(stats.monthlySpend)}
                 </p>
+                <p className="text-xs text-muted-foreground">Approx. monthly recurring</p>
               </div>
             </div>
           </CardContent>
@@ -144,7 +179,7 @@ export function AnalyticsPage() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-lg bg-green-100 dark:bg-green-900/30">
-                <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">
@@ -156,6 +191,7 @@ export function AnalyticsPage() {
                 >
                   {formatAmount(stats.yearlySpend)}
                 </p>
+                <p className="text-xs text-muted-foreground">Based on current MRR</p>
               </div>
             </div>
           </CardContent>
@@ -173,10 +209,12 @@ export function AnalyticsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Spending by Category Pie Chart */}
+          <Card className="col-span-1">
             <CardHeader>
-              <CardTitle>Spending by Category (Monthly)</CardTitle>
+              <CardTitle className="text-base">Spending by Category</CardTitle>
+              <CardDescription>Monthly distribution</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
@@ -215,31 +253,60 @@ export function AnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          {/* Top 5 Expensive Tools Bar Chart */}
+          <Card className="col-span-1">
             <CardHeader>
-              <CardTitle>Spending by Usage Frequency (Monthly)</CardTitle>
+              <CardTitle className="text-base">Top 5 Most Expensive</CardTitle>
+              <CardDescription>Monthly cost normalized</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
-                {stats.usageData.some(d => d.value > 0) ? (
+                {stats.expensiveTools.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={stats.usageData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip formatter={(value: number) => formatAmount(value)} />
-                      <Bar dataKey="value" fill="#8884d8">
-                        {stats.usageData.map((entry, index) => (
+                    <BarChart layout="vertical" data={stats.expensiveTools} margin={{ left: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                      <XAxis type="number" hide />
+                      <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12 }} />
+                      <Tooltip formatter={(value: number) => formatAmount(value)} cursor={{ fill: 'transparent' }} />
+                      <Bar dataKey="cost" fill="#8884d8" radius={[0, 4, 4, 0]}>
+                        {stats.expensiveTools.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                   <div className="h-full flex items-center justify-center text-muted-foreground">
-                    No spending data available
+                  <div className="h-full flex items-center justify-center text-muted-foreground">
+                    No paid tools found
                   </div>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Tool Count by Usage Freq */}
+          <Card className="col-span-1 md:col-span-2">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Tool Usage Frequency
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats.usageData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="name" />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Bar dataKey="value" fill="#8884d8" radius={[4, 4, 0, 0]} name="Number of Tools">
+                      {stats.usageData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>

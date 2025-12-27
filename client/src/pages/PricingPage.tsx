@@ -106,9 +106,8 @@ export function PricingPage() {
         {plans.map((plan) => (
           <Card
             key={plan.id}
-            className={`relative flex flex-col transition-all duration-300 ${
-              plan.popular ? "md:scale-105 ring-2 ring-primary shadow-lg" : ""
-            }`}
+            className={`relative flex flex-col transition-all duration-300 ${plan.popular ? "md:scale-105 ring-2 ring-primary shadow-lg" : ""
+              }`}
             data-testid={`pricing-card-${plan.id}`}
           >
             {plan.popular && (
@@ -127,7 +126,7 @@ export function PricingPage() {
               </div>
               <div className="pt-2 border-t border-border/50">
                 <div className="flex items-baseline gap-1 mb-1">
-                  <span className="text-3xl sm:text-4xl font-bold">{formatAmount(plan.price)}</span>
+                  <span className="text-3xl sm:text-4xl font-bold">${plan.price}</span>
                   <span className="text-muted-foreground text-xs sm:text-sm">/month</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -150,6 +149,12 @@ export function PricingPage() {
               <div className="space-y-3 flex-1">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Features included</p>
                 <div className="space-y-2.5">
+                  {(plan.id === "standard" || plan.id === "premium") && (
+                    <div className="flex items-start gap-3 group">
+                      <Check className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm leading-snug font-medium">Smart Scan (Gmail Integration)</span>
+                    </div>
+                  )}
                   {plan.features.map((feature) => (
                     <div key={feature} className="flex items-start gap-3 group">
                       <Check className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />

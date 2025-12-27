@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tool } from "@/lib/analytics";
+import { getLogoUrl } from "@/lib/utils";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface DiscoveryResult {
     id: string;
@@ -94,6 +96,7 @@ export function InboxDiscovery({ onAddTool }: { onAddTool: (tool: Partial<Tool>)
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["/api/inbox/results"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/inbox/connection-status"] });
             toast({ description: "Gmail account disconnected" });
         },
     });
@@ -149,6 +152,22 @@ export function InboxDiscovery({ onAddTool }: { onAddTool: (tool: Partial<Tool>)
                             </Button>
                         </div>
 
+                        {/* Actions Area */}
+                        {(results.length > 0 || !isScanning) && (
+                            <div className="flex justify-end mb-4">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => scanMutation.mutate()}
+                                    disabled={isScanning}
+                                    className="text-xs"
+                                >
+                                    <RefreshCw className={`h-3 w-3 mr-2 ${isScanning ? 'animate-spin' : ''}`} />
+                                    {isScanning ? 'Scanning...' : 'Rescan Inbox'}
+                                </Button>
+                            </div>
+                        )}
+
                         {results.length > 0 ? (
                             <ScrollArea className="h-[300px] pr-4">
                                 <div className="space-y-3">
@@ -159,6 +178,10 @@ export function InboxDiscovery({ onAddTool }: { onAddTool: (tool: Partial<Tool>)
                                         >
                                             <div className="min-w-0 flex-1 mr-4">
                                                 <div className="flex items-center gap-2 mb-1">
+                                                    <Avatar className="h-6 w-6">
+                                                        <AvatarImage src={getLogoUrl(`https://${result.vendorDomain}`)} />
+                                                        <AvatarFallback>{result.vendorName.substring(0, 2)}</AvatarFallback>
+                                                    </Avatar>
                                                     <span className="font-semibold text-sm">{result.vendorName}</span>
                                                     <Badge variant="secondary" className="bg-primary/10 text-primary-foreground text-[10px] h-4">
                                                         {result.confidence}% match

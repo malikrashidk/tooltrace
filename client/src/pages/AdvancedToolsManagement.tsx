@@ -10,6 +10,7 @@ import { useCurrency } from "@/context/CurrencyContext";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { getLogoUrl } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import {
   Select,
@@ -36,7 +37,7 @@ export function AdvancedToolsManagement() {
   const { toast } = useToast();
   const { formatAmount } = useCurrency();
   const isPaidPlan = user?.plan === "standard" || user?.plan === "premium";
-  
+
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
@@ -84,6 +85,33 @@ export function AdvancedToolsManagement() {
     },
   });
 
+  const updateCategoryMutation = useMutation({
+    mutationFn: async ({ ids, category }: { ids: string[], category: string }) => {
+      // Fetch current tool to get its other categories, then add new one? 
+      // Or just append? API might need 'categories' array.
+      // For now let's assume we append the new category to existing ones for each tool.
+      // This is expensive N requests. A bulk API would be better.
+      // But we'll do N requests for now.
+      const results = await Promise.all(
+        ids.map(async (id) => {
+          const tool = tools.find(t => t.id === id);
+          if (!tool) return;
+          const newCategories = Array.from(new Set([...(tool.categories || []), category]));
+          return apiRequest("PATCH", `/api/tools/${id}`, { categories: newCategories });
+        })
+      );
+      return results;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tools'] });
+      toast({ title: "Success", description: `Updated category for ${selectedTools.size} tool(s)` });
+      setSelectedTools(new Set());
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to update tools", variant: "destructive" });
+    },
+  });
+
   if (!isPaidPlan) {
     return (
       <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
@@ -101,7 +129,7 @@ export function AdvancedToolsManagement() {
               <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
                 Advanced tools management with bulk operations and inline editing is available on Standard and Premium plans.
               </p>
-              <Button 
+              <Button
                 onClick={() => setLocation("/pricing")}
                 className="mt-4 w-full sm:w-auto"
                 data-testid="button-upgrade"
@@ -116,18 +144,18 @@ export function AdvancedToolsManagement() {
   }
 
   const tools = toolsData?.tools || [];
-  
+
   const allCategories = Array.from(new Set(tools.flatMap(t => t.categories || [])));
-  
+
   const filteredTools = tools.filter(tool => {
     const matchesSearch = tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tool.websiteUrl.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = filterCategory === "all" || tool.categories?.includes(filterCategory);
     const matchesUsage = filterUsage === "all" || tool.usageFrequency === filterUsage;
-    const matchesPaid = filterPaid === "all" || 
-      (filterPaid === "paid" && tool.isPaid) || 
+    const matchesPaid = filterPaid === "all" ||
+      (filterPaid === "paid" && tool.isPaid) ||
       (filterPaid === "free" && !tool.isPaid);
-    
+
     return matchesSearch && matchesCategory && matchesUsage && matchesPaid;
   });
 
@@ -164,7 +192,7 @@ export function AdvancedToolsManagement() {
           <h1 className="text-2xl sm:text-3xl font-semibold">Advanced Tools Management</h1>
           <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Bulk operations and advanced filtering</p>
         </div>
-        <Button 
+        <Button
           variant="outline"
           onClick={() => setLocation("/tools")}
           data-testid="button-back-to-tools"
@@ -248,6 +276,20 @@ export function AdvancedToolsManagement() {
                     <SelectItem value="rarely">Rarely</SelectItem>
                   </SelectContent>
                 </Select>
+
+                <Select onValueChange={(val) => updateCategoryMutation.mutate({ ids: Array.from(selectedTools), category: val })}>
+                  <SelectTrigger className="w-[160px]" data-testid="select-bulk-category">
+                    <Tag className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Add Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allCategories.map(cat => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                    <SelectItem value="new">+ Custom...</SelectItem>
+                  </SelectContent>
+                </Select>
+
                 <Button
                   variant="destructive"
                   size="sm"
@@ -275,7 +317,7 @@ export function AdvancedToolsManagement() {
             <Wrench className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-semibold mb-2">No Tools Found</h3>
             <p className="text-muted-foreground">
-              {tools.length === 0 
+              {tools.length === 0
                 ? "Add some tools to get started with advanced management"
                 : "Try adjusting your filters"}
             </p>
@@ -314,10 +356,14 @@ export function AdvancedToolsManagement() {
                     <td className="p-3">
                       <div className="flex items-center gap-3">
                         {tool.logoUrl ? (
-                          <img src={tool.logoUrl} alt={tool.name} className="w-8 h-8 rounded-lg object-contain bg-white p-0.5" />
+                          <img src={getLogoUrl(tool.websiteUrl) || tool.logoUrl || ""} alt={tool.name} className="w-8 h-8 rounded-lg object-contain bg-white p-0.5" />
                         ) : (
                           <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-                            <Wrench className="h-4 w-4 text-muted-foreground" />
+                            {getLogoUrl(tool.websiteUrl) ? (
+                              <img src={getLogoUrl(tool.websiteUrl)} alt={tool.name} className="w-8 h-8 rounded-lg object-contain bg-white p-0.5" />
+                            ) : (
+                              <Wrench className="h-4 w-4 text-muted-foreground" />
+                            )}
                           </div>
                         )}
                         <div>
@@ -337,7 +383,7 @@ export function AdvancedToolsManagement() {
                       </div>
                     </td>
                     <td className="p-3">
-                      <Badge 
+                      <Badge
                         variant={tool.usageFrequency === "daily" ? "default" : tool.usageFrequency === "weekly" ? "secondary" : "outline"}
                         className={tool.usageFrequency === "rarely" ? "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400" : ""}
                       >

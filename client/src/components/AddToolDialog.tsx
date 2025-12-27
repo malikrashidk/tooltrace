@@ -9,7 +9,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -48,7 +47,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { cn, getLogoUrl } from "@/lib/utils";
 import type { Tool } from "@/lib/analytics";
 import { knownTools, type KnownTool } from "../../../shared/known-tools";
 
@@ -215,20 +214,13 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
   const websiteUrl = form.watch("websiteUrl");
   useEffect(() => {
     if (!logoPreview && websiteUrl && !editTool?.logoUrl) {
-      try {
-        // Basic validation to ensure it looks like a domain before requesting
-        if (websiteUrl.includes(".")) {
-          const domain = websiteUrl.replace(/^https?:\/\//, "").split("/")[0];
-          // Use Google's favicon service as a fallback
-          // We don't set it as "logoPreview" (which implies a custom upload)
-          // but we can render it in the UI if logoPreview is null.
-          // However, to persist it, we might want to let the user see it.
-          // For now, the ToolCard handles the display fallback.
-          // But the user requested "logos for tools I add".
-          // If we want to save it, we can set it here.
-        }
-      } catch (e) {
-        // ignore
+      const logo = getLogoUrl(websiteUrl);
+      if (logo) {
+        // We don't auto-set it as "logoPreview" to avoid it looking like a custom upload,
+        // but we could. For now let's just let the visual indication happen if the user
+        // hasn't uploaded one. 
+        // Actually, for "Add Tool", showing it is nice.
+        setLogoPreview(logo);
       }
     }
   }, [websiteUrl, logoPreview, editTool]);
@@ -241,8 +233,8 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
       setSelectedCategories(prev => [...prev, tool.category]);
     }
 
-    // Automatically set logo preview from external favicon service (not stored on server)
-    setLogoPreview(`https://www.google.com/s2/favicons?domain=${tool.website}&sz=128`);
+    // Automatically set logo preview using reliable helper
+    setLogoPreview(getLogoUrl(tool.website) || null);
 
     setComboboxOpen(false);
   };
