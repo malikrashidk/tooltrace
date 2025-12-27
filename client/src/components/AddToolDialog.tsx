@@ -50,6 +50,7 @@ import {
 import { cn, getLogoUrl } from "@/lib/utils";
 import type { Tool } from "@/lib/analytics";
 import { knownTools, type KnownTool } from "../../../shared/known-tools";
+import { ToolLogo } from "./ToolLogo";
 
 const toolSchema = z.object({
   name: z.string().min(1, "Tool name is required"),
@@ -265,16 +266,18 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
               <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                 <div className="flex flex-col items-center sm:items-start flex-shrink-0">
                   <label className="cursor-pointer" data-testid="input-logo-upload">
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 border-2 border-dashed border-border rounded-xl flex items-center justify-center bg-muted/30 hover:bg-muted/50 transition-colors">
-                      {logoPreview ? (
-                        <img
-                          src={logoPreview}
-                          alt="Logo preview"
-                          className="w-full h-full object-contain rounded-lg p-2"
-                        />
-                      ) : (
-                        <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
-                      )}
+                    <div className="flex flex-col items-center justify-center">
+                      <ToolLogo
+                        url={logoPreview}
+                        name={form.watch("name") || "Brand"}
+                        websiteUrl={form.watch("websiteUrl")}
+                        size="xl"
+                        className="border-2 border-dashed border-border/50 hover:border-border transition-colors bg-muted/10 cursor-pointer"
+                      />
+                      {/* Visual hint for upload */}
+                      <div className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                        <Upload className="h-3 w-3" /> Upload
+                      </div>
                     </div>
                     <input
                       type="file"
@@ -349,7 +352,7 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
                                 </Button>
                               </CommandEmpty>
                               <CommandGroup heading="Suggestions">
-                                <CommandList className="max-h-[300px] overflow-y-auto pb-10 md:pb-0">
+                                <CommandList className="max-h-[300px] overflow-y-auto overflow-x-hidden touch-auto overscroll-contain pb-10 md:pb-0">
                                   {knownTools.map((tool) => (
                                     <CommandItem
                                       key={tool.name}
@@ -358,10 +361,13 @@ export function AddToolDialog({ categories, onSave, editTool, trigger, open: ope
                                       className="cursor-pointer py-3 md:py-2"
                                     >
                                       <div className="flex items-center w-full">
-                                        <Avatar className="h-8 w-8 mr-3 rounded-md border bg-white flex-shrink-0">
-                                          <AvatarImage src={`https://logo.clearbit.com/${tool.website}`} alt={tool.name} />
-                                          <AvatarFallback className="text-[10px]">{tool.name.slice(0, 2)}</AvatarFallback>
-                                        </Avatar>
+                                        <ToolLogo
+                                          url={undefined}
+                                          websiteUrl={tool.website}
+                                          name={tool.name}
+                                          size="sm"
+                                          className="mr-3 bg-white"
+                                        />
                                         <div className="flex flex-col min-w-0 flex-1">
                                           <span className="font-medium truncate">{tool.name}</span>
                                           <span className="text-xs text-muted-foreground truncate">{tool.website}</span>

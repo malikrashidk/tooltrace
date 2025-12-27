@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { Tool } from "@shared/schema";
+import { ToolLogo } from "@/components/ToolLogo";
 
 export function AdvancedToolsManagement() {
   const [, setLocation] = useLocation();
@@ -355,17 +356,13 @@ export function AdvancedToolsManagement() {
                     </td>
                     <td className="p-3">
                       <div className="flex items-center gap-3">
-                        {tool.logoUrl ? (
-                          <img src={getLogoUrl(tool.websiteUrl) || tool.logoUrl || ""} alt={tool.name} className="w-8 h-8 rounded-lg object-contain bg-white p-0.5" />
-                        ) : (
-                          <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-                            {getLogoUrl(tool.websiteUrl) ? (
-                              <img src={getLogoUrl(tool.websiteUrl)} alt={tool.name} className="w-8 h-8 rounded-lg object-contain bg-white p-0.5" />
-                            ) : (
-                              <Wrench className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </div>
-                        )}
+                        <ToolLogo
+                          url={tool.logoUrl}
+                          websiteUrl={tool.websiteUrl}
+                          name={tool.name}
+                          size="sm"
+                          className="bg-white rounded-lg"
+                        />
                         <div>
                           <p className="font-medium">{tool.name}</p>
                           <p className="text-xs text-muted-foreground truncate max-w-[150px]">{tool.websiteUrl}</p>

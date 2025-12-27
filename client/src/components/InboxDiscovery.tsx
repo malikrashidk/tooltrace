@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tool } from "@/lib/analytics";
 import { getLogoUrl } from "@/lib/utils";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { ToolLogo } from "./ToolLogo";
 
 interface DiscoveryResult {
     id: string;
@@ -178,10 +178,12 @@ export function InboxDiscovery({ onAddTool }: { onAddTool: (tool: Partial<Tool>)
                                         >
                                             <div className="min-w-0 flex-1 mr-4">
                                                 <div className="flex items-center gap-2 mb-1">
-                                                    <Avatar className="h-6 w-6">
-                                                        <AvatarImage src={getLogoUrl(`https://${result.vendorDomain}`)} />
-                                                        <AvatarFallback>{result.vendorName.substring(0, 2)}</AvatarFallback>
-                                                    </Avatar>
+                                                    <ToolLogo
+                                                        url={null}
+                                                        websiteUrl={`https://${result.vendorDomain}`}
+                                                        name={result.vendorName}
+                                                        size="sm"
+                                                    />
                                                     <span className="font-semibold text-sm">{result.vendorName}</span>
                                                     <Badge variant="secondary" className="bg-primary/10 text-primary-foreground text-[10px] h-4">
                                                         {result.confidence}% match
