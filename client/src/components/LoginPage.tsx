@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -39,13 +41,13 @@ const sanitizeReturnTo = (path: string | null): string => {
 export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  // New state to track if we are processing a token from URL
   const [isProcessingToken, setIsProcessingToken] = useState(false);
   const [requires2FA, setRequires2FA] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState("");
   const [pendingCredentials, setPendingCredentials] = useState<{ email: string; password: string } | null>(null);
-  const { login } = useAuth();
+  const { login, refreshUser } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -56,56 +58,53 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
   });
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get("token");
-    const error = urlParams.get("error");
+    const processToken = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get("token");
+      const error = urlParams.get("error");
 
-    console.log("[LoginPage] URL params:", { hasToken: !!token, error });
+      if (token) {
+        setIsProcessingToken(true);
+        console.log("[LoginPage] Token found via OAuth");
 
-    if (token) {
-      // Indicate we are processing so the form doesn't show up
-      setIsProcessingToken(true);
-      console.log("[LoginPage] Token found in URL:", token.substring(0, 10) + "...");
+        try {
+          localStorage.setItem("token", token);
+          // Manually trigger user fetch to update AuthContext state
+          await refreshUser();
 
-      try {
-        localStorage.setItem("token", token);
-        console.log("[LoginPage] Token successfully written to localStorage");
-      } catch (e) {
-        console.error("[LoginPage] Failed to write token to localStorage:", e);
+          const returnTo = sanitizeReturnTo(urlParams.get("returnTo"));
+          // If returnTo is login, default to dashboard
+          const dest = (returnTo === "/login" || returnTo.includes("/login?")) ? "/" : returnTo;
+
+          console.log("[LoginPage] Auth success, navigating to:", dest);
+          // Use client-side navigation instead of reload
+          setLocation(dest);
+        } catch (e) {
+          console.error("[LoginPage] Failed to process token:", e);
+          toast({
+            title: "Authentication Failed",
+            description: "Could not verify your session. Please try again.",
+            variant: "destructive",
+          });
+          setIsProcessingToken(false);
+        }
       }
 
-      // Default to / if returnTo is explicitly the encoded %2F or empty
-      let returnTo = sanitizeReturnTo(urlParams.get("returnTo"));
-      if (returnTo === "/login" || returnTo.includes("/login?")) {
-        returnTo = "/";
+      if (error === "oauth_failed") {
+        toast({
+          title: "Sign-in Failed",
+          description: "Unable to sign in with social account. Please try again.",
+          variant: "destructive",
+        });
+        window.history.replaceState({}, "", "/login");
       }
+    };
 
-      console.log("[LoginPage] Prepared redirect destination:", returnTo);
-      // Force a hard reload to ensure AuthContext picks up the new token
-      window.location.href = returnTo;
-    }
+    processToken();
+  }, [refreshUser, setLocation, toast]);
 
-    if (error === "oauth_failed") {
-      toast({
-        title: "Sign-in Failed",
-        description: "Unable to sign in with social account. Please try again.",
-        variant: "destructive",
-      });
-      // Clean up URL
-      window.history.replaceState({}, "", "/login");
-    }
-  }, [toast]);
-
-  // If processing token, show a full screen loader instead of the form
   if (isProcessingToken) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Completing sign in...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Completing sign in..." />;
   }
 
   const handleGoogleSignIn = () => {
