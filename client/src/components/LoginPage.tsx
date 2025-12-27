@@ -65,13 +65,23 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
     if (token) {
       // Indicate we are processing so the form doesn't show up
       setIsProcessingToken(true);
-      console.log("[LoginPage] Token found, setting in localStorage");
-      localStorage.setItem("token", token);
+      console.log("[LoginPage] Token found in URL:", token.substring(0, 10) + "...");
 
-      const returnTo = sanitizeReturnTo(urlParams.get("returnTo"));
-      console.log("[LoginPage] Redirecting to:", returnTo);
-      // Small delay to ensure storage write and visual feedback? 
-      // Actually immediate redirect is better if possible, but window.location change is async-like in UX.
+      try {
+        localStorage.setItem("token", token);
+        console.log("[LoginPage] Token successfully written to localStorage");
+      } catch (e) {
+        console.error("[LoginPage] Failed to write token to localStorage:", e);
+      }
+
+      // Default to / if returnTo is explicitly the encoded %2F or empty
+      let returnTo = sanitizeReturnTo(urlParams.get("returnTo"));
+      if (returnTo === "/login" || returnTo.includes("/login?")) {
+        returnTo = "/";
+      }
+
+      console.log("[LoginPage] Prepared redirect destination:", returnTo);
+      // Force a hard reload to ensure AuthContext picks up the new token
       window.location.href = returnTo;
     }
 

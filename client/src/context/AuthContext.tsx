@@ -35,19 +35,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return stored && token ? JSON.parse(stored) : null;
   });
 
-  // Initialize loading: true if we have a token but no user yet (pending fetch)
+  // Initialize loading: true if we have a token, regardless of whether we have a user
+  // We want to verify the token/user session on every hard reload to be safe
   const [isLoading, setIsLoading] = useState(() => {
-    const token = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-    return !!token && !storedUser;
+    return !!localStorage.getItem("token");
   });
 
   // Auto-fetch user profile on mount if token exists
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      // If we don't have the user yet, ensure loading is true
-      if (!user) setIsLoading(true);
       fetchUserProfile();
     } else {
       setIsLoading(false);
@@ -61,6 +58,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
         return;
       }
+
+      // Ensure loading is true while fetching
+      setIsLoading(true);
 
       // GET user profile endpoint is `/api/user/profile` on the server
       const response = await fetch("/api/user/profile", {
