@@ -1,4 +1,4 @@
-﻿import { sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { pgTable, text, varchar, numeric, timestamp, boolean, jsonb, index, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -11,10 +11,10 @@ export const users = pgTable(
     email: text("email").notNull().unique(),
     password: text("password"), // Nullable for OAuth-only users
     name: text("name").notNull(),
-    plan: text("plan").notNull().default("free"), // free, standard, premium
+    plan: text("plan").notNull().default("free"), // free, pro, enterprise
     isAdmin: boolean("is_admin").notNull().default(false),
-    stripeCustomerId: text("stripe_customer_id"),
-    stripeSubscriptionId: text("stripe_subscription_id"),
+    paddleCustomerId: text("paddle_customer_id"),
+    paddleSubscriptionId: text("paddle_subscription_id"),
     // OAuth fields
     googleId: text("google_id").unique(),
     facebookId: text("facebook_id").unique(),
@@ -90,7 +90,7 @@ export const subscriptions = pgTable(
   {
     id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
     userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-    plan: text("plan").notNull(), // free, standard, premium
+    plan: text("plan").notNull(), // free, pro, enterprise
     status: text("status").notNull().default("active"), // active, cancelled, past_due
     currentToolsCount: numeric("current_tools_count", { precision: 10, scale: 0 }).notNull().default("0"),
     toolsLimit: numeric("tools_limit", { precision: 10, scale: 0 }).notNull().default("8"),
@@ -115,8 +115,8 @@ export const payments = pgTable(
     amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
     currency: text("currency").notNull().default("USD"),
     status: text("status").notNull().default("pending"), // pending, completed, failed
-    stripePaymentId: text("stripe_payment_id"),
-    planUpgrade: text("plan_upgrade"), // free->standard, standard->premium
+    paddlePaymentId: text("paddle_payment_id"),
+    planUpgrade: text("plan_upgrade"), // free->pro, pro->enterprise
     description: text("description"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -135,7 +135,7 @@ export const receipts = pgTable(
     userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
     toolId: varchar("tool_id").references(() => tools.id, { onDelete: "set null" }),
     fileName: text("file_name").notNull(),
-    fileUrl: text("file_url").notNull(),
+    fileUrl: text("file_url").notNull(), // Now storing R2 URL or key instead of base64
     uploadDate: timestamp("upload_date").defaultNow().notNull(),
     amount: numeric("amount", { precision: 10, scale: 2 }),
     receiptDate: timestamp("receipt_date"),
@@ -415,4 +415,3 @@ export type InsertInboxDiscoveryResult = typeof inboxDiscoveryResults.$inferInse
 
 export type InboxDiscoveryRun = typeof inboxDiscoveryRuns.$inferSelect;
 export type InsertInboxDiscoveryRun = typeof inboxDiscoveryRuns.$inferInsert;
-

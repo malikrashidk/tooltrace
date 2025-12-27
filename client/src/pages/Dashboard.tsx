@@ -6,11 +6,14 @@ import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type Tool } from "@/lib/analytics";
 import { useCurrency } from "@/context/CurrencyContext";
+import { useAuth } from "@/context/AuthContext";
 import { VerificationSuccessBanner } from "@/components/VerificationSuccessBanner";
+import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 
 export function Dashboard() {
   const [, setLocation] = useLocation();
   const { formatAmount } = useCurrency();
+  const { user } = useAuth();
   
   const { data: analyticsData, isLoading } = useQuery<{
     tools: Tool[];
@@ -28,10 +31,34 @@ export function Dashboard() {
     queryKey: ["/api/tools"],
   });
 
+  const { data: inboxStatus } = useQuery<{ connected: boolean }>({
+    queryKey: ["/api/inbox/connection-status"],
+  });
+
   const tools = toolsData?.tools || [];
   const paidTools = tools.filter(t => t.isPaid);
   const monthlySpend = parseFloat(analyticsData?.monthlyTotal || "0");
   const budgetStatus = analyticsData?.budgetStatus;
+
+  // Calculate Next Month's Forecast
+  const today = new Date();
+  const nextMonth = new Date(today);
+  nextMonth.setMonth(today.getMonth() + 1);
+
+  const nextMonthForecast = paidTools.reduce((acc, tool) => {
+    // If billing is monthly, always add
+    if (tool.billingCycle === "monthly" && tool.billingAmount) {
+      return acc + parseFloat(String(tool.billingAmount));
+    }
+    // If yearly, only add if renewal is in the next 30 days
+    if (tool.billingCycle === "yearly" && tool.billingAmount && tool.nextRenewalDate) {
+      const renewalDate = new Date(tool.nextRenewalDate);
+      if (renewalDate <= nextMonth && renewalDate >= today) {
+        return acc + parseFloat(String(tool.billingAmount));
+      }
+    }
+    return acc;
+  }, 0);
 
   if (isLoading) {
     return (
@@ -49,6 +76,13 @@ export function Dashboard() {
   return (
     <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
       <VerificationSuccessBanner />
+
+      <OnboardingChecklist
+        hasTools={tools.length > 0}
+        hasCurrencySet={!!(user && (user as any).currency && (user as any).currency !== "USD")} // Assuming default is USD, check if changed
+        hasConnectedGmail={!!inboxStatus?.connected}
+      />
+
       <div>
         <h1 className="text-2xl sm:text-3xl font-semibold">Dashboard</h1>
         <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Overview of your tools and subscriptions</p>
@@ -123,11 +157,11 @@ export function Dashboard() {
                 <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Yearly Projection</p>
-                <p className="text-xl sm:text-2xl font-semibold font-mono" data-testid="text-yearly-projection">
-                  {formatAmount(monthlySpend * 12)}
+                <p className="text-sm text-muted-foreground">Next 30 Days Forecast</p>
+                <p className="text-xl sm:text-2xl font-semibold font-mono" data-testid="text-forecast-projection">
+                  {formatAmount(nextMonthForecast)}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">Estimated annual cost</p>
+                <p className="text-xs text-muted-foreground mt-1">Upcoming renewals & bills</p>
               </div>
             </div>
           </CardContent>

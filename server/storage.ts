@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   User,
   InsertUser,
   Tool,
@@ -38,8 +38,8 @@ function mapUser(row: any): User | undefined {
     name: row.name,
     plan: row.plan,
     isAdmin: row.is_admin,
-    stripeCustomerId: row.stripe_customer_id,
-    stripeSubscriptionId: row.stripe_subscription_id,
+    paddleCustomerId: row.paddle_customer_id,
+    paddleSubscriptionId: row.paddle_subscription_id,
     googleId: row.google_id,
     facebookId: row.facebook_id,
     oauthProvider: row.oauth_provider,
@@ -140,7 +140,7 @@ function mapPayment(row: any): Payment | undefined {
     amount: row.amount,
     currency: row.currency,
     status: row.status,
-    stripePaymentId: row.stripe_payment_id,
+    paddlePaymentId: row.paddle_payment_id,
     planUpgrade: row.plan_upgrade,
     description: row.description,
     createdAt: row.created_at,
@@ -354,6 +354,8 @@ export class MemStorage implements IStorage {
       budgetThreshold: null,
       lastLoginAt: new Date(),
       emailVerifiedAt: new Date(),
+      paddleCustomerId: null,
+      paddleSubscriptionId: null
     } as User;
     this.users.set(id, fullUser as any);
     return fullUser;
@@ -361,7 +363,7 @@ export class MemStorage implements IStorage {
 
   async createUser(user: InsertUser): Promise<User> {
     const id = randomUUID();
-    const fullUser = { ...user, id, isAdmin: false, plan: "free", createdAt: new Date(), updatedAt: new Date(), currency: (user as any).currency || "USD", language: (user as any).language || "en", budgetThreshold: null, lastLoginAt: new Date() } as any;
+    const fullUser = { ...user, id, isAdmin: false, plan: "free", createdAt: new Date(), updatedAt: new Date(), currency: (user as any).currency || "USD", language: (user as any).language || "en", budgetThreshold: null, lastLoginAt: new Date(), paddleCustomerId: null, paddleSubscriptionId: null } as any;
     this.users.set(id, fullUser);
     return fullUser;
   }
@@ -1026,12 +1028,12 @@ export class DbStorage implements IStorage {
   async createPayment(payment: InsertPayment): Promise<Payment> {
     const result = await sql`
       INSERT INTO payments (
-        user_id, amount, currency, status, stripe_payment_id, 
+        user_id, amount, currency, status, paddle_payment_id,
         plan_upgrade, description
       )
       VALUES (
         ${payment.userId}, ${payment.amount}, ${payment.currency || 'USD'}, 
-        ${payment.status || 'pending'}, ${payment.stripePaymentId || null}, 
+        ${payment.status || 'pending'}, ${payment.paddlePaymentId || null},
         ${payment.planUpgrade || null}, ${payment.description || null}
       )
       RETURNING *
