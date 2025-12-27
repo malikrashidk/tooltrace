@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Plus, Grid3X3, List, Package, RefreshCw } from "lucide-react";
+import { Plus, Grid3X3, List, Package, RefreshCw, Download } from "lucide-react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ToolCard } from "@/components/ToolCard";
@@ -12,6 +12,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { type Tool } from "@/lib/analytics";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useAuth } from "@/context/AuthContext";
+import { convertToCSV, downloadCSV } from "@/lib/export";
 
 import {
   Table,
@@ -269,6 +270,21 @@ export function ToolsPage() {
             </Button>
           </div>
           <AddToolDialog categories={categories} onSave={handleAddTool} />
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (tools.length > 0) {
+                const csv = convertToCSV(tools);
+                downloadCSV(csv, "tooltrace-export.csv");
+                toast({ title: "Exported", description: "Your tools have been exported to CSV." });
+              }
+            }}
+            disabled={tools.length === 0}
+            className="shadow-sm hidden sm:flex"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
           <Button
             variant="outline"
             onClick={() => setLocation("/smart-scan")}
