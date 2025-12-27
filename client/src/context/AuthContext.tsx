@@ -18,6 +18,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
@@ -34,19 +35,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return stored && token ? JSON.parse(stored) : null;
   });
 
+  // Initialize loading: true if we have a token but no user yet (pending fetch)
+  const [isLoading, setIsLoading] = useState(() => {
+    const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+    return !!token && !storedUser;
+  });
+
   // Auto-fetch user profile on mount if token exists
   useEffect(() => {
     const token = localStorage.getItem("token");
-    // Always fetch profile on mount to ensure fresh state (e.g. email verification)
     if (token) {
+      // If we don't have the user yet, ensure loading is true
+      if (!user) setIsLoading(true);
       fetchUserProfile();
+    } else {
+      setIsLoading(false);
     }
   }, []);
 
   const fetchUserProfile = async () => {
     try {
       const token = localStorage.getItem("token");
-      if (!token) return;
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
 
       // GET user profile endpoint is `/api/user/profile` on the server
       const response = await fetch("/api/user/profile", {
@@ -66,6 +80,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("Failed to fetch user profile:", error);
       logout();
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -82,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const data = await response.json();
-    
+
     // Check if 2FA is required
     if (data.requiresTwoFactor) {
       throw new Error("2FA_REQUIRED");
@@ -115,6 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+    setIsLoading(false);
   };
 
   return (
@@ -122,6 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         isAuthenticated: !!user,
+        isLoading,
         login,
         signup,
         logout,
