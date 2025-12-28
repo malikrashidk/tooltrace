@@ -20,16 +20,18 @@ export function PricingPage() {
   const plans = [
     {
       id: "free",
-      name: "Free",
-      description: "For individuals just getting started",
+      name: "Starter",
+      description: "For individuals getting organized",
       price: 0,
-      tools: 8,
+      tools: 10,
       features: [
-        "Up to 8 tools",
-        "Basic tool tracking",
-        "Manual data entry",
-        "Cost analytics",
-        "Email reminders"
+        "Up to 10 tools",
+        "Core Dashboard & Tracking",
+        "Notes per tool",
+        "Basic Receipts Storage",
+        "Renewal Alerts",
+        "Basic Cost Analytics",
+        "Smart Scan (5 scans/mo)"
       ],
       cta: "Current Plan",
       ctaVariant: "outline" as const,
@@ -38,17 +40,17 @@ export function PricingPage() {
     {
       id: "pro",
       name: "Pro",
-      description: "For power users & freelancers",
-      price: 15,
+      description: "For founders and growing teams",
+      price: 9.99,
       tools: "Unlimited",
       features: [
         "Unlimited tools",
-        "Smart Scan (Gmail Integration)",
-        "Receipt Storage (Cloud)",
-        "Advanced Analytics",
-        "Priority Support",
+        "Smart Scan (30 scans/mo)",
+        "Advanced Analytics & Forecasting",
+        "Low Usage Detection",
         "Data Export (CSV/PDF)",
-        "Cost Forecasting"
+        "Priority Support",
+        "Everything in Starter"
       ],
       cta: userPlan === "pro" ? "Current Plan" : "Upgrade to Pro",
       ctaVariant: userPlan === "pro" ? ("outline" as const) : ("default" as const),
@@ -59,16 +61,16 @@ export function PricingPage() {
     {
       id: "enterprise",
       name: "Enterprise",
-      description: "For agencies & teams",
-      price: 49,
+      description: "For teams and agencies",
+      price: 24.99,
       tools: "Unlimited",
       features: [
         "Everything in Pro",
+        "Unlimited Smart Scans",
         "Team Collaboration",
-        "Role-based Access (Admin/Viewer)",
+        "Role-based Access",
+        "Admin Controls",
         "API Access",
-        "Dedicated Account Manager",
-        "SSO (Coming Soon)",
         "Audit Logs"
       ],
       cta: userPlan === "enterprise" ? "Current Plan" : "Upgrade to Enterprise",

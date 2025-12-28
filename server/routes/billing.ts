@@ -14,7 +14,7 @@ const PRICE_ID_TO_PLAN: Record<string, string> = {
 };
 
 const PLAN_LIMITS: Record<string, string> = {
-  free: "8",
+  free: "10",
   pro: "999999", // Unlimited
   enterprise: "999999",
 };
