@@ -128,6 +128,10 @@ router.patch("/tools/:id", authMiddleware, emailVerificationMiddleware, async (r
       }
     });
 
+    // Explicitly ensure no sensitive fields leaked into updates
+    delete updates.username;
+    delete updates.password;
+
     // Handle credentials update
     if (req.body.username && req.body.password) {
       const credentials = JSON.stringify({
