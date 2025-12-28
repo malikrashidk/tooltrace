@@ -280,7 +280,21 @@ router.patch("/v1/tools/:id", apiKeyAuthMiddleware, async (req, res) => {
       return res.status(404).json({ error: "Tool not found" });
     }
 
-    const updates = req.body;
+    // Whitelist allowed fields to prevent "column does not exist" errors
+    const allowedFields = [
+      "name", "websiteUrl", "logoUrl", "notes", "isPaid",
+      "billingAmount", "billingCycle", "nextRenewalDate",
+      "categories", "tags", "usageFrequency", "paymentMethod",
+      "isPinned", "lastUsedAt", "totalUsageTime"
+    ];
+
+    const updates: any = {};
+    Object.keys(req.body).forEach(key => {
+      if (allowedFields.includes(key)) {
+        updates[key] = req.body[key];
+      }
+    });
+
     if (updates.nextRenewalDate) {
       updates.nextRenewalDate = new Date(updates.nextRenewalDate);
     }
