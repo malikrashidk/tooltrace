@@ -4,9 +4,12 @@ import { Paddle, EventName } from '@paddle/paddle-node-sdk';
 // Environment variables should be PADDLE_API_KEY and PADDLE_WEBHOOK_SECRET
 // For client-side, we'll need PADDLE_CLIENT_TOKEN and PADDLE_ENV (sandbox/production)
 
-const paddleApiKey = process.env.PADDLE_API_KEY;
+import { Environment } from '@paddle/paddle-node-sdk';
 
-export const paddleClient = paddleApiKey ? new Paddle(paddleApiKey) : null;
+const paddleApiKey = process.env.PADDLE_API_KEY;
+const paddleEnv = (process.env.PADDLE_ENV || 'production') as Environment;
+
+export const paddleClient = paddleApiKey ? new Paddle(paddleApiKey, { environment: paddleEnv }) : null;
 
 export const PADDLE_WEBHOOK_SECRET = process.env.PADDLE_WEBHOOK_SECRET;
 

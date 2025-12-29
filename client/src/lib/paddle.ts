@@ -29,10 +29,12 @@ export function loadPaddle() {
 
       // We will look for a global variable or assume Vite env
       const token = import.meta.env.VITE_PADDLE_CLIENT_TOKEN;
+      const environment = import.meta.env.VITE_PADDLE_ENV || 'production';
 
       if (window.Paddle && token) {
         window.Paddle.Initialize({
           token: token,
+          environment: environment,
           // eventCallback: function(data: any) {
           //   console.log(data);
           // }
