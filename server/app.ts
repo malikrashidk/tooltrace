@@ -37,8 +37,8 @@ app.use((_req, res, next) => {
       "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://app.tooltrace.io",
       "font-src 'self' https://fonts.gstatic.com https://r2cdn.perplexity.ai data:",
       "img-src 'self' data: https:",
-      "connect-src 'self' https://app.tooltrace.io https://accounts.google.com https://www.googleapis.com https://gmail.googleapis.com https://sandbox-buy.paddle.com https://buy.paddle.com https://sandbox-api.paddle.com https://api.paddle.com",
-      "frame-ancestors 'none'",
+      "connect-src 'self' https://app.tooltrace.io https://accounts.google.com https://www.googleapis.com https://gmail.googleapis.com https://sandbox-buy.paddle.com https://buy.paddle.com https://sandbox-api.paddle.com https://api.paddle.com https://checkout.paddle.com https://sandbox-checkout.paddle.com",
+      "frame-ancestors 'self'",
       "frame-src 'self' https://accounts.google.com https://cdn.paddle.com https://sandbox-cdn.paddle.com https://sandbox-buy.paddle.com https://buy.paddle.com https://checkout.paddle.com https://sandbox-checkout.paddle.com",
     ].join("; ")
   );
