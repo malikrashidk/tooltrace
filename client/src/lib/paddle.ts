@@ -32,9 +32,12 @@ export function loadPaddle() {
       const environment = import.meta.env.VITE_PADDLE_ENV || 'production';
 
       if (window.Paddle && token) {
+        if (environment === 'sandbox') {
+          window.Paddle.Environment.set('sandbox');
+        }
+
         window.Paddle.Initialize({
           token: token,
-          environment: environment,
           // eventCallback: function(data: any) {
           //   console.log(data);
           // }
