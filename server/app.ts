@@ -29,14 +29,17 @@ app.use((_req, res, next) => {
     "Content-Security-Policy",
     [
       "default-src 'self' https://app.tooltrace.io",
+      "base-uri 'self'",
+      "object-src 'none'",
       "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://cdn.paddle.com https://sandbox-cdn.paddle.com",
+      "script-src-elem 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://cdn.paddle.com https://sandbox-cdn.paddle.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://app.tooltrace.io",
       "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://app.tooltrace.io",
       "font-src 'self' https://fonts.gstatic.com https://r2cdn.perplexity.ai data:",
       "img-src 'self' data: https:",
       "connect-src 'self' https://app.tooltrace.io https://accounts.google.com https://www.googleapis.com https://gmail.googleapis.com https://sandbox-buy.paddle.com https://buy.paddle.com https://sandbox-api.paddle.com https://api.paddle.com",
       "frame-ancestors 'none'",
-      "frame-src https://accounts.google.com https://cdn.paddle.com https://sandbox-cdn.paddle.com https://sandbox-buy.paddle.com https://buy.paddle.com https://checkout.paddle.com https://sandbox-checkout.paddle.com",
+      "frame-src 'self' https://accounts.google.com https://cdn.paddle.com https://sandbox-cdn.paddle.com https://sandbox-buy.paddle.com https://buy.paddle.com https://checkout.paddle.com https://sandbox-checkout.paddle.com",
     ].join("; ")
   );
   next();
