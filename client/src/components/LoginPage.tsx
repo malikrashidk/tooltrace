@@ -3,11 +3,10 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, Layers, Shield, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Shield, Loader2, Check } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -31,7 +30,6 @@ interface LoginPageProps {
 // Helper to sanitize returnTo path to prevent open redirects
 const sanitizeReturnTo = (path: string | null): string => {
   if (!path) return "/";
-  // Ensure path starts with / and doesn't start with // (protocol relative)
   if (path.startsWith("/") && !path.startsWith("//")) {
     return path;
   }
@@ -57,9 +55,18 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
     },
   });
 
+  // Handle Logic: Plan parameter & OAuth Token
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+
+    // Capture plan intent
+    const plan = urlParams.get("plan");
+    if (plan) {
+      sessionStorage.setItem("pending_plan", plan);
+    }
+
+    // Capture OAuth Token
     const processToken = async () => {
-      const urlParams = new URLSearchParams(window.location.search);
       const token = urlParams.get("token");
       const error = urlParams.get("error");
 
@@ -69,15 +76,12 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
 
         try {
           localStorage.setItem("token", token);
-          // Manually trigger user fetch to update AuthContext state
           await refreshUser();
 
           const returnTo = sanitizeReturnTo(urlParams.get("returnTo"));
-          // If returnTo is login, default to dashboard
           const dest = (returnTo === "/login" || returnTo.includes("/login?")) ? "/" : returnTo;
 
           console.log("[LoginPage] Auth success, navigating to:", dest);
-          // Use client-side navigation instead of reload
           setLocation(dest);
         } catch (e) {
           console.error("[LoginPage] Failed to process token:", e);
@@ -110,7 +114,6 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
   const handleGoogleSignIn = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const returnTo = sanitizeReturnTo(urlParams.get("returnTo"));
-    // We pass returnTo to the backend, assuming backend will also validate or passthrough
     const redirectUrl = returnTo !== "/" ? `/api/auth/google?returnTo=${encodeURIComponent(returnTo)}` : "/api/auth/google";
     window.location.href = redirectUrl;
   };
@@ -125,7 +128,6 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
       });
 
       const result = await response.json();
-      console.log("Login response:", { status: response.status, ok: response.ok, result });
 
       if (result.requiresTwoFactor) {
         setPendingCredentials({ email: data.email, password: data.password });
@@ -139,6 +141,7 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
 
       localStorage.setItem("token", result.token);
       localStorage.setItem("user", JSON.stringify(result.user));
+
       const urlParams = new URLSearchParams(window.location.search);
       const returnTo = sanitizeReturnTo(urlParams.get("returnTo"));
       window.location.href = returnTo;
@@ -189,34 +192,34 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted p-4">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="text-center space-y-6 pb-8">
-          <div className="mx-auto w-16 h-16 flex items-center justify-center">
-            <img src="/tooltrace-logo.png" alt="ToolTrace Logo" className="w-full h-full object-contain" />
-          </div>
-          <div>
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Welcome back</CardTitle>
-            <CardDescription className="mt-2 text-base">
+    <div className="min-h-screen w-full flex">
+      {/* Left Side: Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-background">
+        <div className="w-full max-w-md space-y-8">
+          <div className="text-center space-y-2">
+            <div className="w-12 h-12 mx-auto mb-6">
+              <img src="/tooltrace-logo.png" alt="ToolTrace Logo" className="w-full h-full object-contain" />
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
+            <p className="text-muted-foreground">
               Sign in to manage your SaaS subscriptions
-            </CardDescription>
+            </p>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
+
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-medium">Email Address</FormLabel>
+                    <FormLabel>Email Address</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder="you@example.com"
+                        placeholder="name@example.com"
                         data-testid="input-email"
-                        className="h-10"
+                        className="h-11"
                         {...field}
                       />
                     </FormControl>
@@ -229,14 +232,14 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-medium">Password</FormLabel>
+                    <FormLabel>Password</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
                           type={showPassword ? "text" : "password"}
-                          placeholder="Enter password"
+                          placeholder="Enter your password"
                           data-testid="input-password"
-                          className="h-10 pr-10"
+                          className="h-11 pr-10"
                           {...field}
                         />
                         <button
@@ -260,11 +263,11 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
               />
 
               {onForgotPassword && (
-                <div className="text-right">
+                <div className="flex items-center justify-end">
                   <button
                     type="button"
                     onClick={onForgotPassword}
-                    className="text-sm text-primary hover:underline"
+                    className="text-sm font-medium text-primary hover:underline"
                     data-testid="link-forgot-password"
                   >
                     Forgot password?
@@ -274,11 +277,11 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
 
               <Button
                 type="submit"
-                className="w-full h-10 font-semibold"
+                className="w-full h-11 text-base"
                 disabled={isLoading}
                 data-testid="button-login"
               >
-                {isLoading ? "Signing in..." : "Sign In"}
+                {isLoading ? "Signing in..." : "Sign in"}
               </Button>
             </form>
           </Form>
@@ -286,39 +289,86 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               <Separator className="flex-1" />
-              <span className="text-xs text-muted-foreground font-medium">OR</span>
+              <span className="text-xs text-muted-foreground font-medium uppercase">Or continue with</span>
               <Separator className="flex-1" />
             </div>
 
-            <div className="grid grid-cols-1 gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 gap-2"
-                disabled={isLoading}
-                data-testid="button-google-signin"
-                onClick={handleGoogleSignIn}
-              >
-                <FcGoogle className="h-4 w-4" />
-                <span className="text-xs">Google</span>
-              </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-11 gap-2 text-base font-normal"
+              disabled={isLoading}
+              data-testid="button-google-signin"
+              onClick={handleGoogleSignIn}
+            >
+              <FcGoogle className="h-5 w-5" />
+              Google
+            </Button>
+          </div>
+
+          <div className="text-center text-sm">
+            <span className="text-muted-foreground">Don't have an account? </span>
+            <button
+              onClick={onSwitchToSignup}
+              className="font-semibold text-primary hover:underline"
+              data-testid="link-signup"
+            >
+              Sign up
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side: Branding */}
+      <div className="hidden lg:flex w-1/2 bg-muted relative overflow-hidden items-center justify-center p-12">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/10 to-muted z-0" />
+        <div className="relative z-10 max-w-lg space-y-8">
+          <div className="space-y-4">
+             <h2 className="text-4xl font-bold tracking-tight text-foreground">
+              Master your SaaS stack.
+            </h2>
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              Join thousands of founders and teams who use ToolTrace to track subscriptions, manage costs, and discover savings opportunities.
+            </p>
+          </div>
+
+          <div className="grid gap-4">
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                <Check className="h-4 w-4 text-primary" />
+              </div>
+              <span className="font-medium">Track all your tools in one place</span>
+            </div>
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                <Check className="h-4 w-4 text-primary" />
+              </div>
+              <span className="font-medium">Get alerted before renewals</span>
+            </div>
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                <Check className="h-4 w-4 text-primary" />
+              </div>
+              <span className="font-medium">Identify unused subscriptions</span>
             </div>
           </div>
 
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <button
-                onClick={onSwitchToSignup}
-                className="text-primary hover:underline font-semibold"
-                data-testid="link-signup"
-              >
-                Sign up
-              </button>
-            </p>
+          <div className="pt-8">
+             <div className="rounded-xl border bg-card/50 p-6 backdrop-blur-sm shadow-sm">
+                <p className="text-sm text-muted-foreground italic">
+                  "ToolTrace helped us cut our monthly SaaS spend by 25% in just the first week. It's an essential tool for any growing business."
+                </p>
+                <div className="mt-4 flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500" />
+                  <div>
+                    <p className="text-sm font-semibold">Sarah Jenkins</p>
+                    <p className="text-xs text-muted-foreground">CTO, TechStart Inc.</p>
+                  </div>
+                </div>
+             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <Dialog open={requires2FA} onOpenChange={setRequires2FA}>
         <DialogContent className="max-w-sm">

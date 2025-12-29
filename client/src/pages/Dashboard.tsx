@@ -9,11 +9,31 @@ import { useCurrency } from "@/context/CurrencyContext";
 import { useAuth } from "@/context/AuthContext";
 import { VerificationSuccessBanner } from "@/components/VerificationSuccessBanner";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
+import { useEffect } from "react";
+import { openCheckout } from "@/lib/paddle";
+import { getPriceIdForPlan } from "@/lib/plans";
 
 export function Dashboard() {
   const [, setLocation] = useLocation();
   const { formatAmount } = useCurrency();
   const { user } = useAuth();
+
+  // Handle pending plan upgrade from Signup/Login
+  useEffect(() => {
+    const pendingPlan = sessionStorage.getItem("pending_plan");
+    if (pendingPlan && user) {
+      const priceId = getPriceIdForPlan(pendingPlan);
+      if (priceId) {
+        // Clear it immediately to avoid loops or double triggers
+        sessionStorage.removeItem("pending_plan");
+        // Open checkout
+        openCheckout(priceId, user.email, user.id);
+      } else {
+        // Invalid plan or free plan, just clear it
+        sessionStorage.removeItem("pending_plan");
+      }
+    }
+  }, [user]);
   
   const { data: analyticsData, isLoading } = useQuery<{
     tools: Tool[];
