@@ -1,12 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, Layers } from "lucide-react";
+import { Eye, EyeOff, Check } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/context/AuthContext";
@@ -41,6 +40,15 @@ export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { signup } = useAuth();
 
+  // Capture plan intent on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const plan = urlParams.get("plan");
+    if (plan) {
+      sessionStorage.setItem("pending_plan", plan);
+    }
+  }, []);
+
   const form = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -62,6 +70,8 @@ export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
     setIsLoading(true);
     try {
       await signup(data.email, data.password, data.name);
+      // The signup function typically redirects or updates state.
+      // If successful, the Dashboard will load and handle the pending_plan.
     } catch (error) {
       console.error("Signup failed:", error);
     } finally {
@@ -70,33 +80,33 @@ export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted p-4">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="text-center space-y-6 pb-8">
-          <div className="mx-auto w-16 h-16 flex items-center justify-center">
-            <img src="/tooltrace-logo.png" alt="ToolTrace Logo" className="w-full h-full object-contain" />
+    <div className="min-h-screen w-full flex">
+      {/* Left Side: Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-background">
+        <div className="w-full max-w-md space-y-8">
+          <div className="text-center space-y-2">
+            <div className="w-12 h-12 mx-auto mb-6">
+              <img src="/tooltrace-logo.png" alt="ToolTrace Logo" className="w-full h-full object-contain" />
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight">Create an account</h1>
+            <p className="text-muted-foreground">
+              Start managing your SaaS subscriptions today
+            </p>
           </div>
-          <div>
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Create an account</CardTitle>
-            <CardDescription className="mt-2 text-base">
-              Start managing your SaaS subscriptions
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
+
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-medium">Full Name</FormLabel>
+                    <FormLabel>Full Name</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="John Doe"
                         data-testid="input-name"
-                        className="h-10"
+                        className="h-11"
                         {...field}
                       />
                     </FormControl>
@@ -109,13 +119,13 @@ export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-medium">Email Address</FormLabel>
+                    <FormLabel>Email Address</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder="you@example.com"
+                        placeholder="name@example.com"
                         data-testid="input-email"
-                        className="h-10"
+                        className="h-11"
                         {...field}
                       />
                     </FormControl>
@@ -128,14 +138,14 @@ export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-medium">Password</FormLabel>
+                    <FormLabel>Password</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
                           type={showPassword ? "text" : "password"}
-                          placeholder="Enter password"
+                          placeholder="Create a password"
                           data-testid="input-password"
-                          className="h-10 pr-10"
+                          className="h-11 pr-10"
                           {...field}
                         />
                         <button
@@ -162,13 +172,13 @@ export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-medium">Confirm Password</FormLabel>
+                    <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
                       <Input
                         type={showPassword ? "text" : "password"}
-                        placeholder="Confirm password"
+                        placeholder="Confirm your password"
                         data-testid="input-confirm-password"
-                        className="h-10"
+                        className="h-11"
                         {...field}
                       />
                     </FormControl>
@@ -176,9 +186,10 @@ export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
                   </FormItem>
                 )}
               />
+
               <Button
                 type="submit"
-                className="w-full h-10 font-semibold"
+                className="w-full h-11 text-base"
                 disabled={isLoading}
                 data-testid="button-signup"
               >
@@ -190,43 +201,86 @@ export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               <Separator className="flex-1" />
-              <span className="text-xs text-muted-foreground font-medium">OR</span>
+              <span className="text-xs text-muted-foreground font-medium uppercase">Or continue with</span>
               <Separator className="flex-1" />
             </div>
 
-            <div className="grid grid-cols-1 gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 gap-2"
-                disabled={isLoading}
-                data-testid="button-google-signup"
-                onClick={handleGoogleSignIn}
-              >
-                <FcGoogle className="h-4 w-4" />
-                <span className="text-xs">Google</span>
-              </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-11 gap-2 text-base font-normal"
+              disabled={isLoading}
+              data-testid="button-google-signup"
+              onClick={handleGoogleSignIn}
+            >
+              <FcGoogle className="h-5 w-5" />
+              Google
+            </Button>
+          </div>
+
+          <div className="text-center text-sm">
+            <span className="text-muted-foreground">Already have an account? </span>
+            <button
+              onClick={onSwitchToLogin}
+              className="font-semibold text-primary hover:underline"
+              data-testid="link-login"
+            >
+              Sign in
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side: Branding */}
+      <div className="hidden lg:flex w-1/2 bg-muted relative overflow-hidden items-center justify-center p-12">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/10 to-muted z-0" />
+        <div className="relative z-10 max-w-lg space-y-8">
+           <div className="space-y-4">
+             <h2 className="text-4xl font-bold tracking-tight text-foreground">
+              Master your SaaS stack.
+            </h2>
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              Join thousands of founders and teams who use ToolTrace to track subscriptions, manage costs, and discover savings opportunities.
+            </p>
+          </div>
+
+          <div className="grid gap-4">
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                <Check className="h-4 w-4 text-primary" />
+              </div>
+              <span className="font-medium">Track all your tools in one place</span>
+            </div>
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                <Check className="h-4 w-4 text-primary" />
+              </div>
+              <span className="font-medium">Get alerted before renewals</span>
+            </div>
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                <Check className="h-4 w-4 text-primary" />
+              </div>
+              <span className="font-medium">Identify unused subscriptions</span>
             </div>
           </div>
 
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <button
-                onClick={onSwitchToLogin}
-                className="text-primary hover:underline font-semibold"
-                data-testid="link-login"
-              >
-                Sign in
-              </button>
-            </p>
+          <div className="pt-8">
+             <div className="rounded-xl border bg-card/50 p-6 backdrop-blur-sm shadow-sm">
+                <p className="text-sm text-muted-foreground italic">
+                  "ToolTrace helped us cut our monthly SaaS spend by 25% in just the first week. It's an essential tool for any growing business."
+                </p>
+                <div className="mt-4 flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500" />
+                  <div>
+                    <p className="text-sm font-semibold">Sarah Jenkins</p>
+                    <p className="text-xs text-muted-foreground">CTO, TechStart Inc.</p>
+                  </div>
+                </div>
+             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
-
-
-
-

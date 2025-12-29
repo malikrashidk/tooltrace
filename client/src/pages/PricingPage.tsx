@@ -4,18 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
 import { openCheckout } from "@/lib/paddle";
+import { PRICE_IDS } from "@/lib/plans";
 
 export function PricingPage() {
   const { user } = useAuth();
 
   const userPlan = user ? (user as any).plan || "free" : "free";
   const userToolsCount = user ? (user as any).toolsCount || 0 : 0;
-
-  // Environment variables for Paddle Price IDs
-  const PRICE_IDS = {
-    pro: import.meta.env.VITE_PADDLE_PRICE_ID_PRO || "pri_pro_placeholder",
-    enterprise: import.meta.env.VITE_PADDLE_PRICE_ID_ENTERPRISE || "pri_enterprise_placeholder"
-  };
 
   const plans = [
     {
