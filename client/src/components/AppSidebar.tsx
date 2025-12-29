@@ -312,8 +312,13 @@ export function AppSidebar() {
                   </Avatar>
                   {state === "expanded" && (
                     <div className="flex flex-col gap-0 min-w-0 flex-1">
-                      <span className="text-sm font-medium truncate leading-tight">
+                      <span className="text-sm font-medium truncate leading-tight flex items-center gap-2">
                         {user?.name || "User"}
+                        {user?.plan && user.plan !== "free" && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary text-primary-foreground uppercase">
+                            {user.plan}
+                          </span>
+                        )}
                       </span>
                       <span className="text-xs text-muted-foreground truncate leading-tight">
                         {user?.email || "user@example.com"}
