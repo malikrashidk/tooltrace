@@ -25,6 +25,10 @@ export const app = express();
 
 // Set up Content Security Policy
 app.use((_req, res, next) => {
+  // Remove potentially existing headers to prevent duplicates
+  res.removeHeader("Content-Security-Policy");
+  res.removeHeader("X-Powered-By");
+
   res.setHeader(
     "Content-Security-Policy",
     [
@@ -33,6 +37,7 @@ app.use((_req, res, next) => {
       "object-src 'none'",
       "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://cdn.paddle.com https://sandbox-cdn.paddle.com",
       "script-src-elem 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://cdn.paddle.com https://sandbox-cdn.paddle.com",
+      "script-src-attr 'none'", // Debug marker
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://app.tooltrace.io",
       "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://app.tooltrace.io",
       "font-src 'self' https://fonts.gstatic.com https://r2cdn.perplexity.ai data:",
