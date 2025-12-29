@@ -21,10 +21,20 @@ export function loadPaddle() {
     script.async = true;
     script.onload = () => {
       const token = import.meta.env.VITE_PADDLE_CLIENT_TOKEN;
-      const environment = import.meta.env.VITE_PADDLE_ENV || 'production';
+      const envVar = import.meta.env.VITE_PADDLE_ENV;
+
+      // Robust detection: use env var OR infer from token prefix
+      const isSandbox = envVar === 'sandbox' || (token && token.startsWith('test_'));
+
+      console.log('[Paddle] Loading...', {
+        envVar,
+        tokenPrefix: token ? token.substring(0, 5) : 'none',
+        isSandbox
+      });
 
       if (window.Paddle && token) {
-        if (environment === 'sandbox') {
+        if (isSandbox) {
+          console.log('[Paddle] Setting environment to sandbox');
           window.Paddle.Environment.set('sandbox');
         }
 
