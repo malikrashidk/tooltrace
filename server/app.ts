@@ -29,14 +29,14 @@ app.use((_req, res, next) => {
     "Content-Security-Policy",
     [
       "default-src 'self' https://app.tooltrace.io",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://cdn.paddle.com https://sandbox-cdn.paddle.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://app.tooltrace.io",
       "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://app.tooltrace.io",
       "font-src 'self' https://fonts.gstatic.com https://r2cdn.perplexity.ai data:",
       "img-src 'self' data: https:",
-      "connect-src 'self' https://app.tooltrace.io https://accounts.google.com https://www.googleapis.com https://gmail.googleapis.com",
+      "connect-src 'self' https://app.tooltrace.io https://accounts.google.com https://www.googleapis.com https://gmail.googleapis.com https://sandbox-buy.paddle.com https://buy.paddle.com",
       "frame-ancestors 'none'",
-      "frame-src https://accounts.google.com",
+      "frame-src https://accounts.google.com https://cdn.paddle.com https://sandbox-cdn.paddle.com https://sandbox-buy.paddle.com https://buy.paddle.com",
     ].join("; ")
   );
   next();
