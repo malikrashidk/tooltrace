@@ -22,14 +22,19 @@ export function Dashboard() {
   useEffect(() => {
     const pendingPlan = sessionStorage.getItem("pending_plan");
     if (pendingPlan && user) {
+      console.log("[Dashboard] Found pending plan:", pendingPlan);
       const priceId = getPriceIdForPlan(pendingPlan);
+      console.log("[Dashboard] Resolved Price ID:", priceId);
+
       if (priceId) {
         // Clear it immediately to avoid loops or double triggers
         sessionStorage.removeItem("pending_plan");
         // Open checkout
+        console.log("[Dashboard] Opening checkout for:", user.email);
         openCheckout(priceId, user.email, user.id);
       } else {
         // Invalid plan or free plan, just clear it
+        console.warn("[Dashboard] Invalid or missing price ID for plan:", pendingPlan);
         sessionStorage.removeItem("pending_plan");
       }
     }
