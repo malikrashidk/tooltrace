@@ -104,23 +104,27 @@ function renderTools() {
 
   if (detectedTools.length === 0) {
     toolsList.innerHTML = '';
-    emptyState.style.display = 'block';
+    emptyState.classList.remove('hidden');
     addBtn.disabled = true;
     return;
   }
 
-  emptyState.style.display = 'none';
+  emptyState.classList.add('hidden');
   toolsList.innerHTML = detectedTools
     .map(tool => `
-      <div class="tool-item">
-        <input 
-          type="checkbox" 
-          id="tool-${tool.id}" 
-          onchange="toggleTool('${tool.id}')"
-        >
+      <div class="tool-card">
+        <div class="tool-checkbox-container">
+          <input 
+            type="checkbox" 
+            class="tool-checkbox"
+            id="tool-${tool.id}" 
+            onchange="toggleTool('${tool.id}')"
+          >
+        </div>
+        <div class="tool-icon">${tool.icon || '🛠️'}</div>
         <div class="tool-info">
-          <div class="tool-name">${tool.icon} ${tool.name}</div>
-          <div class="tool-url">${tool.domain}</div>
+          <div class="tool-name">${tool.name}</div>
+          <div class="tool-domain">${tool.domain}</div>
         </div>
       </div>
     `)
@@ -141,19 +145,25 @@ function toggleTool(toolId) {
 
 function showStatus(message, type = 'info') {
   const statusDiv = document.getElementById('statusMessage');
-  statusDiv.innerHTML = `<div class="status-message status-${type}">${message}</div>`;
+  const icon = type === 'success' ? '✔' : type === 'error' ? '✖' : 'ℹ';
+  statusDiv.innerHTML = `
+    <div class="status-msg status-${type}">
+      ${type === 'loading' ? '<span class="spinner spinner-dark"></span>' : `<span>${icon}</span>`}
+      ${message}
+    </div>
+  `;
 
   if (type !== 'loading') {
     setTimeout(() => {
       statusDiv.innerHTML = '';
-    }, 3000);
+    }, 4000);
   }
 }
 
 async function addSelectedTools() {
   if (selectedTools.size === 0) return;
 
-  showStatus('<span class="spinner"></span>Adding to Tool Trace...', 'loading');
+  showStatus('Adding to Tooltrace...', 'loading');
 
   const toolsToAdd = detectedTools.filter(t => selectedTools.has(t.id));
 
@@ -163,9 +173,9 @@ async function addSelectedTools() {
       tools: toolsToAdd
     }, response => {
       if (response && response.success) {
-        showStatus(`✔ Added ${response.count} tool(s) successfully!`, 'success');
+        showStatus(`Added ${response.count} tool(s) successfully!`, 'success');
         selectedTools.clear();
-        document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        document.querySelectorAll('.tool-checkbox').forEach(cb => cb.checked = false);
         document.getElementById('addBtn').disabled = true;
       } else {
         showStatus('Failed to add tools. ' + (response.error || ''), 'error');
@@ -177,9 +187,9 @@ async function addSelectedTools() {
 }
 
 function refreshTools() {
-  showStatus('<span class="spinner"></span>Scanning...', 'loading');
+  showStatus('Scanning for tools...', 'loading');
   selectedTools.clear();
-  document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+  document.querySelectorAll('.tool-checkbox').forEach(cb => cb.checked = false);
   setTimeout(() => {
     detectTools();
     checkSavedCredentials();
@@ -190,9 +200,9 @@ async function updateAuthStatus() {
   chrome.runtime.sendMessage({ action: 'checkAuth' }, (response) => {
     const statusDiv = document.getElementById('authStatus');
     if (response && response.token) {
-      statusDiv.innerHTML = '<span style="color: #166534">● Connected</span>';
+      statusDiv.innerHTML = '<div class="status-dot" style="background: #10b981"></div> Connected';
     } else {
-      statusDiv.innerHTML = '<span style="color: #991b1b">● Disconnected</span>';
+      statusDiv.innerHTML = '<div class="status-dot" style="background: #ef4444"></div> Disconnected';
     }
   });
 }
@@ -217,6 +227,14 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('addView').classList.add('hidden');
 
       document.getElementById(target + 'View').classList.remove('hidden');
+
+      // Hide/Show footer based on tab
+      const footer = document.querySelector('.footer');
+      if (target === 'detect') {
+        footer.classList.remove('hidden');
+      } else {
+        footer.classList.add('hidden'); // Only show global add on detect tab
+      }
     };
   });
 });
