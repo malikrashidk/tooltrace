@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { encrypt, decrypt } from "../server/lib/crypto";
+import { encrypt, decrypt } from "./crypto";
 
 describe("Encryption", () => {
     it("should encrypt and decrypt correctly", () => {

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { storage } from "../storage";
 import { authMiddleware, emailVerificationMiddleware, auditLog } from "../middleware";
 import { insertToolSchema, insertNoteSchema } from "@shared/schema";
+import { calculateNextRenewalDate } from "../lib/date-utils";
 import { encrypt, decrypt } from "../lib/crypto";
 import { uploadToR2, deleteFromR2, getR2DownloadUrl } from "../lib/r2";
 import { z } from "zod";
@@ -17,8 +18,23 @@ router.get("/tools", authMiddleware, async (req, res) => {
 
     const limit = subscription?.toolsLimit ? parseInt(String(subscription.toolsLimit)) : 8;
 
+    // Handle renewal date rollover for paid tools
+    const updatedTools = await Promise.all(tools.map(async (tool) => {
+      if (tool.isPaid && tool.nextRenewalDate && tool.billingCycle) {
+        const renewalDate = new Date(tool.nextRenewalDate);
+        const nextDate = calculateNextRenewalDate(renewalDate, tool.billingCycle);
+
+        if (nextDate.getTime() !== renewalDate.getTime()) {
+          console.log(`[Renewal] Rolling over ${tool.name} from ${renewalDate.toLocaleDateString()} to ${nextDate.toLocaleDateString()}`);
+          const updated = await storage.updateTool(tool.id, { nextRenewalDate: nextDate });
+          return updated || tool;
+        }
+      }
+      return tool;
+    }));
+
     // Sort tools by creation date and mark those above the limit as locked
-    const sortedTools = [...tools].sort((a, b) =>
+    const sortedTools = [...updatedTools].sort((a, b) =>
       new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
