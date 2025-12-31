@@ -16,6 +16,7 @@ import { cn, getLogoUrl as getLogoUrlHelper } from "@/lib/utils";
 import type { Tool } from "@/lib/analytics";
 import { ToolLogo } from "./ToolLogo";
 import { CredentialsDialog } from "./CredentialsDialog";
+import { fromCents } from "../../../shared/money";
 
 interface ToolCardProps {
   tool: Tool;
@@ -87,7 +88,7 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
               <div className="flex items-center gap-2 mt-2">
                 {tool.isPaid && tool.billingAmount && (
                   <span className="text-base font-mono font-bold text-primary" data-testid={`text-tool-cost-${tool.id}`}>
-                    {formatCost(Number(tool.billingAmount) as number, tool.billingCycle || "")}
+                    {formatCost(fromCents(tool.billingAmount), tool.billingCycle || "")}
                   </span>
                 )}
                 {!tool.isPaid && (

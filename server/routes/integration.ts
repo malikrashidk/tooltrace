@@ -1,7 +1,8 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { storage } from "../storage";
 import { authMiddleware, auditLog } from "../middleware";
 import crypto from "crypto";
+import { hashPassword, verifyPassword } from "../auth";
 
 const router = Router();
 
@@ -36,11 +37,24 @@ const apiKeyAuthMiddleware = async (req: any, res: any, next: any) => {
       return res.status(401).json({ error: "Missing or invalid API key" });
     }
 
-    const key = authHeader.substring(7);
+    const authValue = authHeader.substring(7);
+    const [key, providedSecret] = authValue.includes('.') ? authValue.split('.') : [authValue, null];
+
     const apiKey = await storage.getApiKeyByKey(key);
 
     if (!apiKey || !apiKey.isActive) {
       return res.status(401).json({ error: "Invalid or inactive API key" });
+    }
+
+    // Verify secret if it was hashed
+    if (providedSecret) {
+      const isValid = await verifyPassword(providedSecret, apiKey.secret);
+      if (!isValid) {
+        return res.status(401).json({ error: "Invalid API secret" });
+      }
+    } else if (apiKey.secret.includes(':')) {
+      // If the stored secret is hashed but no secret was provided in the header
+      return res.status(401).json({ error: "API secret missing in token" });
     }
 
     // Verify user still has a paid plan (API access requires Enterprise)
@@ -89,12 +103,13 @@ router.post("/api-keys", authMiddleware, paidPlanMiddleware, async (req, res) =>
     // Generate key and secret
     const key = `tt_${crypto.randomBytes(16).toString('hex')}`;
     const secret = crypto.randomBytes(32).toString('hex');
+    const hashedSecret = await hashPassword(secret);
 
     const apiKey = await storage.createApiKey({
       userId: req.userId!,
       name: name.trim(),
       key,
-      secret,
+      secret: hashedSecret,
     } as any);
 
     await auditLog(req.userId!, "create", "api_key", apiKey.id, { name: apiKey.name }, req);
@@ -103,7 +118,8 @@ router.post("/api-keys", authMiddleware, paidPlanMiddleware, async (req, res) =>
     res.json({
       apiKey: {
         ...apiKey,
-        // Note: this is the only time secret is visible
+        secret: secret, // Show the raw secret once
+        token: `${key}.${secret}` // Provide the combined token for convenience
       },
       message: "Save the key and secret now. The secret will not be shown again."
     });
@@ -156,7 +172,9 @@ router.get("/v1/tools/:id", apiKeyAuthMiddleware, async (req, res) => {
     if (!tool || tool.userId !== req.userId!) {
       return res.status(404).json({ error: "Tool not found" });
     }
-    res.json({ tool });
+    // Sanitize
+    const { credentials, ...sanitizedTool } = tool;
+    res.json({ tool: sanitizedTool });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch tool" });
   }
@@ -184,52 +202,59 @@ router.get("/v1/renewals", apiKeyAuthMiddleware, async (req, res) => {
 });
 
 // External API: Get spending analytics
-router.get("/v1/analytics/spending", async (req, res, next) => {
+router.get("/v1/analytics/spending", async (req: Request, res: Response, next: NextFunction) => {
   // Try session auth first, fall back to API key
   if (req.headers.authorization?.startsWith('Bearer ')) {
-    return authMiddleware(req, res, next);
+    return authMiddleware(req as any, res as any, next);
   }
   return apiKeyAuthMiddleware(req, res, next);
-}, async (req, res) => {
+}, async (req: Request, res: Response) => {
   try {
     const tools = await storage.getUserTools(req.userId!);
 
-    const monthlyTotal = tools.reduce((sum, tool) => {
-      if (tool.billingAmount && tool.billingCycle === "monthly") {
-        return sum + parseFloat(tool.billingAmount);
+    const monthlyTotalCents = tools.reduce((sum, tool) => {
+      const amountCents = parseInt(String(tool.billingAmount || "0"));
+      if (amountCents > 0 && tool.billingCycle === "monthly") {
+        return sum + amountCents;
       }
-      if (tool.billingAmount && tool.billingCycle === "yearly") {
-        return sum + parseFloat(tool.billingAmount) / 12;
+      if (amountCents > 0 && tool.billingCycle === "yearly") {
+        return sum + Math.round(amountCents / 12);
       }
       return sum;
     }, 0);
-
+    const monthlyTotal = monthlyTotalCents / 100;
     const yearlyTotal = monthlyTotal * 12;
-    const byCategory = tools.reduce((acc: Record<string, number>, tool) => {
+
+    const byCategory: Record<string, number> = {};
+    tools.forEach(tool => {
       const category = tool.categories?.[0] || "Uncategorized";
-      const monthly = tool.billingCycle === "yearly"
-        ? parseFloat(tool.billingAmount || "0") / 12
-        : parseFloat(tool.billingAmount || "0");
-      acc[category] = (acc[category] || 0) + monthly;
-      return acc;
-    }, {});
+      const amountCents = parseInt(String(tool.billingAmount || "0"));
+      let monthlyCents = 0;
+      if (amountCents > 0) {
+        monthlyCents = tool.billingCycle === "yearly" ? Math.round(amountCents / 12) : amountCents;
+      }
+      byCategory[category] = (byCategory[category] || 0) + (monthlyCents / 100);
+    });
 
     const user = await storage.getUser(req.userId!);
+    // Assuming budgetThreshold is stored as a decimal string in DB for now, or already converted to decimal if using a mapper
+    // But since we are doing cent-based math, let's assume it might be cents soon.
+    // For now, let's treat it as decimal if it has "." otherwise cents? No, let's stick to decimal for user settings if they haven't been refactored.
     const budgetThreshold = user?.budgetThreshold ? parseFloat(user.budgetThreshold) : null;
-    const budgetStatus = budgetThreshold
-      ? {
-        threshold: budgetThreshold,
-        isOverBudget: monthlyTotal > budgetThreshold,
-        percentageUsed: (monthlyTotal / budgetThreshold) * 100
-      }
-      : null;
+
+    const isOverBudget = budgetThreshold !== null && monthlyTotal > budgetThreshold;
+    const percentageUsed = budgetThreshold ? (monthlyTotal / budgetThreshold) * 100 : 0;
 
     res.json({
+      tools: tools.map(t => ({ ...t, credentials: null })),
       monthlyTotal: monthlyTotal.toFixed(2),
       yearlyTotal: yearlyTotal.toFixed(2),
-      toolCount: tools.length,
       byCategory,
-      budgetStatus
+      budgetStatus: {
+        threshold: budgetThreshold,
+        isOverBudget,
+        percentageUsed
+      }
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch analytics" });

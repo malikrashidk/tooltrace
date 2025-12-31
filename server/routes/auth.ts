@@ -31,39 +31,31 @@ router.post("/register", async (req, res) => {
     }
 
     const hashedPassword = await hashPassword(parsed.data.password!);
-    const user = await storage.createUser({
-      ...parsed.data,
-      password: hashedPassword,
-    });
-    // Email verification
+
+    // Email verification token
     const { raw, hash, expiresAt } = generateEmailVerifyToken();
-    await storage.setEmailVerificationToken(user.id, hash, expiresAt);
 
-    const verifyUrl = `${process.env.APP_URL}/api/auth/verify-email?token=${raw}`;
+    // Transactional registration
+    const user = await storage.registerUserWithSubscription(
+      {
+        ...parsed.data,
+        password: hashedPassword,
+      },
+      hash,
+      expiresAt,
+      {
+        plan: "free",
+        toolsLimit: "10",
+      }
+    );
+
+    const verifyUrl = `${process.env.APP_URL || 'http://localhost:5000'}/api/auth/verify-email?token=${raw}`;
 
     try {
-      console.log("[email-verify] sending to", user.email);
       await sendEmailVerificationEmail(user.email, verifyUrl);
-      console.log("[email-verify] sent to", user.email);
     } catch (e) {
-      console.error("[email-verify] failed for", user.email, e);
+      console.error("Failed to send verification email:", e);
     }
-
-
-    try {
-      await sendWelcomeEmail(user.email, user.name);
-    } catch (e) {
-      console.error("Welcome email failed:", e);
-    }
-
-    // Create default free subscription
-    await storage.createSubscription({
-      userId: user.id,
-      plan: "free",
-      toolsLimit: "8",
-    });
-
-    await auditLog(user.id, "create", "user", user.id, {}, req);
 
     const token = generateToken(user);
     res.status(201).json({
@@ -94,6 +86,14 @@ router.get("/verify-email", async (req, res) => {
 
     if (!user) {
       return res.status(400).json({ error: "Invalid or expired token" });
+    }
+
+    if (user) {
+      try {
+        await sendWelcomeEmail(user.email, user.name || undefined);
+      } catch (e) {
+        console.error("Failed to send welcome email:", e);
+      }
     }
 
     return res.redirect("/?verified=true");
@@ -349,7 +349,7 @@ router.get("/google", (req, res, next) => {
 });
 
 router.get("/google/callback", (req, res, next) => {
-  passport.authenticate("google", { session: false }, (err: any, user: any) => {
+  passport.authenticate("google", { session: false }, async (err: any, user: any) => {
     console.log("[OAuth] Google callback received", { err: err?.message, hasUser: !!user });
 
     if (err || !user) {
@@ -357,20 +357,48 @@ router.get("/google/callback", (req, res, next) => {
       return res.redirect("/login?error=oauth_failed");
     }
 
-    const token = generateToken(user);
-    console.log("[OAuth] Token generated for user:", user.email, "Token length:", token.length);
+    const handoffCode = await storage.storeHandoffCode(user.id);
+    console.log("[OAuth] Handoff code generated for user:", user.email);
 
-    // Redirect to /login so the LoginPage can process the token and set it in localStorage
-    // LoginPage will then redirect to the intended returnTo path or dashboard
-    const urlParams = new URLSearchParams(req.query as any);
     const returnTo = req.query.state as string || "/";
-
-    console.log("[OAuth] Redirecting to /login with token");
-    const redirectUrl = `/login?token=${token}&returnTo=${encodeURIComponent(returnTo)}`;
-    console.log("[OAuth] Full redirect URL:", redirectUrl);
-    console.log("[OAuth] Token preview:", token.substring(0, 20) + "...");
+    const redirectUrl = `/login?code=${handoffCode}&returnTo=${encodeURIComponent(returnTo)}`;
+    console.log("[OAuth] Redirecting to /login with handoff code");
     res.redirect(redirectUrl);
   })(req, res, next);
+});
+
+router.post("/oauth/handoff", async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: "Code is required" });
+
+    const userId = await storage.getHandoffCode(code);
+    if (!userId) return res.status(401).json({ error: "Invalid or expired handoff code" });
+
+    const user = await storage.getUser(userId);
+    if (!user) return res.status(401).json({ error: "User not found" });
+
+    // Update last login
+    await storage.updateUser(user.id, { lastLoginAt: new Date() });
+
+    const token = generateToken(user);
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        plan: user.plan,
+        isAdmin: user.isAdmin,
+        twoFactorEnabled: user.twoFactorEnabled,
+        avatarUrl: user.avatarUrl,
+        emailVerifiedAt: user.emailVerifiedAt,
+      },
+      token,
+    });
+  } catch (error) {
+    console.error("[OAuth] Handoff failed:", error);
+    res.status(500).json({ error: "Handoff failed" });
+  }
 });
 
 // ============ 2FA ROUTES ============

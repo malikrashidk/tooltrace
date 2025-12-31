@@ -36,16 +36,29 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
 
     req.userId = decoded.userId;
     if (user) {
+      if (user.isSuspended) {
+        console.warn(`[Auth] Blocked access for suspended user: ${user.id}`);
+        return res.status(403).json({
+          error: "ACCOUNT_SUSPENDED",
+          message: "Your account has been suspended by an administrator."
+        });
+      }
       req.user = user;
       req.isAdmin = (user as any).isAdmin || false;
     } else {
-      // User not in storage (server restart), but token is valid. Create a basic user object for the request.
+      // User not in storage (server restart), but token is valid. 
+      // Check if the decoded token itself claims the user is suspended (if we encode it there in future)
+      if ((decoded as any).isSuspended) {
+        return res.status(403).json({ error: "ACCOUNT_SUSPENDED" });
+      }
+
       req.user = {
         id: decoded.userId,
         email: decoded.email,
         name: decoded.email.split("@")[0],
         plan: (decoded.plan as any) || "free",
         isAdmin: decoded.isAdmin || false,
+        isSuspended: false,
         password: null,
         twoFactorEnabled: false,
         createdAt: new Date(),

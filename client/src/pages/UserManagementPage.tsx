@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, Edit2, Loader2 } from "lucide-react";
+import { Plus, Trash2, Edit2, Loader2, Ban, ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -46,6 +46,7 @@ interface User {
   email: string;
   name: string;
   plan: string;
+  isSuspended: boolean;
   createdAt: string;
   toolsCount: number;
 }
@@ -121,6 +122,37 @@ export function UserManagementPage() {
     onSuccess: () => {
       toast({ title: "Success", description: "User deleted successfully" });
       setShowDeleteDialog({ open: false, user: null });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Suspend user mutation
+  const suspendUserMutation = useMutation({
+    mutationFn: async ({ userId, suspended }: { userId: string; suspended: boolean }) => {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/admin/users/${userId}/suspend`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ suspended }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update user status");
+      }
+      return res.json();
+    },
+    onSuccess: (_, variables) => {
+      toast({
+        title: "Success",
+        description: `User ${variables.suspended ? 'suspended' : 'unsuspended'} successfully`
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
     },
     onError: (error: any) => {
@@ -216,10 +248,21 @@ export function UserManagementPage() {
                           <Badge className={getPlanColor(user.plan)}>
                             {user.plan.charAt(0).toUpperCase() + user.plan.slice(1)}
                           </Badge>
+                          {user.isSuspended && (
+                            <Badge variant="destructive">Suspended</Badge>
+                          )}
                           <span className="text-xs text-muted-foreground">
                             {new Date(user.createdAt).toLocaleDateString()}
                           </span>
                         </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => suspendUserMutation.mutate({ userId: user.id, suspended: !user.isSuspended })}
+                          disabled={suspendUserMutation.isPending}
+                        >
+                          {user.isSuspended ? "Unsuspend" : "Suspend"}
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -251,7 +294,20 @@ export function UserManagementPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => suspendUserMutation.mutate({ userId: user.id, suspended: !user.isSuspended })}
+                            disabled={suspendUserMutation.isPending}
+                            title={user.isSuspended ? "Unsuspend User" : "Suspend User"}
+                          >
+                            {user.isSuspended ? (
+                              <ShieldCheck className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <Ban className="h-4 w-4 text-amber-600" />
+                            )}
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"

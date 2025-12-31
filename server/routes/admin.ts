@@ -113,30 +113,42 @@ router.patch("/users/:id", authMiddleware, adminMiddleware, async (req, res) => 
 
 router.get("/stats", authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const users = await storage.getAllUsers();
-    const totalUsers = users.length;
-    const totalRevenue = users.reduce((sum, u) => {
-      const plan = u.plan;
-      // Pro = 9.99/mo, Enterprise = 24.99/mo
-      return sum + (plan === "pro" ? 9.99 * 12 : plan === "enterprise" ? 24.99 * 12 : 0);
-    }, 0);
-
-    // Active users: Logged in within last 30 days
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const activeUsers = users.filter(u => {
-      if (!u.lastLoginAt) return false;
-      return new Date(u.lastLoginAt) > thirtyDaysAgo;
-    }).length;
-
-    res.json({
-      totalUsers,
-      totalRevenue: Math.round(totalRevenue * 100) / 100,
-      activeSubscriptions: activeUsers, // Using "activeSubscriptions" key for compatibility with frontend, but logic is now active users
-    });
+    const stats = await storage.getGlobalStats();
+    res.json(stats);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch stats" });
+  }
+});
+
+router.get("/audit-logs", authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = parseInt(req.query.offset as string) || 0;
+    const logs = await storage.getAuditLogs(limit, offset);
+    res.json({ logs });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch audit logs" });
+  }
+});
+
+router.post("/users/:id/suspend", authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { suspended } = req.body;
+    const user = await storage.getUser(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (user.isAdmin) {
+      return res.status(403).json({ error: "Cannot suspend admin users" });
+    }
+
+    await storage.suspendUser(req.params.id, suspended);
+    await auditLog(req.userId!, suspended ? "suspend" : "unsuspend", "user", req.params.id, {}, req);
+
+    res.json({ message: `User ${suspended ? 'suspended' : 'unsuspended'} successfully` });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update user status" });
   }
 });
 

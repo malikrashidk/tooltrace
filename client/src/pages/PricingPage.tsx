@@ -28,9 +28,9 @@ export function PricingPage() {
         "Basic Cost Analytics",
         "Smart Scan (5 scans/mo)"
       ],
-      cta: userPlan === "free" ? "Current Plan" : "Downgrade",
+      cta: userPlan === "free" ? "Current Plan" : null,
       ctaVariant: userPlan === "free" ? ("outline" as const) : ("default" as const),
-      disabled: userPlan === "free",
+      disabled: true,
     },
     {
       id: "pro",
@@ -47,9 +47,9 @@ export function PricingPage() {
         "Priority Support",
         "Everything in Starter"
       ],
-      cta: userPlan === "pro" ? "Current Plan" : (userPlan === "enterprise" ? "Downgrade" : "Upgrade to Pro"),
+      cta: userPlan === "pro" ? "Current Plan" : (userPlan === "enterprise" ? null : "Upgrade to Pro"),
       ctaVariant: userPlan === "pro" ? ("outline" as const) : ("default" as const),
-      disabled: userPlan === "pro",
+      disabled: userPlan === "pro" || (userPlan === "enterprise" && true),
       popular: true,
       priceId: PRICE_IDS.pro
     },
@@ -122,15 +122,21 @@ export function PricingPage() {
               </div>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col">
-              <Button
-                onClick={() => handleUpgrade(plan)}
-                variant={plan.ctaVariant}
-                size="lg"
-                className="w-full mb-6"
-                disabled={plan.disabled}
-              >
-                {plan.cta}
-              </Button>
+              {plan.cta ? (
+                <Button
+                  onClick={() => handleUpgrade(plan)}
+                  variant={plan.ctaVariant}
+                  size="lg"
+                  className="w-full mb-6"
+                  disabled={plan.disabled}
+                >
+                  {plan.cta}
+                </Button>
+              ) : (
+                <div className="h-[44px] mb-6 flex items-center justify-center text-sm text-muted-foreground border border-dashed rounded-md">
+                  Included in your plan
+                </div>
+              )}
 
               <div className="space-y-3 flex-1">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Features included</p>

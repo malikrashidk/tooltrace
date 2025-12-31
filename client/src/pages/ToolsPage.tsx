@@ -13,6 +13,7 @@ import { type Tool } from "@/lib/analytics";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useAuth } from "@/context/AuthContext";
 import { convertToCSV, downloadCSV } from "@/lib/export";
+import { fromCents } from "../../../shared/money";
 
 import {
   Table,
@@ -415,7 +416,7 @@ export function ToolsPage() {
                         </TableCell>
                         <TableCell className="text-right font-mono text-xs sm:text-sm whitespace-nowrap">
                           {tool.isPaid && tool.billingAmount
-                            ? formatAmount(typeof tool.billingAmount === 'string' ? parseFloat(tool.billingAmount) : tool.billingAmount)
+                            ? formatAmount(fromCents(tool.billingAmount))
                             : "Free"}
                         </TableCell>
                         <TableCell className="hidden sm:table-cell text-sm text-muted-foreground whitespace-nowrap">

@@ -29,7 +29,8 @@ import { IStorage } from "./types";
 export class MemStorage implements IStorage {
     private users: Map<string, User> = new Map();
     private tools: Map<string, Tool> = new Map();
-    private subscriptions: Map<string, Subscription> = new Map();
+    private subscriptions = new Map<string, Subscription>();
+    private handoffCodes = new Map<string, { userId: string; expiresAt: number }>();
     private payments: Map<string, Payment> = new Map();
     private receipts: Map<string, Receipt> = new Map();
     private apiKeys: Map<string, ApiKey> = new Map();
@@ -66,6 +67,7 @@ export class MemStorage implements IStorage {
             password: null,
             plan: "free",
             isAdmin: false,
+            isSuspended: false,
             googleId: userData.googleId || null,
             facebookId: userData.facebookId || null,
             oauthProvider: userData.oauthProvider || null,
@@ -83,13 +85,27 @@ export class MemStorage implements IStorage {
             paddleCustomerId: null,
             paddleSubscriptionId: null
         } as User;
-        this.users.set(id, fullUser as any);
+        this.users.set(id, fullUser);
         return fullUser;
     }
 
     async createUser(user: InsertUser): Promise<User> {
         const id = randomUUID();
-        const fullUser = { ...user, id, isAdmin: false, plan: "free", createdAt: new Date(), updatedAt: new Date(), currency: (user as any).currency || "USD", language: (user as any).language || "en", budgetThreshold: null, lastLoginAt: new Date(), paddleCustomerId: null, paddleSubscriptionId: null } as any;
+        const fullUser = {
+            ...user,
+            id,
+            isAdmin: false,
+            isSuspended: false,
+            plan: "free",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            currency: (user as any).currency || "USD",
+            language: (user as any).language || "en",
+            budgetThreshold: null,
+            lastLoginAt: new Date(),
+            paddleCustomerId: null,
+            paddleSubscriptionId: null
+        } as any;
         this.users.set(id, fullUser);
         return fullUser;
     }
@@ -107,36 +123,23 @@ export class MemStorage implements IStorage {
     }
 
     async deleteUser(id: string): Promise<boolean> {
-        // Also delete user's tools, subscriptions, payments, receipts, api keys, and notes
-        const tools = Array.from(this.tools.values()).filter((t) => t.userId === id);
-        for (const tool of tools) {
-            this.tools.delete(tool.id);
-        }
+        const toolsToDelete = Array.from(this.tools.values()).filter((t) => t.userId === id);
+        for (const tool of toolsToDelete) this.tools.delete(tool.id);
 
-        const subscriptions = Array.from(this.subscriptions.values()).filter((s) => s.userId === id);
-        for (const sub of subscriptions) {
-            this.subscriptions.delete(sub.id);
-        }
+        const subsToDelete = Array.from(this.subscriptions.values()).filter((s) => s.userId === id);
+        for (const sub of subsToDelete) this.subscriptions.delete(sub.id);
 
-        const payments = Array.from(this.payments.values()).filter((p) => p.userId === id);
-        for (const payment of payments) {
-            this.payments.delete(payment.id);
-        }
+        const paymentsToDelete = Array.from(this.payments.values()).filter((p) => p.userId === id);
+        for (const payment of paymentsToDelete) this.payments.delete(payment.id);
 
-        const receipts = Array.from(this.receipts.values()).filter((r) => r.userId === id);
-        for (const receipt of receipts) {
-            this.receipts.delete(receipt.id);
-        }
+        const receiptsToDelete = Array.from(this.receipts.values()).filter((r) => r.userId === id);
+        for (const receipt of receiptsToDelete) this.receipts.delete(receipt.id);
 
-        const apiKeys = Array.from(this.apiKeys.values()).filter((k) => k.userId === id);
-        for (const key of apiKeys) {
-            this.apiKeys.delete(key.id);
-        }
+        const keysToDelete = Array.from(this.apiKeys.values()).filter((k) => k.userId === id);
+        for (const key of keysToDelete) this.apiKeys.delete(key.id);
 
-        const notes = Array.from(this.notes.values()).filter((n) => n.userId === id);
-        for (const note of notes) {
-            this.notes.delete(note.id);
-        }
+        const notesToDelete = Array.from(this.notes.values()).filter((n) => n.userId === id);
+        for (const note of notesToDelete) this.notes.delete(note.id);
 
         return this.users.delete(id);
     }
@@ -260,9 +263,7 @@ export class MemStorage implements IStorage {
         return Array.from(this.notes.values())
             .filter((n) => n.userId === userId)
             .sort((a, b) => {
-                if (a.isPinned !== b.isPinned) {
-                    return a.isPinned ? -1 : 1;
-                }
+                if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
                 return b.updatedAt.getTime() - a.updatedAt.getTime();
             });
     }
@@ -290,11 +291,12 @@ export class MemStorage implements IStorage {
         return fullLog;
     }
 
-    async getAuditLogs(userId?: string, limit = 100): Promise<AuditLog[]> {
-        const list = userId ? this.auditLogs.filter((l) => l.userId === userId) : this.auditLogs.slice();
-        return list
+    async getAuditLogs(limit = 100, offset = 0, userId?: string): Promise<AuditLog[]> {
+        let logs = this.auditLogs;
+        if (userId) logs = logs.filter(l => l.userId === userId);
+        return logs
             .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-            .slice(0, limit);
+            .slice(offset, offset + limit);
     }
 
     async getTeamMembers(teamOwnerId: string): Promise<TeamMember[]> {
@@ -350,40 +352,181 @@ export class MemStorage implements IStorage {
     }
 
     async verifyEmailByTokenHash(tokenHash: string): Promise<User | null> {
-        return null;
+        return Array.from(this.users.values()).find(u => u.emailVerifyTokenHash === tokenHash) || null;
     }
 
-    async getOAuthConnection(userId: string, provider: string): Promise<OAuthConnection | undefined> {
-        return undefined;
+    async registerUserWithSubscription(
+        user: InsertUser,
+        tokenHash: string,
+        tokenExpiresAt: Date,
+        subscription: Omit<InsertSubscription, "userId">
+    ): Promise<User> {
+        const userId = randomUUID();
+        const fullUser: User = {
+            id: userId,
+            email: user.email,
+            password: user.password || null,
+            name: user.name,
+            plan: subscription.plan as any,
+            isAdmin: false,
+            isSuspended: false,
+            emailVerifyTokenHash: tokenHash,
+            emailVerifyTokenExpiresAt: tokenExpiresAt,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            currency: "USD",
+            language: "en",
+            budgetThreshold: null,
+            lastLoginAt: new Date(),
+            emailVerifiedAt: null,
+            paddleCustomerId: null,
+            paddleSubscriptionId: null,
+            twoFactorEnabled: false,
+            twoFactorSecret: null,
+            twoFactorBackupCodes: null,
+            avatarUrl: null,
+            facebookId: null,
+            googleId: null,
+            oauthProvider: null,
+            resetToken: null,
+            resetTokenExpiry: null,
+        };
+        this.users.set(userId, fullUser);
+
+        const subId = randomUUID();
+        const fullSub: Subscription = {
+            id: subId,
+            userId,
+            plan: subscription.plan,
+            status: subscription.status || 'active',
+            currentToolsCount: String(subscription.currentToolsCount || 0),
+            toolsLimit: String(subscription.toolsLimit || 10),
+            startDate: subscription.startDate || new Date(),
+            renewalDate: subscription.renewalDate || null,
+            cancelledAt: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
+        this.subscriptions.set(subId, fullSub);
+        return fullUser;
     }
-    async createOAuthConnection(conn: InsertOAuthConnection): Promise<OAuthConnection> {
-        const full = { ...conn, id: randomUUID(), createdAt: new Date(), updatedAt: new Date() } as OAuthConnection;
-        return full;
+
+    async getExpiredSubscriptions(): Promise<Subscription[]> {
+        const now = new Date();
+        return Array.from(this.subscriptions.values()).filter(sub =>
+            sub.status === 'cancelled' && sub.renewalDate && new Date(sub.renewalDate) < now
+        );
     }
-    async updateOAuthConnection(id: string, updates: Partial<OAuthConnection>): Promise<OAuthConnection | undefined> {
-        return undefined;
+
+    async getToolsByExpiration(days: number): Promise<{ tool: Tool; user: User }[]> {
+        const now = new Date();
+        const futureDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+        const thresholdDate = new Date(now.getTime() + (days - 1) * 24 * 60 * 60 * 1000);
+
+        const results: { tool: Tool; user: User }[] = [];
+        for (const tool of this.tools.values()) {
+            if (tool.isPaid && tool.nextRenewalDate) {
+                const renewal = new Date(tool.nextRenewalDate);
+                if (renewal <= futureDate && renewal > thresholdDate) {
+                    const user = this.users.get(tool.userId);
+                    if (user) results.push({ tool, user });
+                }
+            }
+        }
+        return results;
     }
+
+    async updateUserSubscription(userId: string, userUpdates: Partial<User>, subUpdates: Partial<Subscription>): Promise<void> {
+        const user = this.users.get(userId);
+        if (user) this.users.set(userId, { ...user, ...userUpdates, updatedAt: new Date() });
+
+        const sub = await this.getUserSubscription(userId);
+        if (sub) this.subscriptions.set(sub.id, { ...sub, ...subUpdates, updatedAt: new Date() });
+    }
+
+    async createToolWithAudit(userId: string, tool: InsertTool): Promise<Tool> {
+        const newTool = await this.createTool({ ...tool, userId });
+        await this.createAuditLog({
+            userId,
+            action: "create",
+            resource: "tool",
+            resourceId: newTool.id,
+            changes: null,
+            ipAddress: null,
+            userAgent: null
+        });
+        return newTool;
+    }
+
+    async deleteToolWithAudit(userId: string, toolId: string): Promise<boolean> {
+        const tool = this.tools.get(toolId);
+        if (!tool || tool.userId !== userId) return false;
+        const deleted = await this.deleteTool(toolId);
+        if (deleted) {
+            await this.createAuditLog({
+                userId,
+                action: "delete",
+                resource: "tool",
+                resourceId: toolId,
+                changes: null,
+                ipAddress: null,
+                userAgent: null
+            });
+        }
+        return deleted;
+    }
+
+    async storeHandoffCode(userId: string): Promise<string> {
+        const code = randomUUID();
+        this.handoffCodes.set(code, { userId, expiresAt: Date.now() + 5 * 60 * 1000 });
+        return code;
+    }
+
+    async getHandoffCode(code: string): Promise<string | undefined> {
+        const entry = this.handoffCodes.get(code);
+        if (!entry) return undefined;
+        this.handoffCodes.delete(code);
+        if (entry.expiresAt < Date.now()) return undefined;
+        return entry.userId;
+    }
+
+    async suspendUser(userId: string, suspended: boolean): Promise<void> {
+        const user = this.users.get(userId);
+        if (user) this.users.set(userId, { ...user, isSuspended: suspended, updatedAt: new Date() });
+    }
+
+    async getGlobalStats(): Promise<any> {
+        const users = Array.from(this.users.values());
+        const totalUsers = users.length;
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const activeUsersCount = users.filter(u => u.lastLoginAt && new Date(u.lastLoginAt) > thirtyDaysAgo).length;
+
+        const totalRevenue = Array.from(this.payments.values())
+            .filter(p => p.status === 'completed' || p.status === 'succeeded')
+            .reduce((sum, p) => sum + Number(p.amount), 0) / 100;
+
+        const activeProUsers = users.filter(u => u.plan === 'pro').length;
+        const activeEnterpriseUsers = users.filter(u => u.plan === 'enterprise').length;
+        const mrr = (activeProUsers * 9.99) + (activeEnterpriseUsers * 24.99);
+
+        return {
+            totalUsers,
+            activeSubscriptions: activeUsersCount,
+            totalRevenue,
+            mrr
+        };
+    }
+
+    async getOAuthConnection(userId: string, provider: string): Promise<OAuthConnection | undefined> { return undefined; }
+    async createOAuthConnection(conn: InsertOAuthConnection): Promise<OAuthConnection> { return { ...conn, id: randomUUID(), createdAt: new Date(), updatedAt: new Date() } as OAuthConnection; }
+    async updateOAuthConnection(id: string, updates: Partial<OAuthConnection>): Promise<OAuthConnection | undefined> { return undefined; }
     async deleteOAuthConnection(userId: string, provider: string): Promise<void> { }
-
-    async getDiscoveryResults(userId: string): Promise<InboxDiscoveryResult[]> {
-        return [];
-    }
-    async createDiscoveryResult(result: InsertInboxDiscoveryResult): Promise<InboxDiscoveryResult> {
-        const full = { ...result, id: randomUUID(), createdAt: new Date() } as InboxDiscoveryResult;
-        return full;
-    }
+    async getDiscoveryResults(userId: string): Promise<InboxDiscoveryResult[]> { return []; }
+    async createDiscoveryResult(result: InsertInboxDiscoveryResult): Promise<InboxDiscoveryResult> { return { ...result, id: randomUUID(), createdAt: new Date() } as InboxDiscoveryResult; }
     async clearDiscoveryResults(userId: string): Promise<void> { }
-    async createDiscoveryRun(run: InsertInboxDiscoveryRun): Promise<InboxDiscoveryRun> {
-        const full = { ...run, id: randomUUID(), startedAt: new Date(), finishedAt: null, itemsFoundCount: run.itemsFoundCount || 0 } as InboxDiscoveryRun;
-        return full;
-    }
-    async updateDiscoveryRun(id: string, updates: Partial<InboxDiscoveryRun>): Promise<InboxDiscoveryRun | undefined> {
-        return undefined;
-    }
-    async getLatestDiscoveryRun(userId: string): Promise<InboxDiscoveryRun | undefined> {
-        return undefined;
-    }
-    async getDiscoveryRunsThisMonth(userId: string): Promise<number> {
-        return 0;
-    }
+    async createDiscoveryRun(run: InsertInboxDiscoveryRun): Promise<InboxDiscoveryRun> { return { ...run, id: randomUUID(), startedAt: new Date(), finishedAt: null, itemsFoundCount: run.itemsFoundCount || 0 } as InboxDiscoveryRun; }
+    async updateDiscoveryRun(id: string, updates: Partial<InboxDiscoveryRun>): Promise<InboxDiscoveryRun | undefined> { return undefined; }
+    async getLatestDiscoveryRun(userId: string): Promise<InboxDiscoveryRun | undefined> { return undefined; }
+    async getDiscoveryRunsThisMonth(userId: string): Promise<number> { return 0; }
 }

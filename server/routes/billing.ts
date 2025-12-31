@@ -2,6 +2,7 @@ import { Router } from "express";
 import { paddleClient, PADDLE_WEBHOOK_SECRET } from "../lib/paddle";
 import { storage } from "../storage";
 import { EventName } from "@paddle/paddle-node-sdk";
+import { toCents } from "../../shared/money";
 
 const router = Router();
 
@@ -71,35 +72,19 @@ router.post("/webhooks/paddle", async (req, res) => {
 
         console.log(`[Paddle Webhook] Debug - Received Price ID: ${priceId}`);
         console.log(`[Paddle Webhook] Debug - Mapped to Plan: ${plan}`);
-        console.log(`[Paddle Webhook] Debug - Known Price IDs:`, Object.keys(PRICE_ID_TO_PLAN));
-        console.log(`[Paddle Webhook] Updating user ${userId} to plan ${plan} (Status: ${status})`);
+        console.log(`[Paddle Webhook] Updating user ${userId} and subscription to plan ${plan} (Status: ${status})`);
 
-        // Update User
-        await storage.updateUser(userId, {
+        // Transactional update for both User and Subscription
+        await storage.updateUserSubscription(userId, {
           paddleCustomerId: customerId,
           paddleSubscriptionId: subscription.id,
-          plan: status === 'active' ? plan : 'free' // Downgrade if not active? Or handle strictly
+          plan: status === 'active' ? plan : 'free'
+        }, {
+          plan: status === 'active' ? plan : 'free',
+          status: status,
+          toolsLimit: PLAN_LIMITS[plan] || "10",
+          renewalDate: subscription.nextBilledAt ? new Date(subscription.nextBilledAt) : null,
         });
-
-        // Update Subscription Table
-        const userSubscription = await storage.getUserSubscription(userId);
-        if (userSubscription) {
-          await storage.updateSubscription(userSubscription.id, {
-            plan: status === 'active' ? plan : 'free',
-            status: status,
-            toolsLimit: PLAN_LIMITS[plan] || "8",
-            renewalDate: subscription.nextBilledAt ? new Date(subscription.nextBilledAt) : null,
-          });
-        } else {
-          await storage.createSubscription({
-            userId,
-            plan: status === 'active' ? plan : 'free',
-            status: status,
-            toolsLimit: PLAN_LIMITS[plan] || "8",
-            startDate: new Date(),
-            renewalDate: subscription.nextBilledAt ? new Date(subscription.nextBilledAt) : null,
-          });
-        }
         break;
       }
 
@@ -108,18 +93,13 @@ router.post("/webhooks/paddle", async (req, res) => {
         const userId = subscription.customData?.userId as string;
 
         if (userId) {
-          console.log(`[Paddle Webhook] Subscription cancelled for user ${userId}`);
-          // We might want to keep them on the plan until the end of the period
-          // But usually cancellation is "scheduled". If status is "canceled", it's done.
-          // Check effectiveFrom?
+          console.log(`[Paddle Webhook] Subscription cancellation received for user ${userId}. Scheduled for end of period.`);
 
-          await storage.updateUser(userId, { plan: "free" });
           const userSub = await storage.getUserSubscription(userId);
           if (userSub) {
             await storage.updateSubscription(userSub.id, {
-              plan: "free",
               status: "cancelled",
-              toolsLimit: "8",
+              renewalDate: subscription.nextBilledAt ? new Date(subscription.nextBilledAt) : userSub.renewalDate,
               cancelledAt: new Date(),
             });
           }
@@ -133,14 +113,14 @@ router.post("/webhooks/paddle", async (req, res) => {
         const txn = eventData.data;
         const userId = txn.customData?.userId as string;
         if (userId) {
-           await storage.createPayment({
-             userId,
-             amount: txn.details?.totals?.total || "0",
-             currency: txn.currencyCode,
-             status: txn.status,
-             paddlePaymentId: txn.id,
-             description: `Paddle Transaction ${txn.id}`
-           });
+          await storage.createPayment({
+            userId,
+            amount: String(toCents(txn.details?.totals?.total || "0")),
+            currency: txn.currencyCode,
+            status: txn.status,
+            paddlePaymentId: txn.id,
+            description: `Paddle Transaction ${txn.id}`
+          });
         }
         break;
       }

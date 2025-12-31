@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { openCheckout } from "@/lib/paddle";
 import { getPriceIdForPlan } from "@/lib/plans";
 import { Loader2 } from "lucide-react";
+import { fromCents } from "../../../shared/money";
 
 export function Dashboard() {
   const [, setLocation] = useLocation();
@@ -62,7 +63,7 @@ export function Dashboard() {
       }
     }
   }, [user]);
-  
+
   const { data: analyticsData, isLoading } = useQuery<{
     tools: Tool[];
     monthlyTotal: string;
@@ -96,13 +97,13 @@ export function Dashboard() {
   const nextMonthForecast = paidTools.reduce((acc, tool) => {
     // If billing is monthly, always add
     if (tool.billingCycle === "monthly" && tool.billingAmount) {
-      return acc + parseFloat(String(tool.billingAmount));
+      return acc + fromCents(tool.billingAmount);
     }
     // If yearly, only add if renewal is in the next 30 days
     if (tool.billingCycle === "yearly" && tool.billingAmount && tool.nextRenewalDate) {
       const renewalDate = new Date(tool.nextRenewalDate);
       if (renewalDate <= nextMonth && renewalDate >= today) {
-        return acc + parseFloat(String(tool.billingAmount));
+        return acc + fromCents(tool.billingAmount);
       }
     }
     return acc;
@@ -126,9 +127,9 @@ export function Dashboard() {
       <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
         <div className="bg-card border shadow-lg rounded-lg p-8 max-w-md w-full text-center space-y-4">
           {paymentSuccess ? (
-             <Package className="h-12 w-12 text-green-500 mx-auto" />
+            <Package className="h-12 w-12 text-green-500 mx-auto" />
           ) : (
-             <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
           )}
           <h2 className="text-2xl font-semibold">
             {paymentSuccess ? "Payment Successful!" : "Finalizing your subscription..."}
@@ -188,11 +189,10 @@ export function Dashboard() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className={`p-3 rounded-lg ${
-                budgetStatus?.isOverBudget
+              <div className={`p-3 rounded-lg ${budgetStatus?.isOverBudget
                   ? "bg-red-100 dark:bg-red-900/30"
                   : "bg-green-100 dark:bg-green-900/30"
-              }`}>
+                }`}>
                 {budgetStatus?.isOverBudget ? (
                   <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
                 ) : (
@@ -202,9 +202,8 @@ export function Dashboard() {
               <div className="flex-1">
                 <p className="text-sm text-muted-foreground">Monthly Spend</p>
                 <div className="flex items-baseline gap-2">
-                  <p className={`text-xl sm:text-2xl font-semibold font-mono ${
-                    budgetStatus?.isOverBudget ? "text-red-600 dark:text-red-400" : ""
-                  }`} data-testid="text-monthly-spend">
+                  <p className={`text-xl sm:text-2xl font-semibold font-mono ${budgetStatus?.isOverBudget ? "text-red-600 dark:text-red-400" : ""
+                    }`} data-testid="text-monthly-spend">
                     {formatAmount(monthlySpend)}
                   </p>
                   {budgetStatus && (
@@ -214,14 +213,13 @@ export function Dashboard() {
                   )}
                 </div>
                 {budgetStatus && (
-                   <div className="w-full h-1.5 bg-secondary rounded-full mt-2 overflow-hidden">
-                     <div
-                        className={`h-full rounded-full ${
-                          budgetStatus.isOverBudget ? "bg-red-500" : "bg-green-500"
+                  <div className="w-full h-1.5 bg-secondary rounded-full mt-2 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${budgetStatus.isOverBudget ? "bg-red-500" : "bg-green-500"
                         }`}
-                        style={{ width: `${Math.min(budgetStatus.percentageUsed, 100)}%` }}
-                     />
-                   </div>
+                      style={{ width: `${Math.min(budgetStatus.percentageUsed, 100)}%` }}
+                    />
+                  </div>
                 )}
                 {!budgetStatus && <p className="text-xs text-muted-foreground mt-1">Current subscriptions</p>}
               </div>
@@ -269,7 +267,7 @@ export function Dashboard() {
           <CardContent>
             <div className="space-y-3">
               {tools.slice(0, 5).map((tool) => (
-                <div 
+                <div
                   key={tool.id}
                   className="flex items-center justify-between p-3 border rounded-md hover-elevate cursor-pointer"
                   onClick={() => setLocation("/tools")}
@@ -288,7 +286,7 @@ export function Dashboard() {
                   </div>
                   {tool.isPaid && tool.billingAmount && (
                     <div className="text-right">
-                      <p className="font-mono font-medium">{formatAmount(tool.billingAmount)}/mo</p>
+                      <p className="font-mono font-medium">{formatAmount(fromCents(tool.billingAmount))}/mo</p>
                       {tool.nextRenewalDate && (
                         <p className="text-xs text-muted-foreground">
                           Renews {new Date(tool.nextRenewalDate).toLocaleDateString()}

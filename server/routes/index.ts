@@ -70,7 +70,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 await storage.createSubscription({
                   userId: user!.id,
                   plan: "free",
-                  toolsLimit: "8",
+                  toolsLimit: "10",
                 });
               }
             }

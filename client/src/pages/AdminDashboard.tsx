@@ -22,6 +22,21 @@ export function AdminDashboard() {
     },
   });
 
+  // Fetch recent logs
+  const { data: logsResponse, isLoading: logsLoading } = useQuery({
+    queryKey: ["/api/admin/audit-logs", { limit: 10 }],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/admin/audit-logs?limit=10", {
+        headers: { "Authorization": `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch audit logs");
+      return res.json();
+    },
+  });
+
+  const logs = logsResponse?.logs || [];
+
   const stats = statsResponse || { totalUsers: 0, totalRevenue: 0, activeSubscriptions: 0 };
   const totalUsers = stats.totalUsers || 0;
   const activeUsers = stats.activeSubscriptions || 0;
@@ -112,20 +127,59 @@ export function AdminDashboard() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>User Management</CardTitle>
-          <CardDescription>Add, edit, or delete users</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-6">
-            <p className="text-muted-foreground mb-4">Go to User Management to view and manage all users</p>
-            <Button onClick={() => setLocation("/admin/users")} data-testid="button-manage-users-card">
-              Manage Users
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>User Management</CardTitle>
+            <CardDescription>Add, edit, or delete users</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-6">
+              <p className="text-muted-foreground mb-4">Go to User Management to view and manage all users</p>
+              <Button onClick={() => setLocation("/admin/users")} data-testid="button-manage-users-card">
+                Manage Users
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent System Activity</CardTitle>
+            <CardDescription>Latest global audit logs</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {logsLoading ? (
+              <div className="flex justify-center py-4">
+                <Activity className="h-6 w-6 animate-spin" />
+              </div>
+            ) : logs.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">No recent activity</p>
+            ) : (
+              <div className="space-y-4">
+                {logs.map((log: any) => (
+                  <div key={log.id} className="flex items-start gap-3 pb-3 border-b last:border-0">
+                    <div className={`mt-1 p-1.5 rounded-full ${log.action === 'delete' ? 'bg-red-100 text-red-600' :
+                      log.action === 'suspend' ? 'bg-amber-100 text-amber-600' :
+                        'bg-blue-100 text-blue-600'
+                      }`}>
+                      <Activity className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        <span className="capitalize">{log.action}</span> {log.resource}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        ID: {log.resourceId} • {new Date(log.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
     </div>
   );

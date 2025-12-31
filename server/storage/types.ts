@@ -75,7 +75,6 @@ export interface IStorage {
 
     // Audit Log operations
     createAuditLog(log: Omit<AuditLog, "id" | "createdAt">): Promise<AuditLog>;
-    getAuditLogs(userId?: string, limit?: number): Promise<AuditLog[]>;
 
     // Team Member operations
     getTeamMembers(teamOwnerId: string): Promise<TeamMember[]>;
@@ -104,4 +103,27 @@ export interface IStorage {
     // Email verification
     setEmailVerificationToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void>;
     verifyEmailByTokenHash(tokenHash: string): Promise<User | null>;
+
+    // Transactional operations
+    registerUserWithSubscription(
+        user: InsertUser,
+        tokenHash: string,
+        tokenExpiresAt: Date,
+        subscription: Omit<InsertSubscription, "userId">
+    ): Promise<User>;
+
+    // OAuth Handoff
+    storeHandoffCode(userId: string): Promise<string>;
+    getHandoffCode(code: string): Promise<string | undefined>;
+
+    // Background Jobs
+    getExpiredSubscriptions(): Promise<Subscription[]>;
+    getToolsByExpiration(days: number): Promise<{ tool: Tool; user: User }[]>;
+    // Transactional Operations
+    updateUserSubscription(userId: string, userUpdates: Partial<User>, subUpdates: Partial<Subscription>): Promise<void>;
+    createToolWithAudit(userId: string, tool: InsertTool): Promise<Tool>;
+    deleteToolWithAudit(userId: string, toolId: string): Promise<boolean>;
+    suspendUser(userId: string, suspended: boolean): Promise<void>;
+    getGlobalStats(): Promise<any>;
+    getAuditLogs(limit?: number, offset?: number, userId?: string): Promise<AuditLog[]>;
 }

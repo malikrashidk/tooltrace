@@ -1,4 +1,3 @@
-import { sql } from "../db";
 import type {
     User,
     InsertUser,
@@ -24,7 +23,9 @@ import type {
     InboxDiscoveryRun,
     InsertInboxDiscoveryRun,
 } from "../../shared/schema";
+import { users, subscriptions, tools, auditLogs } from "../../shared/schema";
 import { IStorage } from "./types";
+import { db, sql } from "../db";
 import {
     mapUser,
     mapTool,
@@ -361,7 +362,7 @@ export class DbStorage implements IStorage {
         return mapAuditLog(result[0])!;
     }
 
-    async getAuditLogs(userId?: string, limit = 100): Promise<AuditLog[]> {
+    async getAuditLogs(limit = 100, offset = 0, userId?: string): Promise<AuditLog[]> {
         let result;
         if (userId) {
             result = await sql`
@@ -369,12 +370,14 @@ export class DbStorage implements IStorage {
         WHERE user_id = ${userId} 
         ORDER BY created_at DESC 
         LIMIT ${limit}
+        OFFSET ${offset}
       `;
         } else {
             result = await sql`
         SELECT * FROM audit_logs 
         ORDER BY created_at DESC 
         LIMIT ${limit}
+        OFFSET ${offset}
       `;
         }
         return result.map((row: any) => mapAuditLog(row)!);
@@ -638,4 +641,195 @@ export class DbStorage implements IStorage {
     `;
         return parseInt(res[0].count);
     }
+
+    async registerUserWithSubscription(
+        user: InsertUser,
+        tokenHash: string,
+        tokenExpiresAt: Date,
+        subscription: Omit<InsertSubscription, "userId">
+    ): Promise<User> {
+        return await db.transaction(async (tx: any) => {
+            const [newUser] = await tx.insert(users).values({
+                email: user.email,
+                password: user.password,
+                name: user.name,
+                emailVerifyTokenHash: tokenHash,
+                emailVerifyTokenExpiresAt: tokenExpiresAt,
+            }).returning();
+
+            await tx.insert(subscriptions).values({
+                userId: newUser.id,
+                plan: subscription.plan,
+                status: subscription.status || 'active',
+                currentToolsCount: subscription.currentToolsCount || 0,
+                toolsLimit: subscription.toolsLimit,
+                startDate: subscription.startDate || new Date(),
+                renewalDate: subscription.renewalDate,
+            });
+
+            return mapUser(newUser)!;
+        });
+    }
+
+    private handoffCodes = new Map<string, { userId: string; expiresAt: number }>();
+
+    async storeHandoffCode(userId: string): Promise<string> {
+        const code = crypto.randomUUID();
+        this.handoffCodes.set(code, {
+            userId,
+            expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
+        });
+        return code;
+    }
+
+    async getHandoffCode(code: string): Promise<string | undefined> {
+        const data = this.handoffCodes.get(code);
+        if (!data) return undefined;
+        this.handoffCodes.delete(code); // One-time use
+        if (data.expiresAt < Date.now()) return undefined;
+        return data.userId;
+    }
+
+    async getExpiredSubscriptions(): Promise<Subscription[]> {
+        const result = await sql`
+            SELECT * FROM subscriptions 
+            WHERE status = 'cancelled' 
+            AND renewal_date < NOW()
+        `;
+        return result.map((row: any) => mapSubscription(row)!);
+    }
+
+    async getToolsByExpiration(days: number): Promise<{ tool: Tool; user: User }[]> {
+        const result = await sql`
+            SELECT t.*, u.id as user_id, u.email as user_email, u.name as user_name, u.plan as user_plan
+            FROM tools t
+            JOIN users u ON t.user_id = u.id
+            WHERE t.is_paid = true
+            AND t.next_renewal_date <= (NOW() + ${days} * INTERVAL '1 day')
+            AND t.next_renewal_date > (NOW() + (${days} - 1) * INTERVAL '1 day')
+        `;
+        return result.map((row: any) => ({
+            tool: mapTool(row)!,
+            user: mapUser({
+                ...row,
+                id: row.user_id,
+                email: row.user_email,
+                name: row.user_name,
+                plan: row.user_plan
+            })!
+        }));
+    }
+
+    async updateUserSubscription(userId: string, userUpdates: Partial<User>, subUpdates: Partial<Subscription>): Promise<void> {
+        await db.transaction(async (tx: any) => {
+            // Update User
+            const userSetClauses: string[] = [];
+            const userValues: any[] = [];
+            let i = 1;
+
+            Object.entries(userUpdates).forEach(([key, value]) => {
+                const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+                userSetClauses.push(`${snakeKey} = $${i}`);
+                userValues.push(value === undefined ? null : value);
+                i++;
+            });
+
+            if (userSetClauses.length > 0) {
+                const query = `UPDATE users SET ${userSetClauses.join(', ')}, updated_at = NOW() WHERE id = $${i}`;
+                userValues.push(userId);
+                await tx.execute(sql(query, userValues));
+            }
+
+            // Update Subscription
+            const sub = await this.getUserSubscription(userId);
+            if (sub) {
+                const subSetClauses: string[] = [];
+                const subValues: any[] = [];
+                let j = 1;
+
+                Object.entries(subUpdates).forEach(([key, value]) => {
+                    const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+                    subSetClauses.push(`${snakeKey} = $${j}`);
+                    subValues.push(value === undefined ? null : value);
+                    j++;
+                });
+
+                if (subSetClauses.length > 0) {
+                    const query = `UPDATE subscriptions SET ${subSetClauses.join(', ')}, updated_at = NOW() WHERE id = $${j}`;
+                    subValues.push(sub.id);
+                    await tx.execute(sql(query, subValues));
+                }
+            }
+        });
+    }
+
+    async createToolWithAudit(userId: string, tool: InsertTool): Promise<Tool> {
+        return await db.transaction(async (tx: any) => {
+            const [newTool] = await tx.insert(tools).values({
+                ...tool,
+                userId,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            }).returning();
+
+            await tx.insert(auditLogs).values({
+                userId,
+                action: "create",
+                resource: "tool",
+                resourceId: newTool.id,
+                createdAt: new Date()
+            });
+
+            return mapTool(newTool)!;
+        });
+    }
+
+    async deleteToolWithAudit(userId: string, toolId: string): Promise<boolean> {
+        return await db.transaction(async (tx: any) => {
+            const result = await tx.delete(tools).where(sql`id = ${toolId} AND user_id = ${userId}`).returning();
+            if (result.length === 0) return false;
+
+            await tx.insert(auditLogs).values({
+                userId,
+                action: "delete",
+                resource: "tool",
+                resourceId: toolId,
+                createdAt: new Date()
+            });
+
+            return true;
+        });
+    }
+    async suspendUser(userId: string, suspended: boolean): Promise<void> {
+        await this.updateUser(userId, { isSuspended: suspended });
+    }
+
+    async getGlobalStats(): Promise<any> {
+        const users = await this.getAllUsers();
+        const totalUsers = users.length;
+
+        // Active users: Logged in within last 30 days
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const activeUsersCount = users.filter(u => u.lastLoginAt && new Date(u.lastLoginAt) > thirtyDaysAgo).length;
+
+        const totalRevenueResult = await sql`
+            SELECT SUM(amount)::numeric as total 
+            FROM payments 
+            WHERE status = 'succeeded' OR status = 'completed'
+        `;
+        const totalRevenue = Number(totalRevenueResult[0]?.total || 0) / 100; // to dollars
+
+        const activeProUsers = users.filter(u => u.plan === 'pro').length;
+        const activeEnterpriseUsers = users.filter(u => u.plan === 'enterprise').length;
+        const mrr = (activeProUsers * 9.99) + (activeEnterpriseUsers * 24.99);
+
+        return {
+            totalUsers,
+            activeSubscriptions: activeUsersCount, // compatibility key
+            totalRevenue,
+            mrr
+        };
+    }
+
 }

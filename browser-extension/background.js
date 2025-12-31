@@ -179,18 +179,17 @@ async function handleUsageLog(url, duration, sendResponse = () => { }) {
     }
 
     try {
-        const domain = new URL(url).hostname;
-        // First find if we have a tool matching this domain
-        const resTools = await apiFetch(`${API_BASE}/tools`, {
-            headers: { 'Authorization': `Bearer ${authToken}` }
+        // Use the new match endpoint for better performance
+        const resMatch = await apiFetch(`${API_BASE}/tools/match`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({ url })
         });
-        const data = await resTools.json();
-
-        const matchedTool = data.tools.find(t => {
-            try {
-                return new URL(t.websiteUrl).hostname.includes(domain) || domain.includes(new URL(t.websiteUrl).hostname);
-            } catch (e) { return false; }
-        });
+        const data = await resMatch.json();
+        const matchedTool = data.match;
 
         if (matchedTool) {
             // Log the usage to the specific extension endpoint
@@ -202,7 +201,7 @@ async function handleUsageLog(url, duration, sendResponse = () => { }) {
                 },
                 body: JSON.stringify({
                     toolId: matchedTool.id,
-                    durationSeconds: Math.floor(duration)
+                    durationSeconds: Math.ceil(duration)
                 })
             });
             console.log(`[Usage] Logged ${duration}s for ${matchedTool.name}`);
@@ -266,30 +265,19 @@ async function handleCheckSavedCredentials(domain, sendResponse) {
     }
 
     try {
-        const res = await apiFetch(`${API_BASE}/tools`, {
-            headers: { 'Authorization': `Bearer ${authToken}` }
+        // Use the match endpoint instead of fetching all tools
+        const res = await apiFetch(`${API_BASE}/tools/match`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({ url: domain })
         });
         const data = await res.json();
-
-        // Find a tool that matches the domain and has credentials
-        // Note: The /api/tools response includes credentials as 'null' to indicate they exist but are hidden
-        // Wait, looking at routes/tools.ts:
-        // const toolResponse = { ...tool, credentials: null, secureNote: !!tool.secureNote };
-        // Actually, the server returns credentials: null regardless. 
-        // We need another way to check if they exist. 
-        // Let's assume for this version we check the 'id' and then call reveal if we think it matches.
-
-        const matchedTool = data.tools.find(t => {
-            try {
-                const host = new URL(t.websiteUrl).hostname;
-                return host.includes(domain) || domain.includes(host);
-            } catch (e) {
-                return false;
-            }
-        });
-
-        sendResponse({ tool: matchedTool || null });
+        sendResponse({ tool: data.match || null });
     } catch (e) {
+        console.error('[Background] Error checking credentials:', e);
         sendResponse({ tool: null });
     }
 }

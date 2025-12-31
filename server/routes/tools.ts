@@ -2,6 +2,7 @@ import { Router } from "express";
 import { storage } from "../storage";
 import { authMiddleware, emailVerificationMiddleware, auditLog } from "../middleware";
 import { insertToolSchema, insertNoteSchema } from "@shared/schema";
+import { toCents } from "../../shared/money";
 import { calculateNextRenewalDate } from "../lib/date-utils";
 import { encrypt, decrypt } from "../lib/crypto";
 import { uploadToR2, deleteFromR2, getR2DownloadUrl } from "../lib/r2";
@@ -16,7 +17,7 @@ router.get("/tools", authMiddleware, async (req, res) => {
     const user = await storage.getUser(req.userId!);
     const subscription = await storage.getUserSubscription(req.userId!);
 
-    const limit = subscription?.toolsLimit ? parseInt(String(subscription.toolsLimit)) : 8;
+    const limit = subscription?.toolsLimit ? parseInt(String(subscription.toolsLimit)) : 10;
 
     // Handle renewal date rollover for paid tools
     const updatedTools = await Promise.all(tools.map(async (tool) => {
@@ -25,7 +26,7 @@ router.get("/tools", authMiddleware, async (req, res) => {
         const nextDate = calculateNextRenewalDate(renewalDate, tool.billingCycle);
 
         if (nextDate.getTime() !== renewalDate.getTime()) {
-          console.log(`[Renewal] Rolling over ${tool.name} from ${renewalDate.toLocaleDateString()} to ${nextDate.toLocaleDateString()}`);
+          console.log(`[Renewal] Rolling over ${tool.name} from ${renewalDate.toLocaleDateString()} to ${nextDate.toLocaleDateString()} `);
           const updated = await storage.updateTool(tool.id, { nextRenewalDate: nextDate });
           return updated || tool;
         }
@@ -74,7 +75,7 @@ router.post("/tools", authMiddleware, emailVerificationMiddleware, async (req, r
       return res
         .status(403)
         .json({
-          error: `Tool limit reached. Upgrade to ${subscription.plan === "free" ? "Standard" : "Premium"} for more tools.`,
+          error: `Tool limit reached.Upgrade to ${subscription.plan === "free" ? "Standard" : "Premium"} for more tools.`,
         });
     }
 
@@ -89,6 +90,11 @@ router.post("/tools", authMiddleware, emailVerificationMiddleware, async (req, r
       tags: parsed.data.tags || [],
       categories: parsed.data.categories || ["Other"]
     };
+
+    // Convert billingAmount to cents for precision
+    if (toolData.billingAmount !== undefined && toolData.billingAmount !== null) {
+      toolData.billingAmount = String(toCents(toolData.billingAmount));
+    }
 
     // Encrypt credentials if provided
     if (req.body.username || req.body.password || req.body.email) {
@@ -111,15 +117,12 @@ router.post("/tools", authMiddleware, emailVerificationMiddleware, async (req, r
       toolData.isPinned = req.body.isPinned;
     }
 
-    const tool = await storage.createTool({
+    const tool = await storage.createToolWithAudit(req.userId!, {
       ...toolData,
-      userId: req.userId,
     } as any);
 
     // Remove sensitive data from response
     const toolResponse = { ...tool, credentials: null, secureNote: !!tool.secureNote };
-
-    await auditLog(req.userId, "create", "tool", tool.id, {}, req);
 
     res.status(201).json({ tool: toolResponse });
   } catch (error) {
@@ -150,6 +153,11 @@ router.patch("/tools/:id", authMiddleware, emailVerificationMiddleware, async (r
         updates[key] = req.body[key];
       }
     });
+
+    // Convert billingAmount to cents if provided
+    if (updates.billingAmount !== undefined && updates.billingAmount !== null) {
+      updates.billingAmount = String(toCents(updates.billingAmount));
+    }
 
     // Explicitly ensure no sensitive fields leaked into updates
     delete updates.username;
@@ -241,8 +249,10 @@ router.delete("/tools/:id", authMiddleware, emailVerificationMiddleware, async (
       return res.status(404).json({ error: "Tool not found" });
     }
 
-    await storage.deleteTool(req.params.id);
-    await auditLog(req.userId, "delete", "tool", req.params.id, {}, req);
+    const success = await storage.deleteToolWithAudit(req.userId!, req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: "Tool not found or delete failed" });
+    }
 
     res.json({ message: "Tool deleted" });
   } catch (error) {
@@ -441,7 +451,7 @@ router.post("/receipts", authMiddleware, paidPlanMiddleware, async (req, res) =>
     console.error("Receipt upload error:", error);
     if (error.code === '23502' || error.message?.includes('null value')) {
       return res.status(400).json({
-        error: `Missing required field. Please ensure all required fields are provided.`
+        error: `Missing required field.Please ensure all required fields are provided.`
       });
     }
     res.status(500).json({ error: error.message || "Failed to upload receipt" });
@@ -471,6 +481,42 @@ router.delete("/receipts/:id", authMiddleware, paidPlanMiddleware, async (req, r
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: "Failed to delete receipt" });
+  }
+});
+
+router.post("/tools/match", authMiddleware, async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url) return res.status(400).json({ error: "URL is required" });
+
+    const tools = await storage.getUserTools(req.userId!);
+    const hostname = new URL(url.startsWith('http') ? url : `https://${url}`).hostname.replace('www.', '');
+
+    const match = tools.find(t => {
+      if (!t.websiteUrl) return false;
+      try {
+        const toolHostname = new URL(t.websiteUrl.startsWith('http') ? t.websiteUrl : `https://${t.websiteUrl}`).hostname.replace('www.', '');
+        return toolHostname === hostname;
+      } catch (e) {
+        return false;
+      }
+    });
+
+    if (match) {
+      res.json({
+        match: {
+          ...match,
+          credentials: null,
+          secureNote: !!match.secureNote,
+          hasCredentials: !!match.credentials
+        }
+      });
+    } else {
+      res.json({ match: null });
+    }
+  } catch (error) {
+    console.error("Tool match error:", error);
+    res.status(500).json({ error: "Match failed" });
   }
 });
 

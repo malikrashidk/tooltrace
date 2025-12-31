@@ -21,8 +21,15 @@ export async function sendEmail({
   text?: string;
   html?: string;
 }) {
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+  console.log(`[Mailer] Sending email:
+    From: ${from}
+    To: ${to}
+    Subject: ${subject}
+  `);
+
   return transporter.sendMail({
-    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    from,
     to,
     subject,
     text,
