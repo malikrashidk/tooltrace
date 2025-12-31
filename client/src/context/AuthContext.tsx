@@ -73,6 +73,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const data = await response.json();
         setUser(data.user);
         localStorage.setItem("user", JSON.stringify(data.user));
+        // Ensure cookie is in sync for extension even on refresh
+        document.cookie = `token=${token}; path=/; max-age=${60 * 60 * 24 * 30}; sameSite=Lax`;
       } else {
         // Token invalid, clear auth
         logout();
