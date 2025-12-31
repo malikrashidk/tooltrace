@@ -61,8 +61,112 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 
+    if (request.action === 'logUsage') {
+        handleUsageLog(request.url, request.duration, sendResponse);
+        return true;
+    }
+
     return true;
 });
+
+// --- Usage Tracking Logic (Moved from content.js) ---
+let activeTabId = null;
+let activeTabStartTime = null;
+let activeTabUrl = null;
+
+function isValidUrl(url) {
+    return url && (url.startsWith('http://') || url.startsWith('https://'));
+}
+
+async function stopTracking() {
+    if (activeTabId && activeTabStartTime && activeTabUrl) {
+        const duration = (Date.now() - activeTabStartTime) / 1000; // seconds
+        if (duration > 5) {
+            console.log(`[Usage] Tracked ${duration.toFixed(1)}s on ${activeTabUrl}`);
+            handleUsageLog(activeTabUrl, duration);
+        }
+    }
+    activeTabId = null;
+    activeTabStartTime = null;
+    activeTabUrl = null;
+}
+
+chrome.tabs.onActivated.addListener(activeInfo => {
+    stopTracking();
+    chrome.tabs.get(activeInfo.tabId, (tab) => {
+        if (tab && isValidUrl(tab.url)) {
+            activeTabId = activeInfo.tabId;
+            activeTabUrl = tab.url;
+            activeTabStartTime = Date.now();
+        }
+    });
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (tabId === activeTabId && changeInfo.url) {
+        stopTracking();
+        if (isValidUrl(changeInfo.url)) {
+            activeTabId = tabId;
+            activeTabUrl = changeInfo.url;
+            activeTabStartTime = Date.now();
+        }
+    }
+});
+
+chrome.windows.onFocusChanged.addListener(windowId => {
+    if (windowId === chrome.windows.WINDOW_ID_NONE) {
+        stopTracking();
+    } else {
+        chrome.tabs.query({ active: true, windowId: windowId }, tabs => {
+            if (tabs.length > 0 && isValidUrl(tabs[0].url)) {
+                stopTracking();
+                activeTabId = tabs[0].id;
+                activeTabUrl = tabs[0].url;
+                activeTabStartTime = Date.now();
+            }
+        });
+    }
+});
+
+async function handleUsageLog(url, duration, sendResponse = () => { }) {
+    if (!authToken || !url) {
+        sendResponse({ success: false });
+        return;
+    }
+
+    try {
+        const domain = new URL(url).hostname;
+        // First find if we have a tool matching this domain
+        const resTools = await fetch(`${API_BASE}/tools`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await resTools.json();
+
+        const matchedTool = data.tools.find(t => {
+            try {
+                return new URL(t.websiteUrl).hostname.includes(domain) || domain.includes(new URL(t.websiteUrl).hostname);
+            } catch (e) { return false; }
+        });
+
+        if (matchedTool) {
+            // Log the usage to the specific extension endpoint
+            await fetch(`${API_BASE}/extension/usage`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify({
+                    toolId: matchedTool.id,
+                    durationMinutes: Math.ceil(duration / 60)
+                })
+            });
+            console.log(`[Usage] Logged ${duration}s for ${matchedTool.name}`);
+        }
+    } catch (e) {
+        console.error('[Usage] Error logging usage:', e);
+    }
+}
 
 async function handleAddTools(tools, sendResponse) {
     if (!authToken) {
