@@ -107,6 +107,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
     localStorage.setItem("user", JSON.stringify(data.user));
     localStorage.setItem("token", data.token);
+
+    // Set cookie for extension sync
+    document.cookie = `token=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; sameSite=Lax`;
   };
 
   const signup = async (email: string, password: string, name: string) => {
@@ -125,12 +128,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
     localStorage.setItem("user", JSON.stringify(data.user));
     localStorage.setItem("token", data.token);
+
+    // Set cookie for extension sync
+    document.cookie = `token=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; sameSite=Lax`;
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     setIsLoading(false);
   };
 

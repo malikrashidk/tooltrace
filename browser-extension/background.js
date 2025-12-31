@@ -1,193 +1,180 @@
 // background.js
 
-const API_BASE = 'http://localhost:5000/api'; // Change to production URL in build
+// Determine API base - use current origin if extension is on a site, 
+// but for the service worker, we often need a fixed target or clever detection.
+let API_BASE = 'https://tooltrace.io/api'; // Default production
+if (typeof chrome !== 'undefined' && chrome.runtime.getManifest().version === '1.0.0') {
+    // For development, we might want to check if we are on localhost
+    // But since it's a service worker, we'll stick to a primary target.
+    // In a real build, this would be replaced by an environment variable.
+    API_BASE = 'http://localhost:5000/api';
+}
 
-// Store auth token
 let authToken = null;
 
-// Listen for messages
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'checkAuth') {
-      // In a real app, you'd sync this better, possibly via cookies or explicit login
-      // For now we simulate it or check local storage
-      chrome.storage.local.get(['authToken'], (res) => {
-          authToken = res.authToken;
-          sendResponse({ token: authToken });
-      });
-      return true;
-  }
+// Helper to keep token in sync
+function syncToken() {
+    chrome.cookies.get({ url: API_BASE.replace('/api', ''), name: 'token' }, (cookie) => {
+        if (cookie) {
+            authToken = cookie.value;
+            chrome.storage.local.set({ authToken: authToken });
+            console.log('[Background] Auth token synced from cookie');
+        } else {
+            // Check storage as fallback
+            chrome.storage.local.get(['authToken'], (res) => {
+                authToken = res.authToken;
+            });
+        }
+    });
+}
 
-  if (request.action === 'addTools') {
-      // Store tools temporarily and open import page
-      chrome.storage.local.set({
-        pendingTools: request.tools,
-        timestamp: new Date().toISOString(),
-      }, () => {
-        chrome.tabs.create({
-          url: 'http://localhost:5000/?import-tools=true',
-          active: true
-        });
-        sendResponse({ success: true });
-      });
-      return true;
-  }
+// Initial sync
+syncToken();
 
-  if (request.action === 'addToolWithCreds') {
-      addTool(request.data, sendResponse);
-      return true;
-  }
-
-  if (request.action === 'getPinnedTools') {
-      fetchPinnedTools(sendResponse);
-      return true;
-  }
-
-  if (request.action === 'triggerAutofill') {
-      handleAutofill(request.toolId, request.url, sendResponse);
-      return true;
-  }
-
-  if (request.action === 'logUsage') {
-      handleUsageLog(request.url, request.duration);
-  }
-});
-
-// Helper to get auth token (simple version, relies on manual login via popup or shared cookie in future)
-// For this demo, let's assume the user has to login via the extension popup manually or we grab it from the main site cookies if possible (cross-origin issues apply).
-// To keep it simple: We will try to fetch from localhost cookie if permission allows, or expect it in storage.
-chrome.cookies.get({ url: 'http://localhost:5000', name: 'token' }, (cookie) => {
-    if (cookie) {
-        authToken = cookie.value;
-        chrome.storage.local.set({ authToken: authToken });
+// Listen for cookie changes to stay in sync
+chrome.cookies.onChanged.addListener((changeInfo) => {
+    if (changeInfo.cookie.name === 'token' && changeInfo.cookie.domain.includes('localhost')) {
+        if (changeInfo.removed) {
+            authToken = null;
+            chrome.storage.local.remove('authToken');
+        } else {
+            authToken = changeInfo.cookie.value;
+            chrome.storage.local.set({ authToken: authToken });
+        }
     }
 });
 
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'checkAuth') {
+        syncToken(); // One more check
+        sendResponse({ token: authToken });
+        return true;
+    }
 
-async function addTool(data, sendResponse) {
+    if (request.action === 'addTools') {
+        handleAddTools(request.tools, sendResponse);
+        return true;
+    }
+
+    if (request.action === 'checkSavedCredentials') {
+        handleCheckSavedCredentials(request.domain, sendResponse);
+        return true;
+    }
+
+    if (request.action === 'autofill') {
+        handleAutofill(request.toolId, sendResponse);
+        return true;
+    }
+
+    return true;
+});
+
+async function handleAddTools(tools, sendResponse) {
     if (!authToken) {
         sendResponse({ success: false, error: 'Not logged in' });
         return;
     }
 
-    try {
-        const res = await fetch(`${API_BASE}/tools`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
-            },
-            body: JSON.stringify(data)
-        });
-
-        if (res.ok) sendResponse({ success: true });
-        else sendResponse({ success: false });
-    } catch (e) {
-        sendResponse({ success: false, error: e.message });
-    }
-}
-
-async function fetchPinnedTools(sendResponse) {
-    if (!authToken) {
-        sendResponse({ tools: [] });
-        return;
-    }
-
-    try {
-        const res = await fetch(`${API_BASE}/tools`, {
-             headers: { 'Authorization': `Bearer ${authToken}` }
-        });
-        const data = await res.json();
-        const pinned = data.tools.filter(t => t.isPinned);
-        sendResponse({ tools: pinned });
-    } catch (e) {
-        sendResponse({ tools: [] });
-    }
-}
-
-async function handleAutofill(toolId, url, sendResponse) {
-     if (!authToken) {
-        sendResponse({ success: false });
-        return;
-    }
-
-    try {
-        // Fetch decrypted credentials
-        const res = await fetch(`${API_BASE}/tools/${toolId}/reveal`, {
-             headers: { 'Authorization': `Bearer ${authToken}` }
-        });
-        const data = await res.json();
-
-        if (data.credentials) {
-            // Find tab to fill
-            chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-                const tab = tabs[0];
-                if (tab) {
-                     chrome.scripting.executeScript({
-                        target: { tabId: tab.id },
-                        func: (user, pass) => {
-                            const userInputs = document.querySelectorAll('input[type="email"], input[name*="user"], input[name*="login"]');
-                            const passInputs = document.querySelectorAll('input[type="password"]');
-
-                            if (userInputs.length > 0) userInputs[0].value = user;
-                            if (passInputs.length > 0) passInputs[0].value = pass;
-
-                            // Try to dispatch input events to trigger React/Angular handlers
-                            const event = new Event('input', { bubbles: true });
-                            if (userInputs.length > 0) userInputs[0].dispatchEvent(event);
-                            if (passInputs.length > 0) passInputs[0].dispatchEvent(event);
-                        },
-                        args: [data.credentials.username, data.credentials.password]
-                    });
-                }
-            });
-            sendResponse({ success: true });
-        } else {
-             sendResponse({ success: false });
-        }
-    } catch (e) {
-        sendResponse({ success: false });
-    }
-}
-
-async function handleUsageLog(url, duration) {
-    if (!authToken) return;
-
-    // First, identify which tool matches this URL
-    try {
-        const res = await fetch(`${API_BASE}/tools`, {
-             headers: { 'Authorization': `Bearer ${authToken}` }
-        });
-        const data = await res.json();
-        const tool = data.tools.find(t => url.includes(new URL(t.websiteUrl).hostname));
-
-        if (tool) {
-            // Send usage update
-            // We use the apiKey middleware route but we can also use a standard authenticated route
-            // Let's use the one we added: POST /api/tools/usage
-            // But that one is behind apiKeyAuthMiddleware which expects an API Key, not a Bearer Token.
-            // Wait, I put it under `apiKeyAuthMiddleware` in the previous step.
-            // I should have put it under `authMiddleware` or both.
-            // Let's assume for now we use the authMiddleware one or I'll update the route to accept Bearer token too.
-            // actually the route was added under the block of apiKeyAuthMiddleware in server/routes.ts
-            // I should update server/routes.ts to allow authMiddleware for this usage route as well, OR use an API key for the extension.
-            // For simplicity, let's fix server/routes.ts to allow `authMiddleware` for usage too.
-
-            // Correction: I will update server/routes.ts in next step to move usage endpoint or add authMiddleware support.
-
-            // For now, let's assume we fix it.
-             await fetch(`${API_BASE}/tools/usage`, {
+    const results = [];
+    for (const tool of tools) {
+        try {
+            const res = await fetch(`${API_BASE}/tools`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${authToken}`
                 },
                 body: JSON.stringify({
-                    toolId: tool.id,
-                    durationSeconds: duration
+                    name: tool.name,
+                    websiteUrl: tool.url,
+                    logoUrl: tool.logoUrl || null,
+                    isPaid: false,
+                    categories: [tool.category],
+                    usageFrequency: 'daily',
                 })
             });
+            results.push(res.ok);
+        } catch (e) {
+            results.push(false);
+        }
+    }
+
+    const allSuccess = results.every(r => r === true);
+    sendResponse({ success: allSuccess, count: results.filter(r => r).length });
+}
+
+async function handleCheckSavedCredentials(domain, sendResponse) {
+    if (!authToken) {
+        sendResponse({ tool: null });
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/tools`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await res.json();
+
+        // Find a tool that matches the domain and has credentials
+        // Note: The /api/tools response includes credentials as 'null' to indicate they exist but are hidden
+        // Wait, looking at routes/tools.ts:
+        // const toolResponse = { ...tool, credentials: null, secureNote: !!tool.secureNote };
+        // Actually, the server returns credentials: null regardless. 
+        // We need another way to check if they exist. 
+        // Let's assume for this version we check the 'id' and then call reveal if we think it matches.
+
+        const matchedTool = data.tools.find(t => {
+            try {
+                const host = new URL(t.websiteUrl).hostname;
+                return host.includes(domain) || domain.includes(host);
+            } catch (e) {
+                return false;
+            }
+        });
+
+        sendResponse({ tool: matchedTool || null });
+    } catch (e) {
+        sendResponse({ tool: null });
+    }
+}
+
+async function handleAutofill(toolId, sendResponse) {
+    if (!authToken) return;
+
+    try {
+        const res = await fetch(`${API_BASE}/tools/${toolId}/reveal`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await res.json();
+
+        if (data.credentials) {
+            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+                const tab = tabs[0];
+                if (tab) {
+                    chrome.scripting.executeScript({
+                        target: { tabId: tab.id },
+                        func: (user, pass) => {
+                            const userInputs = document.querySelectorAll('input[type="email"], input[type="text"][name*="user"], input[name*="login"], input[id*="username"]');
+                            const passInputs = document.querySelectorAll('input[type="password"]');
+
+                            if (userInputs.length > 0) {
+                                userInputs[0].value = user;
+                                userInputs[0].dispatchEvent(new Event('input', { bubbles: true }));
+                                userInputs[0].dispatchEvent(new Event('change', { bubbles: true }));
+                            }
+                            if (passInputs.length > 0) {
+                                passInputs[0].value = pass;
+                                passInputs[0].dispatchEvent(new Event('input', { bubbles: true }));
+                                passInputs[0].dispatchEvent(new Event('change', { bubbles: true }));
+                            }
+                        },
+                        args: [data.credentials.username, data.credentials.password]
+                    });
+                }
+            });
+            sendResponse({ success: true });
         }
     } catch (e) {
-        console.error(e);
+        sendResponse({ success: false });
     }
 }

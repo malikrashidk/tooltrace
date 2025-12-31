@@ -3,7 +3,14 @@
   "name": "SaaS Hub Tool Detector",
   "version": "1.0.0",
   "description": "Auto-detect SaaS tools you're using and add them to your SaaS Hub",
-  "permissions": ["activeTab", "scripting", "storage", "webNavigation"],
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "webNavigation",
+    "cookies",
+    "contextMenus"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_title": "SaaS Hub Tool Detector"
@@ -13,10 +20,16 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_start"
     }
   ],
-  "host_permissions": ["<all_urls>"]
+  "host_permissions": [
+    "<all_urls>"
+  ]
 }

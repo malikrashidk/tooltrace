@@ -29,7 +29,7 @@ async function detectTools() {
 
     tabs.forEach(tab => {
       if (!tab.url) return;
-      
+
       try {
         const url = new URL(tab.url);
         const domain = url.hostname;
@@ -67,6 +67,33 @@ async function detectTools() {
     });
 
     renderTools();
+  });
+}
+
+async function checkSavedCredentials() {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (!tabs[0] || !tabs[0].url) return;
+    try {
+      const url = new URL(tabs[0].url);
+      const domain = url.hostname;
+
+      chrome.runtime.sendMessage({ action: 'checkSavedCredentials', domain }, response => {
+        const matchView = document.getElementById('matchView');
+        if (response && response.tool) {
+          matchView.classList.remove('hidden');
+          document.getElementById('matchName').innerText = `âœ… ${response.tool.name}`;
+          document.getElementById('autofillBtn').onclick = () => {
+            chrome.runtime.sendMessage({ action: 'autofill', toolId: response.tool.id }, res => {
+              if (res.success) {
+                showStatus('âœ… Credentials filled!', 'success');
+              }
+            });
+          };
+        } else {
+          matchView.classList.add('hidden');
+        }
+      });
+    } catch (e) { }
   });
 }
 
@@ -115,7 +142,7 @@ function toggleTool(toolId) {
 function showStatus(message, type = 'info') {
   const statusDiv = document.getElementById('statusMessage');
   statusDiv.innerHTML = `<div class="status-message status-${type}">${message}</div>`;
-  
+
   if (type !== 'loading') {
     setTimeout(() => {
       statusDiv.innerHTML = '';
@@ -126,23 +153,22 @@ function showStatus(message, type = 'info') {
 async function addSelectedTools() {
   if (selectedTools.size === 0) return;
 
-  showStatus('<span class="spinner"></span>Adding tools...', 'loading');
+  showStatus('<span class="spinner"></span>Adding to Tool Trace...', 'loading');
 
   const toolsToAdd = detectedTools.filter(t => selectedTools.has(t.id));
 
   try {
-    // Send to SaaS Hub app
     chrome.runtime.sendMessage({
       action: 'addTools',
       tools: toolsToAdd
     }, response => {
       if (response && response.success) {
-        showStatus(`…œ“ Added ${toolsToAdd.length} tool(s) to SaaS Hub!`, 'success');
+        showStatus(`âœ… Added ${response.count} tool(s) successfully!`, 'success');
         selectedTools.clear();
         document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
         document.getElementById('addBtn').disabled = true;
       } else {
-        showStatus('Failed to add tools. Please try again.', 'error');
+        showStatus('Failed to add tools. ' + (response.error || ''), 'error');
       }
     });
   } catch (error) {
@@ -156,11 +182,30 @@ function refreshTools() {
   document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
   setTimeout(() => {
     detectTools();
+    checkSavedCredentials();
   }, 500);
 }
 
 // Initial load
 document.addEventListener('DOMContentLoaded', () => {
   detectTools();
+  checkSavedCredentials();
+
+  document.getElementById('addBtn').onclick = addSelectedTools;
+
+  // Tab switching
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.onclick = () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      const target = tab.getAttribute('data-tab');
+      document.getElementById('detectView').classList.add('hidden');
+      document.getElementById('pinnedView').classList.add('hidden');
+      document.getElementById('addView').classList.add('hidden');
+
+      document.getElementById(target + 'View').classList.remove('hidden');
+    };
+  });
 });
 

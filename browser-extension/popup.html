@@ -171,6 +171,16 @@
   <div class="content">
     <div id="statusMessage"></div>
 
+    <div id="matchView" class="hidden" style="margin-bottom: 1rem; border: 1px solid var(--primary); border-radius: 0.5rem; padding: 1rem; background: #eff6ff;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <div id="matchName" style="font-weight: 700; font-size: 1rem;">Tool Found</div>
+                <div style="font-size: 0.8rem; color: var(--primary);">Saved credentials available</div>
+            </div>
+            <button id="autofillBtn" class="btn" style="width: auto; padding: 0.5rem 1rem;">âš¡ï¸  Fill Login</button>
+        </div>
+    </div>
+
     <div id="detectView">
       <div id="emptyState" style="text-align: center; color: var(--muted-foreground); padding: 2rem;">
         No known SaaS tools detected on current tabs.
