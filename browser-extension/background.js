@@ -174,7 +174,7 @@ async function handleUsageLog(url, duration, sendResponse = () => { }) {
                 },
                 body: JSON.stringify({
                     toolId: matchedTool.id,
-                    durationMinutes: Math.ceil(duration / 60)
+                    durationSeconds: Math.floor(duration)
                 })
             });
             console.log(`[Usage] Logged ${duration}s for ${matchedTool.name}`);
