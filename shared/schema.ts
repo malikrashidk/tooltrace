@@ -94,7 +94,7 @@ export const subscriptions = pgTable(
     plan: text("plan").notNull(), // free, pro, enterprise
     status: text("status").notNull().default("active"), // active, cancelled, past_due
     currentToolsCount: numeric("current_tools_count", { precision: 10, scale: 0 }).notNull().default("0"),
-    toolsLimit: numeric("tools_limit", { precision: 10, scale: 0 }).notNull().default("8"),
+    toolsLimit: numeric("tools_limit", { precision: 10, scale: 0 }).notNull().default("10"),
     startDate: timestamp("start_date").defaultNow().notNull(),
     renewalDate: timestamp("renewal_date"),
     cancelledAt: timestamp("cancelled_at"),
