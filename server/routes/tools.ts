@@ -91,10 +91,12 @@ router.post("/tools", authMiddleware, emailVerificationMiddleware, async (req, r
     };
 
     // Encrypt credentials if provided
-    if (req.body.username && req.body.password) {
+    if (req.body.username || req.body.password || req.body.email) {
       const credentials = JSON.stringify({
         username: req.body.username,
+        email: req.body.email,
         password: req.body.password,
+        notes: req.body.notes || req.body.credentialNotes
       });
       toolData.credentials = encrypt(credentials);
     }
@@ -152,12 +154,16 @@ router.patch("/tools/:id", authMiddleware, emailVerificationMiddleware, async (r
     // Explicitly ensure no sensitive fields leaked into updates
     delete updates.username;
     delete updates.password;
+    delete updates.email;
+    delete updates.notes;
 
     // Handle credentials update
-    if (req.body.username && req.body.password) {
+    if (req.body.username || req.body.password || req.body.email) {
       const credentials = JSON.stringify({
         username: req.body.username,
+        email: req.body.email,
         password: req.body.password,
+        notes: req.body.notes || req.body.credentialNotes
       });
       updates.credentials = encrypt(credentials);
     } else if (req.body.credentials === null) {

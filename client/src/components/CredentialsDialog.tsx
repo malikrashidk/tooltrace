@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { encryptCredential, decryptCredential, generateSecurePassword } from "@/lib/encryption";
+import { generateSecurePassword } from "@/lib/encryption";
 import { validatePasswordStrength, sanitizeInput, auditLogger } from "@/lib/security";
 import type { Tool } from "@/lib/analytics";
 
@@ -390,10 +390,10 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
                   onClick={() => {
                     setShowForm(false);
                     setFormData({
-                      username: credentials?.username || "",
-                      email: credentials?.email || "",
-                      password: credentials?.password || "",
-                      notes: credentials?.notes || "",
+                      username: decryptedData?.username || "",
+                      email: decryptedData?.email || "",
+                      password: decryptedData?.password || "",
+                      notes: decryptedData?.notes || "",
                     });
                   }}
                   data-testid={`button-cancel-credentials-${tool.id}`}
