@@ -117,8 +117,8 @@ function renderTools() {
           <input 
             type="checkbox" 
             class="tool-checkbox"
-            id="tool-${tool.id}" 
-            onchange="toggleTool('${tool.id}')"
+            data-id="${tool.id}"
+            ${selectedTools.has(tool.id) ? 'checked' : ''}
           >
         </div>
         <div class="tool-icon">${tool.icon || '🛠️'}</div>
@@ -129,6 +129,14 @@ function renderTools() {
       </div>
     `)
     .join('');
+
+  // Attach event listeners to checkboxes
+  toolsList.querySelectorAll('.tool-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', (e) => {
+      const toolId = e.target.getAttribute('data-id');
+      toggleTool(toolId);
+    });
+  });
 
   addBtn.disabled = selectedTools.size === 0;
 }
