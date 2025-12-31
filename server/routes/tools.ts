@@ -84,7 +84,11 @@ router.post("/tools", authMiddleware, emailVerificationMiddleware, async (req, r
       return res.status(400).json({ error: parsed.error.errors });
     }
 
-    const toolData = { ...(parsed.data as any) };
+    const toolData = {
+      ...(parsed.data as any),
+      tags: parsed.data.tags || [],
+      categories: parsed.data.categories || ["Other"]
+    };
 
     // Encrypt credentials if provided
     if (req.body.username && req.body.password) {
@@ -108,7 +112,7 @@ router.post("/tools", authMiddleware, emailVerificationMiddleware, async (req, r
     const tool = await storage.createTool({
       ...toolData,
       userId: req.userId,
-    });
+    } as any);
 
     // Remove sensitive data from response
     const toolResponse = { ...tool, credentials: null, secureNote: !!tool.secureNote };
