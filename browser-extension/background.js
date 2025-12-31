@@ -2,13 +2,8 @@
 
 // Determine API base - use current origin if extension is on a site, 
 // but for the service worker, we often need a fixed target or clever detection.
-let API_BASE = 'https://tooltrace.io/api'; // Default production
-if (typeof chrome !== 'undefined' && chrome.runtime.getManifest().version === '1.0.0') {
-    // For development, we might want to check if we are on localhost
-    // But since it's a service worker, we'll stick to a primary target.
-    // In a real build, this would be replaced by an environment variable.
-    API_BASE = 'http://localhost:5000/api';
-}
+let API_BASE = 'https://app.tooltrace.io/api';
+// We remove the hardcoded localhost check to prioritize your server URL
 
 let authToken = null;
 
