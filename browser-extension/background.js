@@ -9,17 +9,21 @@ let authToken = null;
 
 // Helper to keep token in sync
 function syncToken() {
-    chrome.cookies.get({ url: API_BASE.replace('/api', ''), name: 'token' }, (cookie) => {
-        if (cookie) {
-            authToken = cookie.value;
-            chrome.storage.local.set({ authToken: authToken });
-            console.log('[Background] Auth token synced from cookie');
-        } else {
-            // Check storage as fallback
-            chrome.storage.local.get(['authToken'], (res) => {
-                authToken = res.authToken;
-            });
-        }
+    return new Promise((resolve) => {
+        chrome.cookies.get({ url: API_BASE.replace('/api', ''), name: 'token' }, (cookie) => {
+            if (cookie) {
+                authToken = cookie.value;
+                chrome.storage.local.set({ authToken: authToken });
+                console.log('[Background] Auth token synced from cookie');
+                resolve(authToken);
+            } else {
+                // Check storage as fallback
+                chrome.storage.local.get(['authToken'], (res) => {
+                    authToken = res.authToken || null;
+                    resolve(authToken);
+                });
+            }
+        });
     });
 }
 
@@ -41,8 +45,9 @@ chrome.cookies.onChanged.addListener((changeInfo) => {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'checkAuth') {
-        syncToken(); // One more check
-        sendResponse({ token: authToken });
+        syncToken().then(token => {
+            sendResponse({ token: token });
+        });
         return true;
     }
 
