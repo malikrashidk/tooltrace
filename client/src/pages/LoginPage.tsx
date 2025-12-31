@@ -320,52 +320,67 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
       </div>
 
       {/* Right Side: Branding */}
-      <div className="hidden lg:flex w-1/2 bg-muted relative overflow-hidden items-center justify-center p-12">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/10 to-muted z-0" />
-        <div className="relative z-10 max-w-lg space-y-8">
-          <div className="space-y-4">
-             <h2 className="text-4xl font-bold tracking-tight text-foreground">
-              Master your SaaS stack.
+      <div className="hidden lg:flex w-1/2 bg-slate-950 relative overflow-hidden items-center justify-center p-12">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px] animate-pulse delay-700" />
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
+        </div>
+
+        <div className="relative z-10 max-w-lg space-y-12">
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-md">
+              <span className="flex h-2 w-2 rounded-full bg-primary animate-ping" />
+              <span className="text-xs font-semibold text-primary uppercase tracking-wider">Trusted by 2,000+ teams</span>
+            </div>
+
+            <h2 className="text-5xl font-extrabold tracking-tight text-white leading-[1.1]">
+              The single source of truth for your <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-400">SaaS ecosystem.</span>
             </h2>
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              Join thousands of founders and teams who use ToolTrace to track subscriptions, manage costs, and discover savings opportunities.
+
+            <p className="text-xl text-slate-400 leading-relaxed font-light">
+              Stop overpaying for software you don't use. Automate tracking, get renewal alerts, and optimize your stack in minutes.
             </p>
           </div>
 
-          <div className="grid gap-4">
-            <div className="flex items-center gap-3 text-muted-foreground">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                <Check className="h-4 w-4 text-primary" />
+          <div className="space-y-5">
+            <div className="group flex items-center gap-4 text-slate-300 transition-colors hover:text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 border border-white/10 group-hover:border-primary/50 transition-all shadow-xl">
+                <Check className="h-5 w-5 text-primary" />
               </div>
-              <span className="font-medium">Track all your tools in one place</span>
+              <span className="text-lg font-medium">Auto-detect subscriptions via Gmail</span>
             </div>
-            <div className="flex items-center gap-3 text-muted-foreground">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                <Check className="h-4 w-4 text-primary" />
+            <div className="group flex items-center gap-4 text-slate-300 transition-colors hover:text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 border border-white/10 group-hover:border-primary/50 transition-all shadow-xl">
+                <Check className="h-5 w-5 text-primary" />
               </div>
-              <span className="font-medium">Get alerted before renewals</span>
+              <span className="text-lg font-medium">Smart renewal & budget alerts</span>
             </div>
-            <div className="flex items-center gap-3 text-muted-foreground">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                <Check className="h-4 w-4 text-primary" />
+            <div className="group flex items-center gap-4 text-slate-300 transition-colors hover:text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 border border-white/10 group-hover:border-primary/50 transition-all shadow-xl">
+                <Check className="h-5 w-5 text-primary" />
               </div>
-              <span className="font-medium">Identify unused subscriptions</span>
+              <span className="text-lg font-medium">Collaborative team management</span>
             </div>
           </div>
 
-          <div className="pt-8">
-             <div className="rounded-xl border bg-card/50 p-6 backdrop-blur-sm shadow-sm">
-                <p className="text-sm text-muted-foreground italic">
-                  "ToolTrace helped us cut our monthly SaaS spend by 25% in just the first week. It's an essential tool for any growing business."
-                </p>
-                <div className="mt-4 flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500" />
-                  <div>
-                    <p className="text-sm font-semibold">Sarah Jenkins</p>
-                    <p className="text-xs text-muted-foreground">CTO, TechStart Inc.</p>
-                  </div>
+          <div className="pt-4">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl shadow-2xl relative group overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-5 bg-white rounded-bl-3xl transform translate-x-1 translate-y--1" />
+              <p className="text-lg text-slate-200 font-medium italic relative z-10">
+                "ToolTrace helped us cut our monthly SaaS spend by 25% in just the first week. It's an essential tool for any growing business."
+              </p>
+              <div className="mt-6 flex items-center gap-4">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 ring-2 ring-white/10" />
+                <div>
+                  <p className="text-base font-bold text-white leading-tight">Sarah Jenkins</p>
+                  <p className="text-xs text-slate-400 font-medium tracking-wide flex items-center gap-1 uppercase">
+                    CTO <span className="h-1 w-1 rounded-full bg-slate-500" /> TechStart Inc.
+                  </p>
                 </div>
-             </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

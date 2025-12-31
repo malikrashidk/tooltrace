@@ -104,11 +104,12 @@ export function emailVerificationMiddleware(req: Request, res: Response, next: N
   next();
 }
 
-export function rateLimit(maxRequests: number = 100, windowMs: number = 60000) {
+export function rateLimit(maxRequests: number = 100, windowMs: number = 60000, keyPrefix: string = "global") {
   const requests = new Map<string, number[]>();
 
   return (req: Request, res: Response, next: NextFunction) => {
-    const key = req.ip || "unknown";
+    // Use IP + prefix to allow different limits for different routes from same IP
+    const key = `${keyPrefix}:${req.ip || "unknown"}`;
     const now = Date.now();
     const windowStart = now - windowMs;
 
@@ -120,7 +121,11 @@ export function rateLimit(maxRequests: number = 100, windowMs: number = 60000) {
     requestTimes = requestTimes.filter((time) => time > windowStart);
 
     if (requestTimes.length >= maxRequests) {
-      return res.status(429).json({ error: "Too many requests" });
+      console.warn(`[RateLimit] ${keyPrefix} limit exceeded for ${req.ip}`);
+      return res.status(429).json({
+        error: "Too many requests",
+        message: "Please wait before trying again."
+      });
     }
 
     requestTimes.push(now);

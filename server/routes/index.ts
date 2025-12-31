@@ -19,7 +19,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
 
   // Apply rate limiting
-  app.use("/api", rateLimit(100, 60000));
+  app.use("/api/auth", rateLimit(20, 60000, "auth")); // Stricter for auth
+  app.use("/api", rateLimit(100, 60000, "general"));
   app.use(passport.initialize());
 
   // OAuth Configuration

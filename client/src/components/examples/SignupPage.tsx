@@ -1,4 +1,4 @@
-import { SignupPage } from "../SignupPage";
+import { SignupPage } from "../../pages/SignupPage";
 import { AuthProvider } from "@/context/AuthContext";
 
 export default function SignupPageExample() {

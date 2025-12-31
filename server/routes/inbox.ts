@@ -3,7 +3,7 @@ import { storage } from "../storage";
 import { authMiddleware } from "../middleware";
 import { getAuthUrl, getTokensFromCode, getClient } from "../lib/google-auth";
 import { scanInbox } from "../lib/gmail-scanner";
-import { encrypt as encryptToken, decrypt as decryptToken } from "../lib/encryption";
+import { encrypt, decrypt, encryptToString } from "../lib/crypto";
 
 const router = Router();
 
@@ -52,8 +52,8 @@ router.get("/google/callback", async (req, res) => {
 
     const tokens = await getTokensFromCode(code as string, callbackUrl);
 
-    const accessTokenEnc = encryptToken(tokens.access_token || "");
-    const refreshTokenEnc = tokens.refresh_token ? encryptToken(tokens.refresh_token) : null;
+    const accessTokenEnc = encryptToString(tokens.access_token || "");
+    const refreshTokenEnc = tokens.refresh_token ? encryptToString(tokens.refresh_token) : null;
 
     // Upsert OAuth connection
     const userId = state as string;
@@ -109,8 +109,8 @@ router.post("/scan", authMiddleware, async (req, res) => {
     console.log(`[Scan] Found OAuth connection, decrypting tokens...`);
     let access_token, refresh_token;
     try {
-      access_token = decryptToken(conn.accessTokenEnc);
-      refresh_token = conn.refreshTokenEnc ? decryptToken(conn.refreshTokenEnc) : undefined;
+      access_token = decrypt(conn.accessTokenEnc);
+      refresh_token = conn.refreshTokenEnc ? decrypt(conn.refreshTokenEnc) : undefined;
       console.log(`[Scan] Tokens decrypted successfully`);
     } catch (e: any) {
       console.error(`[Scan] Token decryption failed for user ${user.id}:`, e.message);
@@ -130,7 +130,7 @@ router.post("/scan", authMiddleware, async (req, res) => {
       userId: user.id,
       provider: "google",
       status: "running",
-      });
+    });
 
     console.log(`[Scan] Discovery run ${run.id} started`);
     const suggestions = await scanInbox(auth);

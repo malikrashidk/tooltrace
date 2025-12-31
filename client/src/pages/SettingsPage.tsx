@@ -28,7 +28,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { apiRequest } from "@/lib/queryClient";
-import { TwoFactorSetup } from "./TwoFactorSetup";
+import { TwoFactorSetup } from "@/components/TwoFactorSetup";
 import { CurrencySelector } from "@/components/CurrencySelector";
 
 const profileSchema = z.object({
