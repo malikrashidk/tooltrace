@@ -34,7 +34,7 @@ export function ApiKeysPage() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const isPaidPlan = user?.plan === "standard" || user?.plan === "premium";
+  const isPaidPlan = user?.plan === "enterprise";
   
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -118,7 +118,7 @@ export function ApiKeysPage() {
               </div>
               <h2 className="text-xl sm:text-2xl font-semibold">Upgrade to Access API Keys</h2>
               <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
-                API key management is available on Standard and Premium plans. Upgrade to get programmatic access to your SaaS tools.
+                API key management is exclusively available on the Enterprise plan. Upgrade to get programmatic access to your SaaS tools.
               </p>
               <Button 
                 onClick={() => setLocation("/pricing")}

@@ -29,6 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { apiRequest } from "@/lib/queryClient";
 import { TwoFactorSetup } from "./TwoFactorSetup";
+import { CurrencySelector } from "@/components/CurrencySelector";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -144,6 +145,12 @@ export function SettingsPage() {
               <CardDescription>Update your personal information</CardDescription>
             </CardHeader>
             <CardContent>
+              <div className="mb-6">
+                <Label className="text-sm font-medium mb-2 block">Currency / Region</Label>
+                <CurrencySelector />
+                <p className="text-xs text-muted-foreground mt-1">Select your preferred currency for display.</p>
+              </div>
+
               <Form {...profileForm}>
                 <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
                   <FormField
@@ -410,7 +417,3 @@ export function SettingsPage() {
     </div>
   );
 }
-
-
-
-

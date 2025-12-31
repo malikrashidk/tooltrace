@@ -156,9 +156,9 @@ export function UserManagementPage() {
 
   const getPlanColor = (plan: string) => {
     switch (plan) {
-      case "premium":
+      case "enterprise":
         return "bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-300";
-      case "standard":
+      case "pro":
         return "bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-300";
       default:
         return "bg-gray-100 dark:bg-gray-900/30 text-gray-900 dark:text-gray-300";
@@ -318,9 +318,9 @@ export function UserManagementPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="free">Free (5 tools)</SelectItem>
-                  <SelectItem value="standard">Standard (12 tools)</SelectItem>
-                  <SelectItem value="premium">Premium (Unlimited)</SelectItem>
+                  <SelectItem value="free">Free (10 tools)</SelectItem>
+                  <SelectItem value="pro">Pro (Unlimited)</SelectItem>
+                  <SelectItem value="enterprise">Enterprise (Unlimited)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

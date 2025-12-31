@@ -10,7 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export function IntegrationsHub() {
   const { user } = useAuth();
-  const isPremium = user?.plan === "premium";
+  const isPremium = user?.plan === "enterprise";
   const { toast } = useToast();
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -39,11 +39,11 @@ export function IntegrationsHub() {
               <div>
                 <h2 className="text-xl sm:text-2xl font-bold mb-2">Premium Feature</h2>
                 <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
-                  Integrations Hub with Slack, Zapier, Make, and webhooks is exclusively available on Premium plan.
+                  Integrations Hub with Slack, Zapier, Make, and webhooks is exclusively available on the Enterprise plan.
                 </p>
               </div>
               <Button asChild size="lg" className="mt-4 w-full sm:w-auto">
-                <a href="/pricing">Upgrade to Premium</a>
+                <a href="/pricing">Upgrade to Enterprise</a>
               </Button>
             </div>
           </CardContent>

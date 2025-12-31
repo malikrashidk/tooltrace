@@ -40,9 +40,11 @@ export function loadPaddle() {
 
         window.Paddle.Initialize({
           token: token,
-          // eventCallback: function(data: any) {
-          //   console.log(data);
-          // }
+          eventCallback: function(data: any) {
+             // Emit a custom event for the application to listen to
+             const event = new CustomEvent('paddle:event', { detail: data });
+             window.dispatchEvent(event);
+          }
         });
         resolve(window.Paddle);
       } else {

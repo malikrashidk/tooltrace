@@ -50,7 +50,7 @@ import { useAuth } from "@/context/AuthContext";
 export function AppSidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
-  const isPaidPlan = user?.plan === "standard" || user?.plan === "premium";
+  const isPaidPlan = user?.plan === "pro" || user?.plan === "enterprise";
 
   const mainNavItems = [
     {

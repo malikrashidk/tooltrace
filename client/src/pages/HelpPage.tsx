@@ -355,40 +355,6 @@ export function HelpPage() {
             </TabsContent>
           ))}
         </Tabs>
-
-        {/* Quick Links */}
-        <Card className="mt-8 bg-gradient-to-r from-primary/5 to-primary/10">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Book className="h-5 w-5" />
-              Quick Links
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <a
-                href="https://github.com/yourusername/saazhub"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors"
-                data-testid="link-github"
-              >
-                <div className="font-medium">GitHub Repository</div>
-                <div className="text-sm text-muted-foreground">View source code and contribute</div>
-              </a>
-              <a
-                href="https://github.com/yourusername/saazhub-extension"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors"
-                data-testid="link-extension"
-              >
-                <div className="font-medium">Browser Extension</div>
-                <div className="text-sm text-muted-foreground">Download and setup guide</div>
-              </a>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
@@ -509,7 +475,3 @@ function FeedbackForm({ onClose }: FeedbackFormProps) {
     </form>
   );
 }
-
-
-
-

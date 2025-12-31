@@ -37,7 +37,7 @@ export function AdvancedToolsManagement() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { formatAmount } = useCurrency();
-  const isPaidPlan = user?.plan === "standard" || user?.plan === "premium";
+  const isPaidPlan = user?.plan === "pro" || user?.plan === "enterprise";
 
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
@@ -128,7 +128,7 @@ export function AdvancedToolsManagement() {
               </div>
               <h2 className="text-xl sm:text-2xl font-semibold">Upgrade for Advanced Management</h2>
               <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
-                Advanced tools management with bulk operations and inline editing is available on Standard and Premium plans.
+                Advanced tools management with bulk operations and inline editing is available on Pro and Enterprise plans.
               </p>
               <Button
                 onClick={() => setLocation("/pricing")}

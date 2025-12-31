@@ -24,15 +24,15 @@ async function initializeAdmin() {
     const existingUser = await storage.getUserByEmail(ADMIN_EMAIL);
     if (existingUser) {
       // Ensure admin user has correct flags set
-      if (!existingUser.isAdmin || existingUser.plan !== "premium") {
+      if (!existingUser.isAdmin || existingUser.plan !== "enterprise") {
         console.log("🔄 Fixing admin user permissions...");
-        await sql`UPDATE users SET is_admin = true, plan = 'premium', updated_at = NOW() WHERE email = ${ADMIN_EMAIL}`;
+        await sql`UPDATE users SET is_admin = true, plan = 'enterprise', updated_at = NOW() WHERE email = ${ADMIN_EMAIL}`;
         console.log("✅ Admin permissions fixed");
       }
       console.log("✅ Admin user already exists");
       console.log(`   Email: ${ADMIN_EMAIL}`);
       console.log(`   Name: ${existingUser.name}`);
-      console.log(`   Plan: premium`);
+      console.log(`   Plan: enterprise`);
       console.log(`   Is Admin: true`);
       return;
     }
@@ -45,17 +45,17 @@ async function initializeAdmin() {
       name: ADMIN_NAME,
     });
 
-    // Update to admin and premium plan, and verify email
+    // Update to admin and enterprise plan, and verify email
     await storage.updateUser(admin.id, {
       isAdmin: true,
-      plan: "premium",
+      plan: "enterprise",
       emailVerifiedAt: new Date(),
     });
 
-    // Create premium subscription
+    // Create enterprise subscription
     await storage.createSubscription({
       userId: admin.id,
-      plan: "premium",
+      plan: "enterprise",
       toolsLimit: "999999", // Unlimited
       status: "active",
     });
@@ -63,7 +63,7 @@ async function initializeAdmin() {
     console.log("✅ Admin user created successfully!");
     console.log(`   Email: ${ADMIN_EMAIL}`);
     console.log(`   Name: ${ADMIN_NAME}`);
-    console.log(`   Plan: premium`);
+    console.log(`   Plan: enterprise`);
     console.log(`   Tools Limit: Unlimited`);
     console.log("");
     console.log("⚠️  Please change the password after first login!");

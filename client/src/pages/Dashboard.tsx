@@ -9,14 +9,36 @@ import { useCurrency } from "@/context/CurrencyContext";
 import { useAuth } from "@/context/AuthContext";
 import { VerificationSuccessBanner } from "@/components/VerificationSuccessBanner";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { openCheckout } from "@/lib/paddle";
 import { getPriceIdForPlan } from "@/lib/plans";
+import { Loader2 } from "lucide-react";
 
 export function Dashboard() {
   const [, setLocation] = useLocation();
   const { formatAmount } = useCurrency();
   const { user } = useAuth();
+  const [isProcessingPayment, setIsProcessingPayment] = useState(() => {
+    return !!sessionStorage.getItem("pending_plan");
+  });
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+
+  // Listen for Paddle events
+  useEffect(() => {
+    const handlePaddleEvent = (e: any) => {
+      const data = e.detail;
+      if (data?.name === "checkout.completed") {
+        console.log("[Dashboard] Payment completed!", data);
+        setPaymentSuccess(true);
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+      }
+    };
+
+    window.addEventListener("paddle:event", handlePaddleEvent);
+    return () => window.removeEventListener("paddle:event", handlePaddleEvent);
+  }, []);
 
   // Handle pending plan upgrade from Signup/Login
   useEffect(() => {
@@ -27,6 +49,7 @@ export function Dashboard() {
       console.log("[Dashboard] Resolved Price ID:", priceId);
 
       if (priceId) {
+        setIsProcessingPayment(true);
         // Clear it immediately to avoid loops or double triggers
         sessionStorage.removeItem("pending_plan");
         // Open checkout
@@ -93,6 +116,37 @@ export function Dashboard() {
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-32" />
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isProcessingPayment || paymentSuccess) {
+    return (
+      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
+        <div className="bg-card border shadow-lg rounded-lg p-8 max-w-md w-full text-center space-y-4">
+          {paymentSuccess ? (
+             <Package className="h-12 w-12 text-green-500 mx-auto" />
+          ) : (
+             <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+          )}
+          <h2 className="text-2xl font-semibold">
+            {paymentSuccess ? "Payment Successful!" : "Finalizing your subscription..."}
+          </h2>
+          <p className="text-muted-foreground">
+            {paymentSuccess
+              ? "Your plan has been upgraded. Refreshing your dashboard in a moment..."
+              : "Please complete the payment in the popup window. Your dashboard will be ready momentarily."}
+          </p>
+          {!paymentSuccess && (
+            <Button
+              variant="outline"
+              onClick={() => setIsProcessingPayment(false)}
+              className="mt-4"
+            >
+              Cancel and View Dashboard
+            </Button>
+          )}
         </div>
       </div>
     );
