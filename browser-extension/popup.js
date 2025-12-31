@@ -215,11 +215,54 @@ async function updateAuthStatus() {
   });
 }
 
+async function fetchPinnedTools() {
+  chrome.runtime.sendMessage({ action: 'getPinnedTools' }, response => {
+    if (response && response.success) {
+      renderPinnedTools(response.tools);
+    }
+  });
+}
+
+function renderPinnedTools(tools) {
+  const pinnedList = document.getElementById('pinnedList');
+  const pinnedEmpty = document.getElementById('pinnedEmpty');
+
+  if (!tools || tools.length === 0) {
+    pinnedList.innerHTML = '';
+    pinnedEmpty.classList.remove('hidden');
+    return;
+  }
+
+  pinnedEmpty.classList.add('hidden');
+  pinnedList.innerHTML = tools
+    .map(tool => `
+      <div class="tool-card" style="cursor: pointer;" onclick="window.open('${tool.websiteUrl}', '_blank')">
+        <div class="tool-icon">${KNOWN_SAAS_TOOLS[new URL(tool.websiteUrl).hostname]?.icon || '🛠️'}</div>
+        <div class="tool-info">
+          <div class="tool-name">${tool.name}</div>
+          <div class="tool-domain">${new URL(tool.websiteUrl).hostname}</div>
+        </div>
+      </div>
+    `)
+    .join('');
+
+  // Note: Since we are using innerHTML with onclick, we need to be careful.
+  // In a real extension, we should use addEventListener. 
+  // Let's refactor to even listeners to avoid CSP issues.
+  pinnedList.querySelectorAll('.tool-card').forEach((card, index) => {
+    card.removeAttribute('onclick');
+    card.addEventListener('click', () => {
+      window.open(tools[index].websiteUrl, '_blank');
+    });
+  });
+}
+
 // Initial load
 document.addEventListener('DOMContentLoaded', () => {
   detectTools();
   checkSavedCredentials();
   updateAuthStatus();
+  fetchPinnedTools();
 
   document.getElementById('addBtn').onclick = addSelectedTools;
 
@@ -235,6 +278,10 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('addView').classList.add('hidden');
 
       document.getElementById(target + 'View').classList.remove('hidden');
+
+      if (target === 'pinned') {
+        fetchPinnedTools();
+      }
 
       // Hide/Show footer based on tab
       const footer = document.querySelector('.footer');

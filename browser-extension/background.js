@@ -77,6 +77,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 
+    if (request.action === 'getPinnedTools') {
+        handleGetPinnedTools(sendResponse);
+        return true;
+    }
+
     if (request.action === 'logUsage') {
         handleUsageLog(request.url, request.duration, sendResponse);
         return true;
@@ -84,6 +89,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     return true;
 });
+
+async function handleGetPinnedTools(sendResponse) {
+    if (!authToken) {
+        sendResponse({ success: false, error: 'Not logged in' });
+        return;
+    }
+
+    try {
+        const res = await apiFetch(`${API_BASE}/tools`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await res.json();
+        const pinned = (data.tools || []).filter(t => t.isPinned);
+        sendResponse({ success: true, tools: pinned });
+    } catch (e) {
+        sendResponse({ success: false, error: e.message });
+    }
+}
 
 // --- Usage Tracking Logic (Moved from content.js) ---
 let activeTabId = null;
