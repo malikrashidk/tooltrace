@@ -36,7 +36,7 @@ export function ReceiptStoragePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { formatAmount } = useCurrency();
-  const isPaidPlan = user?.plan === "standard" || user?.plan === "premium";
+  const isPaidPlan = user?.plan === "pro" || user?.plan === "enterprise";
   
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -74,7 +74,7 @@ export function ReceiptStoragePage() {
       const msg = error?.message || "";
       if (msg.startsWith("403:") || msg.includes("Receipt storage is only")) {
         // Prompt upgrade instead of showing a destructive error
-        toast({ title: "Upgrade required", description: "Receipt storage requires a Standard or Premium plan.", });
+        toast({ title: "Upgrade required", description: "Receipt storage requires a Pro or Enterprise plan.", });
         setLocation("/pricing");
         return;
       }
@@ -186,7 +186,7 @@ export function ReceiptStoragePage() {
               </div>
               <h2 className="text-xl sm:text-2xl font-semibold">Upgrade for Receipt Storage</h2>
               <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
-                Store and organize invoices and receipts with Standard and Premium plans.
+                Store and organize invoices and receipts with Pro and Enterprise plans.
               </p>
               <Button 
                 onClick={() => setLocation("/pricing")}

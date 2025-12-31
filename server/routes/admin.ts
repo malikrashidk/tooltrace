@@ -49,7 +49,7 @@ router.post("/users", authMiddleware, adminMiddleware, async (req, res) => {
       userId: user.id,
       plan: plan || "free",
       status: "active",
-      toolsLimit: String(plan === "standard" ? 15 : plan === "premium" ? 999999 : 8),
+      toolsLimit: String(plan === "pro" ? 999999 : plan === "enterprise" ? 999999 : 10),
     });
 
     await auditLog(req.userId!, "create", "user", user.id, { email, name, plan }, req);
@@ -97,7 +97,7 @@ router.patch("/users/:id", authMiddleware, adminMiddleware, async (req, res) => 
 
     if (plan) {
       const subscription = await storage.getUserSubscription(req.params.id);
-      const toolsLimit = String(plan === "standard" ? 15 : plan === "premium" ? 999999 : 8);
+      const toolsLimit = String(plan === "pro" ? 999999 : plan === "enterprise" ? 999999 : 10);
       if (subscription) {
         await storage.updateSubscription(subscription.id, { plan, toolsLimit });
       }
@@ -117,7 +117,8 @@ router.get("/stats", authMiddleware, adminMiddleware, async (req, res) => {
     const totalUsers = users.length;
     const totalRevenue = users.reduce((sum, u) => {
       const plan = u.plan;
-      return sum + (plan === "standard" ? 9.99 * 12 : plan === "premium" ? 19.99 * 12 : 0);
+      // Pro = 9.99/mo, Enterprise = 24.99/mo
+      return sum + (plan === "pro" ? 9.99 * 12 : plan === "enterprise" ? 24.99 * 12 : 0);
     }, 0);
 
     // Active users: Logged in within last 30 days

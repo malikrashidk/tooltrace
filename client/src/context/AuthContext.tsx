@@ -4,7 +4,7 @@ interface User {
   id: string;
   email: string;
   name: string;
-  plan: "free" | "standard" | "premium";
+  plan: "free" | "pro" | "enterprise";
   toolsCount?: number;
   isAdmin?: boolean;
   twoFactorEnabled?: boolean;

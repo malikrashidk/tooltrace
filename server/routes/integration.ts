@@ -10,7 +10,7 @@ const paidPlanMiddleware = async (req: any, res: any, next: any) => {
   try {
     const user = await storage.getUser(req.userId!);
     if (!user) {
-      return res.status(403).json({ error: "API access is only available for Standard and Premium plans" });
+      return res.status(403).json({ error: "API access is exclusively available for the Enterprise plan" });
     }
 
     // Allow admins regardless of plan
@@ -19,8 +19,8 @@ const paidPlanMiddleware = async (req: any, res: any, next: any) => {
     }
 
     const plan = (user.plan || "").toString().toLowerCase().trim();
-    if (plan !== "standard" && plan !== "premium") {
-      return res.status(403).json({ error: "API access is only available for Standard and Premium plans" });
+    if (plan !== "enterprise") {
+      return res.status(403).json({ error: "API access is exclusively available for the Enterprise plan" });
     }
     next();
   } catch (error) {
@@ -43,10 +43,10 @@ const apiKeyAuthMiddleware = async (req: any, res: any, next: any) => {
       return res.status(401).json({ error: "Invalid or inactive API key" });
     }
 
-    // Verify user still has a paid plan (API access requires Standard or Premium)
+    // Verify user still has a paid plan (API access requires Enterprise)
     const user = await storage.getUser(apiKey.userId);
-    if (!user || (user.plan !== "standard" && user.plan !== "premium")) {
-      return res.status(403).json({ error: "API access requires an active Standard or Premium subscription" });
+    if (!user || user.plan !== "enterprise") {
+      return res.status(403).json({ error: "API access requires an active Enterprise subscription" });
     }
 
     // Store user ID from API key for route handlers

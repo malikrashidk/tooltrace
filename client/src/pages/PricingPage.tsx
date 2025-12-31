@@ -28,8 +28,8 @@ export function PricingPage() {
         "Basic Cost Analytics",
         "Smart Scan (5 scans/mo)"
       ],
-      cta: "Current Plan",
-      ctaVariant: "outline" as const,
+      cta: userPlan === "free" ? "Current Plan" : "Downgrade",
+      ctaVariant: userPlan === "free" ? ("outline" as const) : ("default" as const),
       disabled: userPlan === "free",
     },
     {
@@ -47,7 +47,7 @@ export function PricingPage() {
         "Priority Support",
         "Everything in Starter"
       ],
-      cta: userPlan === "pro" ? "Current Plan" : "Upgrade to Pro",
+      cta: userPlan === "pro" ? "Current Plan" : (userPlan === "enterprise" ? "Downgrade" : "Upgrade to Pro"),
       ctaVariant: userPlan === "pro" ? ("outline" as const) : ("default" as const),
       disabled: userPlan === "pro",
       popular: true,

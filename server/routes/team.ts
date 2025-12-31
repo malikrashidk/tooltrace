@@ -11,7 +11,7 @@ const paidPlanMiddleware = async (req: any, res: any, next: any) => {
   try {
     const user = await storage.getUser(req.userId!);
     if (!user) {
-      return res.status(403).json({ error: "Team collaboration is only available for Standard and Premium plans" });
+      return res.status(403).json({ error: "Team collaboration is exclusively available for the Enterprise plan" });
     }
 
     // Allow admins regardless of plan
@@ -20,8 +20,8 @@ const paidPlanMiddleware = async (req: any, res: any, next: any) => {
     }
 
     const plan = (user.plan || "").toString().toLowerCase().trim();
-    if (plan !== "standard" && plan !== "premium") {
-      return res.status(403).json({ error: "Team collaboration is only available for Standard and Premium plans" });
+    if (plan !== "enterprise") {
+      return res.status(403).json({ error: "Team collaboration is exclusively available for the Enterprise plan" });
     }
     next();
   } catch (error) {

@@ -41,7 +41,7 @@ export function TeamCollaborationPage() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const isPremium = user?.plan === "premium";
+  const isPremium = user?.plan === "enterprise";
   
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -114,14 +114,14 @@ export function TeamCollaborationPage() {
               </div>
               <h2 className="text-xl sm:text-2xl font-semibold">Unlock Team Collaboration</h2>
               <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
-                Team collaboration is exclusively available on Premium plan. Upgrade to invite team members and manage permissions.
+                Team collaboration is exclusively available on the Enterprise plan. Upgrade to invite team members and manage permissions.
               </p>
               <Button 
                 onClick={() => setLocation("/pricing")}
                 className="mt-4 w-full sm:w-auto"
                 data-testid="button-upgrade"
               >
-                Upgrade to Premium
+                Upgrade to Enterprise
               </Button>
             </div>
           </CardContent>

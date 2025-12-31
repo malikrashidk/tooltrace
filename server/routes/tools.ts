@@ -42,7 +42,7 @@ router.post("/tools", authMiddleware, emailVerificationMiddleware, async (req, r
     if (!subscription) {
       const user = await storage.getUser(req.userId!);
       const plan = user?.plan || "free";
-      const toolsLimit = plan === "premium" ? "999999" : plan === "standard" ? "15" : "8";
+      const toolsLimit = plan === "enterprise" ? "999999" : plan === "pro" ? "999999" : "10";
       subscription = await storage.createSubscription({
         userId: req.userId!,
         plan,

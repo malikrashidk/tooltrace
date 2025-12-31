@@ -343,7 +343,8 @@ router.get("/google", (req, res, next) => {
   passport.authenticate("google", {
     scope: ["profile", "email"],
     session: false,
-    state: returnTo
+    state: returnTo,
+    prompt: "select_account",
   })(req, res, next);
 });
 
