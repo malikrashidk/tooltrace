@@ -79,16 +79,23 @@ async function checkSavedCredentials() {
 
       chrome.runtime.sendMessage({ action: 'checkSavedCredentials', domain }, response => {
         const matchView = document.getElementById('matchView');
+        const autofillBtn = document.getElementById('autofillBtn');
+
         if (response && response.tool) {
           matchView.classList.remove('hidden');
           document.getElementById('matchName').innerText = `✔ ${response.tool.name}`;
-          document.getElementById('autofillBtn').onclick = () => {
+
+          // Use addEventListener to avoid CSP issues and safely replace previous handlers
+          const newBtn = autofillBtn.cloneNode(true);
+          autofillBtn.parentNode.replaceChild(newBtn, autofillBtn);
+
+          newBtn.addEventListener('click', () => {
             chrome.runtime.sendMessage({ action: 'autofill', toolId: response.tool.id }, res => {
               if (res.success) {
                 showStatus('✔ Credentials filled!', 'success');
               }
             });
-          };
+          });
         } else {
           matchView.classList.add('hidden');
         }
@@ -235,24 +242,26 @@ function renderPinnedTools(tools) {
 
   pinnedEmpty.classList.add('hidden');
   pinnedList.innerHTML = tools
-    .map(tool => `
-      <div class="tool-card" style="cursor: pointer;" onclick="window.open('${tool.websiteUrl}', '_blank')">
-        <div class="tool-icon">${KNOWN_SAAS_TOOLS[new URL(tool.websiteUrl).hostname]?.icon || '🛠️'}</div>
+    .map(tool => {
+      let hostname = 'Unknown';
+      try { hostname = new URL(tool.websiteUrl).hostname; } catch (e) { }
+      const icon = KNOWN_SAAS_TOOLS[hostname]?.icon || tool.iconUrl || '🛠️';
+      return `
+      <div class="tool-card" style="cursor: pointer;">
+        <div class="tool-icon">${icon}</div>
         <div class="tool-info">
           <div class="tool-name">${tool.name}</div>
-          <div class="tool-domain">${new URL(tool.websiteUrl).hostname}</div>
+          <div class="tool-domain">${hostname}</div>
         </div>
       </div>
-    `)
+    `})
     .join('');
 
-  // Note: Since we are using innerHTML with onclick, we need to be careful.
-  // In a real extension, we should use addEventListener. 
-  // Let's refactor to even listeners to avoid CSP issues.
   pinnedList.querySelectorAll('.tool-card').forEach((card, index) => {
-    card.removeAttribute('onclick');
     card.addEventListener('click', () => {
-      window.open(tools[index].websiteUrl, '_blank');
+      if (tools[index].websiteUrl) {
+        window.open(tools[index].websiteUrl, '_blank');
+      }
     });
   });
 }

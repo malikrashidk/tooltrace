@@ -213,7 +213,9 @@ async function handleAddTools(tools, sendResponse) {
         return;
     }
 
-    const results = [];
+    let lastError = null;
+    let successCount = 0;
+
     for (const tool of tools) {
         try {
             const res = await apiFetch(`${API_BASE}/tools`, {
@@ -229,16 +231,27 @@ async function handleAddTools(tools, sendResponse) {
                     isPaid: false,
                     categories: [tool.category],
                     usageFrequency: 'daily',
+                    tags: [],
+                    notes: ''
                 })
             });
-            results.push(res.ok);
+
+            if (res.ok) {
+                successCount++;
+            } else {
+                const errorData = await res.json();
+                lastError = errorData.error || `Server returned ${res.status}`;
+            }
         } catch (e) {
-            results.push(false);
+            lastError = e.message;
         }
     }
 
-    const allSuccess = results.every(r => r === true);
-    sendResponse({ success: allSuccess, count: results.filter(r => r).length });
+    sendResponse({
+        success: successCount > 0,
+        count: successCount,
+        error: successCount === 0 ? lastError : (successCount < tools.length ? `Partial success. ${lastError}` : null)
+    });
 }
 
 async function handleCheckSavedCredentials(domain, sendResponse) {

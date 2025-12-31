@@ -67,7 +67,7 @@ router.post("/usage", async (req, res, next) => {
     }
 
     const currentDuration = parseInt(tool.totalUsageTime || "0");
-    const addedMinutes = Math.floor(durationSeconds / 60);
+    const addedMinutes = Math.ceil(durationSeconds / 60);
 
     if (addedMinutes > 0) {
       await storage.updateTool(toolId, {
