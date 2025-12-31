@@ -1,117 +1,79 @@
 # Tool Trace Browser Extension
 
-Auto-detect and add SaaS tools to your Tool Trace dashboard while browsing!
+Auto-detect SaaS tools, synchronize authentication, and instantly fill credentials across the web.
 
 ## Features
 
-…œ¨ **Auto-Detection**: Automatically detects SaaS tools you're using
-” **Quick Add**: Select and add multiple tools with one click
-“Š **Supported Tools**: Figma, GitHub, ChatGPT, AWS, Notion, Slack, Zoom, and more
-”’ **Privacy First**: Works entirely on your browser without tracking
+- ⚡️ **Direct Add**: Select and add multiple tools with one click. No redirects or platform switching required.
+- ⚡️ **Credential Autofill**: Detects if you have a saved tool matching the current site and offers a "Fill Login" button to instantly populate credentials.
+- 🔑 **Auth Synchronization**: Stays seamlessly in sync with your Tool Trace account. Log in once on the web app, and the extension is ready to go.
+- 🔍 **Auto-Detection**: Scans open tabs for known SaaS tools like Figma, GitHub, ChatGPT, and Notion.
+- 🛡️ **Privacy & Security**: Securely reveals credentials only when requested and never stores passwords locally in plain text.
 
 ## Installation
 
 ### Chrome / Edge / Brave / Other Chromium Browsers
 
-1. Download or clone this repository
-2. Open `chrome://extensions` in your browser
-3. Enable **"Developer mode"** (toggle in top-right corner)
-4. Click **"Load unpacked"**
-5. Select the `browser-extension` folder
-6. The extension will appear in your browser toolbar!
-
-### Manual Setup
-
-If the above doesn't work:
-1. Click the extension icon in your toolbar
-2. Verify it shows "Connected to Tool Trace"
-3. Visit any SaaS tool website
-4. The extension will detect it automatically
+1.  **Download/Clone**: Get the repository files.
+2.  **Open Extensions**: Go to `chrome://extensions` in your browser.
+3.  **Developer Mode**: Toggle the **"Developer mode"** switch (top-right).
+4.  **Load Unpacked**: Click **"Load unpacked"** and select the `browser-extension` folder.
+5.  **Pin it**: For quick access, pin the Tool Trace extension to your toolbar!
 
 ## How to Use
 
-1. **Browse Normally**: Visit your favorite SaaS tools
-2. **Click Extension Icon**: Open the popup from your toolbar
-3. **Select Tools**: Check the tools you want to add
-4. **Click "Add Selected"**: Tools are added to your Tool Trace dashboard
+### 1. Synchronize (One-Time)
+Simply log in to your Tool Trace dashboard at `http://localhost:5000`. The extension will automatically detect your session and show "Connected".
+
+### 2. Auto-Detect / Add Tools
+- Browse as usual. When you visit a supported SaaS site, open the extension.
+- Select the detected tools you wish to track.
+- Click **"Add Selected Tools"**. They are instantly added to your dashboard in the background.
+
+### 3. Credential Autofill
+- Visit a login page (e.g., `github.com/login`).
+- If you have saved credentials for that site in Tool Trace, a **"✅ Tool Found"** banner will appear in the popup.
+- Click **"⚡️ Fill Login"** to instantly inject your username and password.
+
+---
 
 ## Supported Tools
 
-### Design
-- Figma
-- Canva
+### Design & Marketing
+- Figma, Canva, Stripe, Mailchimp, HubSpot
 
-### Development
-- GitHub
-- Jira
-- Vercel
+### Development & DevOps
+- GitHub, Jira, Vercel, AWS, Netlify
 
-### Cloud & Infrastructure
-- AWS
-- Netlify
+### Productivity & AI
+- Notion, Slack, Zoom, ChatGPT, Trello, Asana
 
-### AI & Automation
-- ChatGPT
+## Customization
 
-### Productivity & Management
-- Notion
-- Slack
-- Zoom
-- Monday.com
-- Asana
-- Trello
-
-### Marketing & Finance
-- Stripe
-- Mailchimp
-- HubSpot
-
-## Adding New Tools
-
-Edit `popup.js` and add your tool to the `KNOWN_SAAS_TOOLS` object:
+To add support for more tools, add your tool to the `KNOWN_SAAS_TOOLS` object in `popup.js`:
 
 ```javascript
 KNOWN_SAAS_TOOLS = {
   'your-domain.com': { 
     name: 'Tool Name', 
     category: 'Category', 
-    icon: '”§' 
+    icon: '⚡️' 
   },
-  // ... more tools
 }
 ```
 
-## Privacy & Security
-
-- …œ… No data is sent to third parties
-- …œ… Credentials are never stored in the extension
-- …œ… Uses browser's native storage API
-- …œ… Works offline (detects from current tabs only)
-
 ## Troubleshooting
 
-### Extension not detecting tools?
-- Make sure the tool domain is in the `KNOWN_SAAS_TOOLS` list
-- Try refreshing the extension by toggling it off/on
-- Check that you're on the correct domain (e.g., github.com, not github.io)
+### "Not Logged In" or "Checking..."
+- Ensure you have a tab open with your Tool Trace app running at `http://localhost:5000`.
+- Refresh the dashboard to ensure the session cookie is active.
 
-### "Cannot connect to Tool Trace" error?
-- Ensure Tool Trace app is running (typically at `http://localhost:5000`)
-- Check browser console for error messages
-- Try refreshing both the extension and the app
-
-## Contributing
-
-To add support for more tools:
-1. Fork this repository
-2. Add your tool to `KNOWN_SAAS_TOOLS`
-3. Submit a pull request
+### Autofill button not appearing?
+- Verify that the `Website URL` in your Tool Trace dashboard exactly matches the domain of the site you are visiting.
 
 ## License
-
-MIT License - See LICENSE file for details
+MIT License - Tool Trace Team
 
 ## Support
 
 For issues or feature requests, please visit: [GitHub Issues](https://github.com/yourusername/saazhub-extension/issues)
-
