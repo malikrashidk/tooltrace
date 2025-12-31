@@ -6,11 +6,12 @@ import { EventName } from "@paddle/paddle-node-sdk";
 const router = Router();
 
 // Map Paddle price IDs to internal plan names
+// We check both backend-specific env vars and VITE_ prefixed vars in case they are shared
 const PRICE_ID_TO_PLAN: Record<string, string> = {
-  [process.env.PADDLE_PRICE_ID_PRO_MONTHLY || "pri_01jk..."]: "pro",
-  [process.env.PADDLE_PRICE_ID_PRO_YEARLY || "pri_01jk..."]: "pro",
-  [process.env.PADDLE_PRICE_ID_ENTERPRISE_MONTHLY || "pri_01jk..."]: "enterprise",
-  [process.env.PADDLE_PRICE_ID_ENTERPRISE_YEARLY || "pri_01jk..."]: "enterprise",
+  [process.env.PADDLE_PRICE_ID_PRO_MONTHLY || process.env.VITE_PADDLE_PRICE_ID_PRO || "pri_pro_monthly_placeholder"]: "pro",
+  [process.env.PADDLE_PRICE_ID_PRO_YEARLY || "pri_pro_yearly_placeholder"]: "pro",
+  [process.env.PADDLE_PRICE_ID_ENTERPRISE_MONTHLY || process.env.VITE_PADDLE_PRICE_ID_ENTERPRISE || "pri_enterprise_monthly_placeholder"]: "enterprise",
+  [process.env.PADDLE_PRICE_ID_ENTERPRISE_YEARLY || "pri_enterprise_yearly_placeholder"]: "enterprise",
 };
 
 const PLAN_LIMITS: Record<string, string> = {
@@ -68,6 +69,9 @@ router.post("/webhooks/paddle", async (req, res) => {
         const priceId = subscription.items[0]?.price?.id;
         const plan = priceId ? (PRICE_ID_TO_PLAN[priceId] || "free") : "free";
 
+        console.log(`[Paddle Webhook] Debug - Received Price ID: ${priceId}`);
+        console.log(`[Paddle Webhook] Debug - Mapped to Plan: ${plan}`);
+        console.log(`[Paddle Webhook] Debug - Known Price IDs:`, Object.keys(PRICE_ID_TO_PLAN));
         console.log(`[Paddle Webhook] Updating user ${userId} to plan ${plan} (Status: ${status})`);
 
         // Update User
