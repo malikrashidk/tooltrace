@@ -3,7 +3,7 @@
 // Determine API base - use current origin if extension is on a site, 
 // but for the service worker, we often need a fixed target or clever detection.
 let API_BASE = 'https://app.tooltrace.io/api';
-// We remove the hardcoded localhost check to prioritize your server URL
+const DOMAIN_PRIMARY = 'app.tooltrace.io';
 
 let authToken = null;
 
@@ -28,7 +28,7 @@ syncToken();
 
 // Listen for cookie changes to stay in sync
 chrome.cookies.onChanged.addListener((changeInfo) => {
-    if (changeInfo.cookie.name === 'token' && changeInfo.cookie.domain.includes('localhost')) {
+    if (changeInfo.cookie.name === 'token' && changeInfo.cookie.domain.includes(DOMAIN_PRIMARY)) {
         if (changeInfo.removed) {
             authToken = null;
             chrome.storage.local.remove('authToken');
