@@ -10,10 +10,12 @@ const router = Router();
 // We check both backend-specific env vars and VITE_ prefixed vars in case they are shared
 const PRICE_ID_TO_PLAN: Record<string, string> = {
   [process.env.PADDLE_PRICE_ID_PRO_MONTHLY || process.env.VITE_PADDLE_PRICE_ID_PRO || "pri_pro_monthly_placeholder"]: "pro",
-  [process.env.PADDLE_PRICE_ID_PRO_YEARLY || "pri_pro_yearly_placeholder"]: "pro",
+  [process.env.PADDLE_PRICE_ID_PRO_YEARLY || process.env.VITE_PADDLE_PRICE_ID_PRO_YEARLY || "pri_pro_yearly_placeholder"]: "pro",
   [process.env.PADDLE_PRICE_ID_ENTERPRISE_MONTHLY || process.env.VITE_PADDLE_PRICE_ID_ENTERPRISE || "pri_enterprise_monthly_placeholder"]: "enterprise",
-  [process.env.PADDLE_PRICE_ID_ENTERPRISE_YEARLY || "pri_enterprise_yearly_placeholder"]: "enterprise",
+  [process.env.PADDLE_PRICE_ID_ENTERPRISE_YEARLY || process.env.VITE_PADDLE_PRICE_ID_ENTERPRISE_YEARLY || "pri_enterprise_yearly_placeholder"]: "enterprise",
 };
+
+console.log("[Billing] Price ID Mapping Initialized:", JSON.stringify(PRICE_ID_TO_PLAN, null, 2));
 
 const PLAN_LIMITS: Record<string, string> = {
   free: "10",

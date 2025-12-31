@@ -25,21 +25,8 @@ export function Dashboard() {
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   // Listen for Paddle events
-  useEffect(() => {
-    const handlePaddleEvent = (e: any) => {
-      const data = e.detail;
-      if (data?.name === "checkout.completed") {
-        console.log("[Dashboard] Payment completed!", data);
-        setPaymentSuccess(true);
-        setTimeout(() => {
-          window.location.reload();
-        }, 3000);
-      }
-    };
-
-    window.addEventListener("paddle:event", handlePaddleEvent);
-    return () => window.removeEventListener("paddle:event", handlePaddleEvent);
-  }, []);
+  // NOTE: This logic is now handled globally in App.tsx to support upgrades from PricingPage
+  // We keep this clear to avoid double handling.
 
   // Handle pending plan upgrade from Signup/Login
   useEffect(() => {
@@ -190,8 +177,8 @@ export function Dashboard() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className={`p-3 rounded-lg ${budgetStatus?.isOverBudget
-                  ? "bg-red-100 dark:bg-red-900/30"
-                  : "bg-green-100 dark:bg-green-900/30"
+                ? "bg-red-100 dark:bg-red-900/30"
+                : "bg-green-100 dark:bg-green-900/30"
                 }`}>
                 {budgetStatus?.isOverBudget ? (
                   <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />

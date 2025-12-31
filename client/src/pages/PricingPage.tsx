@@ -1,16 +1,19 @@
+import { useState } from "react";
 import { Check, Zap, Crown, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 import { openCheckout } from "@/lib/paddle";
-import { PRICE_IDS } from "@/lib/plans";
+import { getPriceIdForPlan } from "@/lib/plans";
 
 export function PricingPage() {
   const { user } = useAuth();
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
 
   const userPlan = user ? (user as any).plan || "free" : "free";
-  const userToolsCount = user ? (user as any).toolsCount || 0 : 0;
 
   const plans = [
     {
@@ -36,7 +39,8 @@ export function PricingPage() {
       id: "pro",
       name: "Pro",
       description: "For founders and growing teams",
-      price: 9.99,
+      price: billingCycle === "monthly" ? 9.99 : 8.99, // ~10% discount off 9.99
+      originalPrice: 9.99,
       tools: "Unlimited",
       features: [
         "Unlimited tools",
@@ -51,13 +55,13 @@ export function PricingPage() {
       ctaVariant: userPlan === "pro" ? ("outline" as const) : ("default" as const),
       disabled: userPlan === "pro" || (userPlan === "enterprise" && true),
       popular: true,
-      priceId: PRICE_IDS.pro
     },
     {
       id: "enterprise",
       name: "Enterprise",
       description: "For teams and agencies",
-      price: 24.99,
+      price: billingCycle === "monthly" ? 24.99 : 22.49, // ~10% discount
+      originalPrice: 24.99,
       tools: "Unlimited",
       features: [
         "Everything in Pro",
@@ -71,13 +75,13 @@ export function PricingPage() {
       cta: userPlan === "enterprise" ? "Current Plan" : "Upgrade to Enterprise",
       ctaVariant: userPlan === "enterprise" ? ("outline" as const) : ("default" as const),
       disabled: userPlan === "enterprise",
-      priceId: PRICE_IDS.enterprise
     },
   ];
 
-  const handleUpgrade = (plan: typeof plans[0]) => {
-    if (plan.priceId) {
-      openCheckout(plan.priceId, user?.email, user?.id);
+  const handleUpgrade = (planId: string) => {
+    const priceId = getPriceIdForPlan(planId, billingCycle);
+    if (priceId) {
+      openCheckout(priceId, user?.email, user?.id);
     }
   };
 
@@ -85,16 +89,30 @@ export function PricingPage() {
     <div className="space-y-6 md:space-y-8 p-3 sm:p-4 md:p-6">
       <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 sm:p-6 md:p-8 text-center">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Simple, Transparent Pricing</h1>
-        <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
           Choose the perfect plan for managing your SaaS subscriptions.
         </p>
+
+        <div className="flex items-center justify-center gap-4">
+          <Label htmlFor="billing-toggle" className={`text-sm ${billingCycle === "monthly" ? "font-bold text-foreground" : "text-muted-foreground"}`}>
+            Monthly
+          </Label>
+          <Switch
+            id="billing-toggle"
+            checked={billingCycle === "yearly"}
+            onCheckedChange={(checked) => setBillingCycle(checked ? "yearly" : "monthly")}
+          />
+          <Label htmlFor="billing-toggle" className={`text-sm ${billingCycle === "yearly" ? "font-bold text-foreground" : "text-muted-foreground"}`}>
+            Yearly <Badge variant="secondary" className="ml-1.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0">Save up to $30/year</Badge>
+          </Label>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6 max-w-6xl mx-auto w-full">
         {plans.map((plan) => (
           <Card
             key={plan.id}
-            className={`relative flex flex-col transition-all duration-300 ${plan.popular ? "md:scale-105 ring-2 ring-primary shadow-lg" : ""
+            className={`relative flex flex-col transition-all duration-300 ${plan.popular ? "md:scale-105 ring-2 ring-primary shadow-lg z-10" : "border-border/60"
               }`}
           >
             {plan.popular && (
@@ -112,19 +130,31 @@ export function PricingPage() {
                 {plan.id === "enterprise" && <Building className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500 flex-shrink-0 mt-1" />}
               </div>
               <div className="pt-2 border-t border-border/50">
-                <div className="flex items-baseline gap-1 mb-1">
+                <div className="flex items-baseline gap-1 mb-1 relative">
+                  {billingCycle === "yearly" && plan.price > 0 && (
+                    <span className="text-sm text-muted-foreground line-through decoration-destructive/50 absolute -top-4 left-1">
+                      ${plan.originalPrice}
+                    </span>
+                  )}
                   <span className="text-3xl sm:text-4xl font-bold">${plan.price}</span>
                   <span className="text-muted-foreground text-xs sm:text-sm">/month</span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {typeof plan.tools === "number" ? `Up to ${plan.tools} tools` : "Unlimited tools"}
-                </p>
+                {billingCycle === "yearly" && plan.price > 0 && (
+                  <p className="text-xs text-green-600 dark:text-green-400 font-medium">
+                    Billed ${Math.round(plan.price * 12 * 100) / 100} yearly
+                  </p>
+                )}
+                {billingCycle === "monthly" && (
+                  <p className="text-xs text-muted-foreground">
+                    {typeof plan.tools === "number" ? `Up to ${plan.tools} tools` : "Unlimited tools"}
+                  </p>
+                )}
               </div>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col">
               {plan.cta ? (
                 <Button
-                  onClick={() => handleUpgrade(plan)}
+                  onClick={() => handleUpgrade(plan.id)}
                   variant={plan.ctaVariant}
                   size="lg"
                   className="w-full mb-6"
@@ -152,6 +182,48 @@ export function PricingPage() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* FAQ Section */}
+      <div className="max-w-4xl mx-auto mt-16 pb-8">
+        <h2 className="text-2xl font-bold text-center mb-8">Frequently Asked Questions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Can I cancel anytime?</h3>
+              <p className="text-muted-foreground text-sm">
+                Yes, you can cancel your subscription at any time. Your plan will remain active until the end of the billing period.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Is my data secure?</h3>
+              <p className="text-muted-foreground text-sm">
+                Absolutely. We use industry-standard encryption for all data and never sell your information to third parties.
+              </p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-semibold text-lg mb-2">What happens to my data if I downgrade?</h3>
+              <p className="text-muted-foreground text-sm">
+                Your data is preserved. If you exceed the tool limit for the free plan, you'll just need to upgrade to add more tools.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Do you offer refunds?</h3>
+              <p className="text-muted-foreground text-sm">
+                We offer a 14-day money-back guarantee if you're not satisfied with your Pro or Enterprise subscription.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-12 pt-8 border-t flex flex-col items-center justify-center gap-4">
+          <p className="text-sm text-muted-foreground">Secure payments processed by</p>
+          <div className="flex items-center gap-2 opacity-70 grayscale hover:grayscale-0 transition-all">
+            <img src="https://paddle.com/images/logo-wordmark.svg" alt="Paddle" className="h-6" />
+          </div>
+        </div>
       </div>
     </div>
   );
