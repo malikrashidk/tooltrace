@@ -40,7 +40,8 @@ router.get("/tools", authMiddleware, async (req, res) => {
 
     const enrichedTools = sortedTools.map((tool, index) => ({
       ...tool,
-      isLocked: index >= limit
+      isLocked: index >= limit,
+      hasCredentials: !!tool.credentials
     }));
 
     res.json({ tools: enrichedTools, count: enrichedTools.length, limit });

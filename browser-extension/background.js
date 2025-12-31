@@ -82,6 +82,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 
+    if (request.action === 'updateToolCredentials') {
+        handleUpdateToolCredentials(request.toolId, request.username, request.password, sendResponse);
+        return true;
+    }
+
     if (request.action === 'logUsage') {
         handleUsageLog(request.url, request.duration, sendResponse);
         return true;
@@ -286,6 +291,35 @@ async function handleCheckSavedCredentials(domain, sendResponse) {
         sendResponse({ tool: matchedTool || null });
     } catch (e) {
         sendResponse({ tool: null });
+    }
+}
+async function handleUpdateToolCredentials(toolId, username, password, sendResponse) {
+    if (!authToken) {
+        sendResponse({ success: false, error: 'Not logged in' });
+        return;
+    }
+
+    try {
+        const res = await apiFetch(`${API_BASE}/tools/${toolId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({
+                username: username,
+                password: password
+            })
+        });
+
+        if (res.ok) {
+            sendResponse({ success: true });
+        } else {
+            const data = await res.json();
+            sendResponse({ success: false, error: data.error || 'Failed to update credentials' });
+        }
+    } catch (e) {
+        sendResponse({ success: false, error: e.message });
     }
 }
 

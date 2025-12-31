@@ -435,9 +435,19 @@
       <div class="match-header">
         <div>
           <div id="matchName" class="match-title">Tool Found</div>
-          <div class="match-desc">Saved credentials ready to use</div>
+          <div id="matchDesc" class="match-desc">Saved credentials ready to use</div>
         </div>
-        <button id="autofillBtn" class="btn btn-outline btn-sm">&#9889; Fill Login</button>
+        <button id="autofillBtn" class="btn btn-outline btn-sm">⚡ Fill Login</button>
+        <button id="addCredsBtn" class="btn btn-outline btn-sm hidden">➕ Save Login</button>
+      </div>
+      <!-- Miniature form for adding credentials to existing tool -->
+      <div id="quickCredForm" class="hidden"
+        style="margin-top: 0.5rem; border-top: 1px solid #bfdbfe; padding-top: 0.5rem;">
+        <input type="text" id="quickUser" placeholder="Email/Username" class="form-input"
+          style="font-size: 0.75rem; padding: 0.4rem; margin-bottom: 0.4rem;">
+        <input type="password" id="quickPass" placeholder="Password" class="form-input"
+          style="font-size: 0.75rem; padding: 0.4rem; margin-bottom: 0.4rem;">
+        <button id="saveQuickCredBtn" class="btn btn-primary btn-sm" style="width: 100%;">Save Credentials</button>
       </div>
     </div>
 

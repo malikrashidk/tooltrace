@@ -80,22 +80,65 @@ async function checkSavedCredentials() {
       chrome.runtime.sendMessage({ action: 'checkSavedCredentials', domain }, response => {
         const matchView = document.getElementById('matchView');
         const autofillBtn = document.getElementById('autofillBtn');
+        const addCredsBtn = document.getElementById('addCredsBtn');
+        const matchDesc = document.getElementById('matchDesc');
+        const quickCredForm = document.getElementById('quickCredForm');
 
         if (response && response.tool) {
           matchView.classList.remove('hidden');
           document.getElementById('matchName').innerText = `✔ ${response.tool.name}`;
 
-          // Use addEventListener to avoid CSP issues and safely replace previous handlers
-          const newBtn = autofillBtn.cloneNode(true);
-          autofillBtn.parentNode.replaceChild(newBtn, autofillBtn);
+          if (response.tool.hasCredentials) {
+            matchDesc.innerText = 'Saved credentials ready to use';
+            autofillBtn.classList.remove('hidden');
+            addCredsBtn.classList.add('hidden');
+            quickCredForm.classList.add('hidden');
 
-          newBtn.addEventListener('click', () => {
-            chrome.runtime.sendMessage({ action: 'autofill', toolId: response.tool.id }, res => {
-              if (res.success) {
-                showStatus('✔ Credentials filled!', 'success');
-              }
+            const newBtn = autofillBtn.cloneNode(true);
+            autofillBtn.parentNode.replaceChild(newBtn, autofillBtn);
+            newBtn.addEventListener('click', () => {
+              chrome.runtime.sendMessage({ action: 'autofill', toolId: response.tool.id }, res => {
+                if (res.success) showStatus('✔ Credentials filled!', 'success');
+              });
             });
-          });
+          } else {
+            matchDesc.innerText = 'No credentials saved for this tool';
+            autofillBtn.classList.add('hidden');
+            addCredsBtn.classList.remove('hidden');
+
+            const newAddBtn = addCredsBtn.cloneNode(true);
+            addCredsBtn.parentNode.replaceChild(newAddBtn, addCredsBtn);
+            newAddBtn.addEventListener('click', () => {
+              quickCredForm.classList.toggle('hidden');
+            });
+
+            const saveBtn = document.getElementById('saveQuickCredBtn');
+            const newSaveBtn = saveBtn.cloneNode(true);
+            saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+            newSaveBtn.addEventListener('click', () => {
+              const user = document.getElementById('quickUser').value;
+              const pass = document.getElementById('quickPass').value;
+              if (!user || !pass) {
+                showStatus('Please enter both username and password', 'error');
+                return;
+              }
+              showStatus('Saving...', 'loading');
+              chrome.runtime.sendMessage({
+                action: 'updateToolCredentials',
+                toolId: response.tool.id,
+                username: user,
+                password: pass
+              }, res => {
+                if (res.success) {
+                  showStatus('Credentials saved!', 'success');
+                  quickCredForm.classList.add('hidden');
+                  checkSavedCredentials(); // Refresh UI
+                } else {
+                  showStatus('Failed to save: ' + res.error, 'error');
+                }
+              });
+            });
+          }
         } else {
           matchView.classList.add('hidden');
         }
