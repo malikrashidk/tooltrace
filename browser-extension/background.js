@@ -30,16 +30,27 @@ function syncToken() {
 // Initial sync
 syncToken();
 
+// --- API Wrapper with Auth Failure Handling ---
+async function apiFetch(url, options = {}) {
+    const res = await fetch(url, options);
+    if (res.status === 401) {
+        console.log('[Background] Token expired or invalid (401), logging out extension.');
+        authToken = null;
+        chrome.storage.local.remove('authToken');
+    }
+    return res;
+}
+
 // Listen for cookie changes to stay in sync
 chrome.cookies.onChanged.addListener((changeInfo) => {
     if (changeInfo.cookie.name === 'token' && changeInfo.cookie.domain.includes(DOMAIN_PRIMARY)) {
-        if (changeInfo.removed) {
-            authToken = null;
-            chrome.storage.local.remove('authToken');
-        } else {
+        if (!changeInfo.removed) {
             authToken = changeInfo.cookie.value;
             chrome.storage.local.set({ authToken: authToken });
         }
+        // We no longer clear the token when the cookie is removed.
+        // This keeps the extension "Connected" even if the browser session expires, 
+        // until the next API call returns a 401.
     }
 });
 
@@ -142,7 +153,7 @@ async function handleUsageLog(url, duration, sendResponse = () => { }) {
     try {
         const domain = new URL(url).hostname;
         // First find if we have a tool matching this domain
-        const resTools = await fetch(`${API_BASE}/tools`, {
+        const resTools = await apiFetch(`${API_BASE}/tools`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
         const data = await resTools.json();
@@ -155,7 +166,7 @@ async function handleUsageLog(url, duration, sendResponse = () => { }) {
 
         if (matchedTool) {
             // Log the usage to the specific extension endpoint
-            await fetch(`${API_BASE}/extension/usage`, {
+            await apiFetch(`${API_BASE}/extension/usage`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -182,7 +193,7 @@ async function handleAddTools(tools, sendResponse) {
     const results = [];
     for (const tool of tools) {
         try {
-            const res = await fetch(`${API_BASE}/tools`, {
+            const res = await apiFetch(`${API_BASE}/tools`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -214,7 +225,7 @@ async function handleCheckSavedCredentials(domain, sendResponse) {
     }
 
     try {
-        const res = await fetch(`${API_BASE}/tools`, {
+        const res = await apiFetch(`${API_BASE}/tools`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
         const data = await res.json();
@@ -246,7 +257,7 @@ async function handleAutofill(toolId, sendResponse) {
     if (!authToken) return;
 
     try {
-        const res = await fetch(`${API_BASE}/tools/${toolId}/reveal`, {
+        const res = await apiFetch(`${API_BASE}/tools/${toolId}/reveal`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
         const data = await res.json();
