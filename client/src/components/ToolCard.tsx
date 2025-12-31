@@ -178,10 +178,10 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
             <ExternalLink className="h-4 w-4 mr-2" />
             Visit Website
           </Button>
-          {credentials?.username && (
+          {(tool as any).hasCredentials && (
             <Button
               variant="secondary"
-              className="w-full"
+              className="w-full font-semibold"
               disabled={(tool as any).isLocked}
               onClick={() => setShowCredentials(true)}
               data-testid={`button-autofill-${tool.id}`}

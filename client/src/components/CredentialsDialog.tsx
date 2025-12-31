@@ -26,21 +26,51 @@ interface CredentialsDialogProps {
 
 export function CredentialsDialog({ tool, open, onOpenChange, onSave }: CredentialsDialogProps) {
   const { toast } = useToast();
-  const credentials = tool.credentials as { username?: string; email?: string; password?: string; notes?: string; lastUpdated?: string | Date } | undefined;
   const [showPassword, setShowPassword] = useState(false);
-  const [showForm, setShowForm] = useState(!credentials?.username);
+  const [showForm, setShowForm] = useState(!(tool as any).hasCredentials);
   const [copied, setCopied] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [decryptedData, setDecryptedData] = useState<{ username?: string; email?: string; password?: string; notes?: string } | null>(null);
   const [passwordStrength, setPasswordStrength] = useState<{ isStrong: boolean; errors: string[] }>({
     isStrong: false,
     errors: [],
   });
+
   const [formData, setFormData] = useState({
-    username: credentials?.username || "",
-    email: credentials?.email || "",
-    password: credentials?.password || "",
-    notes: credentials?.notes || "",
+    username: "",
+    email: "",
+    password: "",
+    notes: "",
   });
+
+  // Fetch decrypted credentials from server when dialog opens
+  useEffect(() => {
+    if (open && (tool as any).hasCredentials) {
+      setIsLoading(true);
+      fetch(`/api/tools/${tool.id}/reveal`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.credentials) {
+            setDecryptedData(data.credentials);
+            setFormData({
+              username: data.credentials.username || "",
+              email: data.credentials.email || "",
+              password: data.credentials.password || "",
+              notes: data.credentials.notes || "",
+            });
+            setShowForm(false);
+          }
+        })
+        .catch(err => {
+          console.error("Reveal error:", err);
+          toast({ description: "Failed to reveal credentials", variant: "destructive" });
+        })
+        .finally(() => setIsLoading(false));
+    } else if (open && !(tool as any).hasCredentials) {
+      setShowForm(true);
+      setFormData({ username: "", email: "", password: "", notes: "" });
+    }
+  }, [open, tool.id, (tool as any).hasCredentials, toast]);
 
   // Validate password strength on change
   useEffect(() => {
@@ -58,12 +88,12 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
 
   const handleCopy = (text: string, label: string) => {
     if (!text) return;
-    
-      navigator.clipboard.writeText(text).then(() => {
+
+    navigator.clipboard.writeText(text).then(() => {
       setCopied(label);
       auditLogger.log("credential_copied", undefined, tool.id, label);
       toast({ description: `${label} copied to clipboard` });
-      
+
       // Clear clipboard after 2 minutes for security
       setTimeout(() => {
         navigator.clipboard.writeText("");
@@ -73,8 +103,8 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
   };
 
   const handleSave = async () => {
-    if (!formData.username && !formData.email) {
-      toast({ description: "Please enter at least a username or email", variant: "destructive" });
+    if (!formData.username && !formData.password) {
+      toast({ description: "Please enter at least a username and password", variant: "destructive" });
       return;
     }
 
@@ -88,30 +118,28 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
 
     setIsLoading(true);
     try {
-      // Sanitize inputs
-      const sanitizedUsername = sanitizeInput(formData.username);
-      const sanitizedEmail = sanitizeInput(formData.email);
-      const sanitizedNotes = sanitizeInput(formData.notes);
+      // Send plaintext to server; server will encrypt it
+      const response = await fetch(`/api/tools/${tool.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: sanitizeInput(formData.username),
+          email: sanitizeInput(formData.email),
+          password: formData.password,
+          notes: sanitizeInput(formData.notes)
+        })
+      });
 
-      // Encrypt password before storing
-      const encryptedPassword = formData.password
-        ? await encryptCredential(formData.password)
-        : "";
+      if (!response.ok) throw new Error("Failed to save");
 
-          const updatedTool: Tool = {
-            ...tool,
-            credentials: {
-              username: sanitizedUsername,
-              email: sanitizedEmail,
-              password: encryptedPassword,
-              notes: sanitizedNotes,
-              lastUpdated: new Date().toISOString(),
-            },
-          };
+      const { tool: updatedTool } = await response.json();
 
       auditLogger.log("credentials_saved", undefined, tool.id);
-      onSave?.(updatedTool);
+      // We need to tell the parent that we have credentials now
+      onSave?.({ ...updatedTool, hasCredentials: true } as any);
       setShowForm(false);
+      setDecryptedData({ username: formData.username, email: formData.email, password: formData.password, notes: formData.notes });
+      toast({ description: "Credentials saved securely on server" });
     } catch (error) {
       toast({
         description: "Failed to save credentials. Please try again.",
@@ -123,14 +151,27 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
     }
   };
 
-  const handleDelete = () => {
-    const updatedTool: Tool = {
-      ...tool,
-      credentials: undefined,
-    };
-    auditLogger.log("credentials_deleted", undefined, tool.id);
-    onSave?.(updatedTool);
-    toast({ description: "Login info deleted securely" });
+  const handleDelete = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/tools/${tool.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credentials: null })
+      });
+      if (!response.ok) throw new Error("Delete failed");
+
+      auditLogger.log("credentials_deleted", undefined, tool.id);
+      onSave?.({ ...tool, hasCredentials: false } as any);
+      setShowForm(true);
+      setDecryptedData(null);
+      setFormData({ username: "", email: "", password: "", notes: "" });
+      toast({ description: "Login info deleted securely" });
+    } catch (e) {
+      toast({ description: "Failed to delete login info", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -142,32 +183,36 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
         </DialogHeader>
 
         <div className="space-y-4">
-          {!showForm && credentials && credentials.username ? (
+          {isLoading && (
+            <div className="flex justify-center py-8">
+              <RefreshCw className="h-8 w-8 animate-spin text-primary/50" />
+            </div>
+          )}
+
+          {!isLoading && !showForm && decryptedData ? (
             <Card className="bg-muted/30">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm">Saved Credentials</CardTitle>
-                {credentials.lastUpdated && (
-                  <CardDescription className="text-xs">
-                    Last updated: {new Date(credentials.lastUpdated as any).toLocaleDateString()}
-                  </CardDescription>
-                )}
+                <CardDescription className="text-xs">
+                  Revealed from secure vault
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {credentials?.username && (
+                {decryptedData.username && (
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Username</Label>
                     <div className="flex gap-2">
                       <input
                         type="text"
                         readOnly
-                        value={credentials.username}
+                        value={decryptedData.username}
                         className="flex-1 text-sm px-3 py-2 rounded-md border border-border bg-background"
                         data-testid={`input-username-display-${tool.id}`}
                       />
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleCopy(credentials?.username || "", "Username")}
+                        onClick={() => handleCopy(decryptedData.username || "", "Username")}
                         data-testid={`button-copy-username-${tool.id}`}
                       >
                         {copied === "Username" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -176,37 +221,14 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
                   </div>
                 )}
 
-                {credentials?.email && (
-                  <div className="space-y-1">
-                    <Label className="text-xs font-medium">Email</Label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        readOnly
-                        value={credentials.email}
-                        className="flex-1 text-sm px-3 py-2 rounded-md border border-border bg-background"
-                        data-testid={`input-email-display-${tool.id}`}
-                      />
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleCopy(credentials?.email || "", "Email")}
-                        data-testid={`button-copy-email-${tool.id}`}
-                      >
-                        {copied === "Email" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {credentials?.password && (
+                {decryptedData.password && (
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Password</Label>
                     <div className="flex gap-2">
                       <input
                         type={showPassword ? "text" : "password"}
                         readOnly
-                        value={credentials.password}
+                        value={decryptedData.password}
                         className="flex-1 text-sm px-3 py-2 rounded-md border border-border bg-background"
                         data-testid={`input-password-display-${tool.id}`}
                       />
@@ -221,7 +243,7 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleCopy(credentials?.password || "", "Password")}
+                        onClick={() => handleCopy(decryptedData.password || "", "Password")}
                         data-testid={`button-copy-password-${tool.id}`}
                       >
                         {copied === "Password" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -230,11 +252,11 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
                   </div>
                 )}
 
-                {credentials?.notes && (
+                {decryptedData.notes && (
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Notes</Label>
                     <p className="text-xs text-muted-foreground bg-background rounded-md p-2">
-                      {credentials.notes}
+                      {decryptedData.notes}
                     </p>
                   </div>
                 )}
