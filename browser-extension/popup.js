@@ -1,22 +1,22 @@
 const KNOWN_SAAS_TOOLS = {
-  'figma.com': { name: 'Figma', category: 'Design', icon: 'Ž¨' },
-  'github.com': { name: 'GitHub', category: 'Development', icon: '’»' },
-  'chat.openai.com': { name: 'ChatGPT', category: 'AI', icon: '¤–' },
-  'aws.amazon.com': { name: 'AWS', category: 'Cloud', icon: '…˜ï¸' },
-  'notion.so': { name: 'Notion', category: 'Productivity', icon: '“' },
-  'slack.com': { name: 'Slack', category: 'Communication', icon: '’¬' },
-  'zoom.us': { name: 'Zoom', category: 'Communication', icon: '“¹' },
-  'monday.com': { name: 'Monday.com', category: 'Productivity', icon: '“Š' },
-  'asana.com': { name: 'Asana', category: 'Productivity', icon: '…œ“' },
-  'trello.com': { name: 'Trello', category: 'Productivity', icon: '“‹' },
-  'jira.atlassian.net': { name: 'Jira', category: 'Development', icon: 'ž' },
-  'canva.com': { name: 'Canva', category: 'Design', icon: 'Ž¨' },
-  'stripe.com': { name: 'Stripe', category: 'Finance', icon: '’³' },
-  'mailchimp.com': { name: 'Mailchimp', category: 'Marketing', icon: '“§' },
-  'hubspot.com': { name: 'HubSpot', category: 'Marketing', icon: 'Ž¯' },
-  'vercel.com': { name: 'Vercel', category: 'Development', icon: '…š¡' },
-  'netlify.com': { name: 'Netlify', category: 'Cloud', icon: 'Œ' },
-  'dopely.com': { name: 'Dopely', category: 'Design', icon: 'Ž¨' },
+  'figma.com': { name: 'Figma', category: 'Design', icon: '🎨' },
+  'github.com': { name: 'GitHub', category: 'Development', icon: '💻' },
+  'chat.openai.com': { name: 'ChatGPT', category: 'AI', icon: '🤖' },
+  'aws.amazon.com': { name: 'AWS', category: 'Cloud', icon: '☁️' },
+  'notion.so': { name: 'Notion', category: 'Productivity', icon: '📝' },
+  'slack.com': { name: 'Slack', category: 'Communication', icon: '💬' },
+  'zoom.us': { name: 'Zoom', category: 'Communication', icon: '📹' },
+  'monday.com': { name: 'Monday.com', category: 'Productivity', icon: '📅' },
+  'asana.com': { name: 'Asana', category: 'Productivity', icon: '✅' },
+  'trello.com': { name: 'Trello', category: 'Productivity', icon: '📋' },
+  'jira.atlassian.net': { name: 'Jira', category: 'Development', icon: '🎫' },
+  'canva.com': { name: 'Canva', category: 'Design', icon: '🎨' },
+  'stripe.com': { name: 'Stripe', category: 'Finance', icon: '💳' },
+  'mailchimp.com': { name: 'Mailchimp', category: 'Marketing', icon: '📧' },
+  'hubspot.com': { name: 'HubSpot', category: 'Marketing', icon: '📈' },
+  'vercel.com': { name: 'Vercel', category: 'Development', icon: '🚀' },
+  'netlify.com': { name: 'Netlify', category: 'Cloud', icon: '🌐' },
+  'dopely.com': { name: 'Dopely', category: 'Design', icon: '🎨' },
 };
 
 let detectedTools = [];
@@ -81,11 +81,11 @@ async function checkSavedCredentials() {
         const matchView = document.getElementById('matchView');
         if (response && response.tool) {
           matchView.classList.remove('hidden');
-          document.getElementById('matchName').innerText = `âœ… ${response.tool.name}`;
+          document.getElementById('matchName').innerText = `✔ ${response.tool.name}`;
           document.getElementById('autofillBtn').onclick = () => {
             chrome.runtime.sendMessage({ action: 'autofill', toolId: response.tool.id }, res => {
               if (res.success) {
-                showStatus('âœ… Credentials filled!', 'success');
+                showStatus('✔ Credentials filled!', 'success');
               }
             });
           };
@@ -163,7 +163,7 @@ async function addSelectedTools() {
       tools: toolsToAdd
     }, response => {
       if (response && response.success) {
-        showStatus(`âœ… Added ${response.count} tool(s) successfully!`, 'success');
+        showStatus(`✔ Added ${response.count} tool(s) successfully!`, 'success');
         selectedTools.clear();
         document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
         document.getElementById('addBtn').disabled = true;
@@ -186,10 +186,22 @@ function refreshTools() {
   }, 500);
 }
 
+async function updateAuthStatus() {
+  chrome.runtime.sendMessage({ action: 'checkAuth' }, (response) => {
+    const statusDiv = document.getElementById('authStatus');
+    if (response && response.token) {
+      statusDiv.innerHTML = '<span style="color: #166534">● Connected</span>';
+    } else {
+      statusDiv.innerHTML = '<span style="color: #991b1b">● Disconnected</span>';
+    }
+  });
+}
+
 // Initial load
 document.addEventListener('DOMContentLoaded', () => {
   detectTools();
   checkSavedCredentials();
+  updateAuthStatus();
 
   document.getElementById('addBtn').onclick = addSelectedTools;
 
