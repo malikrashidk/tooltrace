@@ -143,6 +143,10 @@ router.post("/scan", authMiddleware, async (req, res) => {
         ...suggestion,
         userId: user.id,
         provider: "google",
+        billingAmount: suggestion.billingAmount ? suggestion.billingAmount.toString() : undefined,
+        currency: suggestion.currency,
+        renewalDate: suggestion.renewalDate,
+        paymentPeriod: suggestion.paymentPeriod,
       });
     }
 

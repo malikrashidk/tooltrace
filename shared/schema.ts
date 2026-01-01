@@ -382,6 +382,10 @@ export const inboxDiscoveryResults = pgTable(
     vendorDomain: text("vendor_domain").notNull(),
     evidenceSender: text("evidence_sender"),
     evidenceSubject: text("evidence_subject"),
+    billingAmount: numeric("billing_amount", { precision: 10, scale: 2 }),
+    currency: text("currency").default("USD"),
+    renewalDate: timestamp("renewal_date"),
+    paymentPeriod: text("payment_period"), // monthly, yearly
     confidence: integer("confidence").notNull(),
     lastSeenAt: timestamp("last_seen_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
