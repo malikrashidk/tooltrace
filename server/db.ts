@@ -1,6 +1,9 @@
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import { neon, Pool, neonConfig } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-serverless";
 import * as schema from "@shared/schema";
+import ws from "ws";
+
+neonConfig.webSocketConstructor = ws;
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -29,10 +32,12 @@ if (!connectionString) {
   sql = { __noDb: true } as any;
   db = null as any;
 } else {
-  // Raw SQL client for queries
+  // Raw SQL client for queries (HTTP - lighter for simple queries)
   sql = neon(connectionString);
-  // Drizzle instance for schema management
-  db = drizzle(sql, { schema });
+
+  // Drizzle instance for schema management & transactions (WebSockets/Pool)
+  const pool = new Pool({ connectionString });
+  db = drizzle(pool, { schema });
 }
 
 export { sql, db };
