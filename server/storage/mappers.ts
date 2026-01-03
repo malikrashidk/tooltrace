@@ -40,6 +40,7 @@ export function mapUser(row: any): User | undefined {
         currency: row.currency,
         language: row.language,
         budgetThreshold: row.budget_threshold,
+        isSuspended: row.is_suspended,
         lastLoginAt: row.last_login_at,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
@@ -190,6 +191,10 @@ export function mapInboxDiscoveryResult(row: any): InboxDiscoveryResult | undefi
         evidenceSubject: row.evidence_subject,
         confidence: row.confidence,
         lastSeenAt: row.last_seen_at,
+        billingAmount: row.billing_amount,
+        currency: row.currency,
+        renewalDate: row.renewal_date,
+        paymentPeriod: row.payment_period,
         createdAt: row.created_at,
     };
 }
