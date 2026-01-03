@@ -40,6 +40,7 @@ export function mapUser(row: any): User | undefined {
         currency: row.currency,
         language: row.language,
         budgetThreshold: row.budget_threshold,
+        isSuspended: row.is_suspended,
         lastLoginAt: row.last_login_at,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
