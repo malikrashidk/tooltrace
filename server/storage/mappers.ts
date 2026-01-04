@@ -41,6 +41,7 @@ export function mapUser(row: any): User | undefined {
         language: row.language,
         budgetThreshold: row.budget_threshold,
         lastLoginAt: row.last_login_at,
+        isSuspended: row.is_suspended,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
     };
