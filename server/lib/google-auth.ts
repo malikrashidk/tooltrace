@@ -14,7 +14,7 @@ function createOAuth2Client(redirectUri?: string) {
 }
 
 const SCOPES = [
-    "https://www.googleapis.com/auth/gmail.readonly"
+    "https://www.googleapis.com/auth/gmail.metadata"
 ];
 
 export function getAuthUrl(userId: string, redirectUri?: string) {
