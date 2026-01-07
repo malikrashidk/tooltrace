@@ -1,11 +1,129 @@
 // background.js
 
-// Determine API base - use current origin if extension is on a site, 
-// but for the service worker, we often need a fixed target or clever detection.
 let API_BASE = 'https://app.tooltrace.io/api';
 const DOMAIN_PRIMARY = 'app.tooltrace.io';
+const BATCH_INTERVAL = 60000; // 60 seconds
+const BATCH_LIMIT = 20;
 
 let authToken = null;
+
+// --- Activity Tracking Logic ---
+class ActivityTracker {
+    constructor() {
+        this.eventBuffer = [];
+        this.activeTab = null; // { id, url, startTime, domain }
+        this.flushTimer = null;
+        this.init();
+    }
+
+    init() {
+        // Tab Activation (Switching tabs)
+        chrome.tabs.onActivated.addListener(activeInfo => this.handleTabSwitch(activeInfo));
+
+        // Tab Updates (Navigation within tab)
+        chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => this.handleTabUpdate(tabId, changeInfo, tab));
+
+        // Window Focus (Switching windows)
+        chrome.windows.onFocusChanged.addListener(windowId => this.handleWindowFocus(windowId));
+
+        // Periodic Flush
+        this.flushTimer = setInterval(() => this.flushEvents(), BATCH_INTERVAL);
+    }
+
+    // Capture the end of the previous session
+    stopTracking() {
+        if (this.activeTab && this.activeTab.startTime) {
+            const duration = (Date.now() - this.activeTab.startTime) / 1000;
+            if (duration > 5) { // Only log meaningful visits > 5s
+                this.addEvent({
+                    domain: this.activeTab.url, // We'll send full URL, server normalizes to domain
+                    duration: Math.round(duration),
+                    timestamp: Date.now()
+                });
+            }
+        }
+        this.activeTab = null;
+    }
+
+    async startTracking(tabId, url) {
+        if (!url || !url.startsWith('http')) return;
+
+        // Ignore own domain to prevent feedback loop
+        if (url.includes(DOMAIN_PRIMARY)) return;
+
+        this.activeTab = {
+            id: tabId,
+            url: url,
+            startTime: Date.now()
+        };
+    }
+
+    handleTabSwitch(activeInfo) {
+        this.stopTracking();
+        chrome.tabs.get(activeInfo.tabId, (tab) => {
+            if (chrome.runtime.lastError) return; // Tab might be closed
+            if (tab && tab.url) {
+                this.startTracking(tab.id, tab.url);
+            }
+        });
+    }
+
+    handleTabUpdate(tabId, changeInfo, tab) {
+        if (this.activeTab && this.activeTab.id === tabId && changeInfo.url) {
+            this.stopTracking();
+            this.startTracking(tabId, changeInfo.url);
+        }
+    }
+
+    handleWindowFocus(windowId) {
+        if (windowId === chrome.windows.WINDOW_ID_NONE) {
+            this.stopTracking();
+        } else {
+            chrome.tabs.query({ active: true, windowId: windowId }, tabs => {
+                if (tabs.length > 0) {
+                    this.stopTracking();
+                    this.startTracking(tabs[0].id, tabs[0].url);
+                }
+            });
+        }
+    }
+
+    addEvent(event) {
+        // Dedupe or merge logic could go here, but simple append is fine for now
+        this.eventBuffer.push(event);
+        if (this.eventBuffer.length >= BATCH_LIMIT) {
+            this.flushEvents();
+        }
+    }
+
+    async flushEvents() {
+        if (this.eventBuffer.length === 0) return;
+        if (!authToken) {
+            // Can't send, clear buffer or keep? Keep for a bit maybe?
+            // For now, clear to avoid overflow if user never logs in
+            if (this.eventBuffer.length > 100) this.eventBuffer = [];
+            return;
+        }
+
+        const eventsToSend = [...this.eventBuffer];
+        this.eventBuffer = [];
+
+        try {
+            await apiFetch(`${API_BASE}/activity/events`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify({ events: eventsToSend })
+            });
+            console.log(`[Activity] Flushed ${eventsToSend.length} events`);
+        } catch (e) {
+            console.error('[Activity] Failed to flush events', e);
+            // Put them back? Na, drop to prevent issues.
+        }
+    }
+}
 
 // Helper to keep token in sync
 function syncToken() {
@@ -14,10 +132,8 @@ function syncToken() {
             if (cookie) {
                 authToken = cookie.value;
                 chrome.storage.local.set({ authToken: authToken });
-                console.log('[Background] Auth token synced from cookie');
                 resolve(authToken);
             } else {
-                // Check storage as fallback
                 chrome.storage.local.get(['authToken'], (res) => {
                     authToken = res.authToken || null;
                     resolve(authToken);
@@ -29,6 +145,7 @@ function syncToken() {
 
 // Initial sync
 syncToken();
+const tracker = new ActivityTracker();
 
 // --- API Wrapper with Auth Failure Handling ---
 async function apiFetch(url, options = {}) {
@@ -41,24 +158,20 @@ async function apiFetch(url, options = {}) {
     return res;
 }
 
-// Listen for cookie changes to stay in sync
+// Listen for cookie changes
 chrome.cookies.onChanged.addListener((changeInfo) => {
     if (changeInfo.cookie.name === 'token' && changeInfo.cookie.domain.includes(DOMAIN_PRIMARY)) {
         if (!changeInfo.removed) {
             authToken = changeInfo.cookie.value;
             chrome.storage.local.set({ authToken: authToken });
         }
-        // We no longer clear the token when the cookie is removed.
-        // This keeps the extension "Connected" even if the browser session expires, 
-        // until the next API call returns a 401.
     }
 });
 
+// Communication with Popup/Content
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'checkAuth') {
-        syncToken().then(token => {
-            sendResponse({ token: token });
-        });
+        syncToken().then(token => sendResponse({ token: token }));
         return true;
     }
 
@@ -67,40 +180,37 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 
-    if (request.action === 'checkSavedCredentials') {
-        handleCheckSavedCredentials(request.domain, sendResponse);
-        return true;
-    }
-
-    if (request.action === 'autofill') {
-        handleAutofill(request.toolId, sendResponse);
-        return true;
-    }
-
     if (request.action === 'getPinnedTools') {
         handleGetPinnedTools(sendResponse);
         return true;
     }
 
-    if (request.action === 'updateToolCredentials') {
-        handleUpdateToolCredentials(request.toolId, request.username, request.password, sendResponse);
+    // Legacy credentials check - kept for password manager features
+    if (request.action === 'checkSavedCredentials') {
+        handleCheckSavedCredentials(request.domain, sendResponse);
         return true;
     }
 
-    if (request.action === 'logUsage') {
-        handleUsageLog(request.url, request.duration, sendResponse);
+    // Forward credential saving/autofill requests...
+    if (request.action === 'autofill') {
+        handleAutofill(request.toolId, sendResponse);
+        return true;
+    }
+    if (request.action === 'updateToolCredentials') {
+        handleUpdateToolCredentials(request.toolId, request.username, request.password, sendResponse);
         return true;
     }
 
     return true;
 });
 
+// --- Legacy Handlers (Simplified) ---
+
 async function handleGetPinnedTools(sendResponse) {
     if (!authToken) {
         sendResponse({ success: false, error: 'Not logged in' });
         return;
     }
-
     try {
         const res = await apiFetch(`${API_BASE}/tools`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
@@ -113,113 +223,12 @@ async function handleGetPinnedTools(sendResponse) {
     }
 }
 
-// --- Usage Tracking Logic (Moved from content.js) ---
-let activeTabId = null;
-let activeTabStartTime = null;
-let activeTabUrl = null;
-
-function isValidUrl(url) {
-    return url && (url.startsWith('http://') || url.startsWith('https://'));
-}
-
-async function stopTracking() {
-    if (activeTabId && activeTabStartTime && activeTabUrl) {
-        const duration = (Date.now() - activeTabStartTime) / 1000; // seconds
-        if (duration > 5) {
-            console.log(`[Usage] Tracked ${duration.toFixed(1)}s on ${activeTabUrl}`);
-            handleUsageLog(activeTabUrl, duration);
-        }
-    }
-    activeTabId = null;
-    activeTabStartTime = null;
-    activeTabUrl = null;
-}
-
-chrome.tabs.onActivated.addListener(activeInfo => {
-    stopTracking();
-    chrome.tabs.get(activeInfo.tabId, (tab) => {
-        if (tab && isValidUrl(tab.url)) {
-            activeTabId = activeInfo.tabId;
-            activeTabUrl = tab.url;
-            activeTabStartTime = Date.now();
-        }
-    });
-});
-
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (tabId === activeTabId && changeInfo.url) {
-        stopTracking();
-        if (isValidUrl(changeInfo.url)) {
-            activeTabId = tabId;
-            activeTabUrl = changeInfo.url;
-            activeTabStartTime = Date.now();
-        }
-    }
-});
-
-chrome.windows.onFocusChanged.addListener(windowId => {
-    if (windowId === chrome.windows.WINDOW_ID_NONE) {
-        stopTracking();
-    } else {
-        chrome.tabs.query({ active: true, windowId: windowId }, tabs => {
-            if (tabs.length > 0 && isValidUrl(tabs[0].url)) {
-                stopTracking();
-                activeTabId = tabs[0].id;
-                activeTabUrl = tabs[0].url;
-                activeTabStartTime = Date.now();
-            }
-        });
-    }
-});
-
-async function handleUsageLog(url, duration, sendResponse = () => { }) {
-    if (!authToken || !url) {
-        sendResponse({ success: false });
-        return;
-    }
-
-    try {
-        // Use the new match endpoint for better performance
-        const resMatch = await apiFetch(`${API_BASE}/tools/match`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
-            },
-            body: JSON.stringify({ url })
-        });
-        const data = await resMatch.json();
-        const matchedTool = data.match;
-
-        if (matchedTool) {
-            // Log the usage to the specific extension endpoint
-            await apiFetch(`${API_BASE}/extension/usage`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authToken}`
-                },
-                body: JSON.stringify({
-                    toolId: matchedTool.id,
-                    durationSeconds: Math.ceil(duration)
-                })
-            });
-            console.log(`[Usage] Logged ${duration}s for ${matchedTool.name}`);
-        }
-    } catch (e) {
-        console.error('[Usage] Error logging usage:', e);
-    }
-}
-
 async function handleAddTools(tools, sendResponse) {
     if (!authToken) {
         sendResponse({ success: false, error: 'Not logged in' });
         return;
     }
-
-    let lastError = null;
     let successCount = 0;
-
     for (const tool of tools) {
         try {
             const res = await apiFetch(`${API_BASE}/tools`, {
@@ -236,36 +245,26 @@ async function handleAddTools(tools, sendResponse) {
                     categories: [tool.category],
                     usageFrequency: 'daily',
                     tags: [],
-                    notes: ''
+                    notes: 'Added via Extension'
                 })
             });
-
-            if (res.ok) {
-                successCount++;
-            } else {
-                const errorData = await res.json();
-                lastError = errorData.error || `Server returned ${res.status}`;
-            }
-        } catch (e) {
-            lastError = e.message;
-        }
+            if (res.ok) successCount++;
+        } catch (e) {}
     }
-
-    sendResponse({
-        success: successCount > 0,
-        count: successCount,
-        error: successCount === 0 ? lastError : (successCount < tools.length ? `Partial success. ${lastError}` : null)
-    });
+    sendResponse({ success: successCount > 0 });
 }
 
 async function handleCheckSavedCredentials(domain, sendResponse) {
+    // If user has saved credentials, this counts as a "Confirmed" signal for Smart Scan
+    // We can piggyback on this check to send an immediate "Confirmed" event?
+    // Or just let the regular tracker handle the visit, and we add a flag if we found credentials.
+
     if (!authToken) {
         sendResponse({ tool: null });
         return;
     }
 
     try {
-        // Use the match endpoint instead of fetching all tools
         const res = await apiFetch(`${API_BASE}/tools/match`, {
             method: 'POST',
             headers: {
@@ -275,53 +274,51 @@ async function handleCheckSavedCredentials(domain, sendResponse) {
             body: JSON.stringify({ url: domain })
         });
         const data = await res.json();
+
+        // If we found a tool with credentials, we could log a high-confidence event
+        if (data.match && data.match.credentials) {
+            tracker.addEvent({
+                domain: domain,
+                hasSavedCredentials: true,
+                timestamp: Date.now()
+            });
+        }
+
         sendResponse({ tool: data.match || null });
     } catch (e) {
-        console.error('[Background] Error checking credentials:', e);
         sendResponse({ tool: null });
     }
 }
+
 async function handleUpdateToolCredentials(toolId, username, password, sendResponse) {
     if (!authToken) {
-        sendResponse({ success: false, error: 'Not logged in' });
+        sendResponse({ success: false });
         return;
     }
-
     try {
-        const res = await apiFetch(`${API_BASE}/tools/${toolId}`, {
+        await apiFetch(`${API_BASE}/tools/${toolId}`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${authToken}`
             },
-            body: JSON.stringify({
-                username: username,
-                password: password
-            })
+            body: JSON.stringify({ username, password })
         });
-
-        if (res.ok) {
-            sendResponse({ success: true });
-        } else {
-            const data = await res.json();
-            sendResponse({ success: false, error: data.error || 'Failed to update credentials' });
-        }
+        sendResponse({ success: true });
     } catch (e) {
-        sendResponse({ success: false, error: e.message });
+        sendResponse({ success: false });
     }
 }
 
 async function handleAutofill(toolId, sendResponse) {
     if (!authToken) return;
-
     try {
         const res = await apiFetch(`${API_BASE}/tools/${toolId}/reveal`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
         const data = await res.json();
-
         if (data.credentials) {
-            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+             chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
                 const tab = tabs[0];
                 if (tab) {
                     chrome.scripting.executeScript({
@@ -329,16 +326,13 @@ async function handleAutofill(toolId, sendResponse) {
                         func: (user, pass) => {
                             const userInputs = document.querySelectorAll('input[type="email"], input[type="text"][name*="user"], input[name*="login"], input[id*="username"]');
                             const passInputs = document.querySelectorAll('input[type="password"]');
-
                             if (userInputs.length > 0) {
                                 userInputs[0].value = user;
                                 userInputs[0].dispatchEvent(new Event('input', { bubbles: true }));
-                                userInputs[0].dispatchEvent(new Event('change', { bubbles: true }));
                             }
                             if (passInputs.length > 0) {
                                 passInputs[0].value = pass;
                                 passInputs[0].dispatchEvent(new Event('input', { bubbles: true }));
-                                passInputs[0].dispatchEvent(new Event('change', { bubbles: true }));
                             }
                         },
                         args: [data.credentials.username, data.credentials.password]

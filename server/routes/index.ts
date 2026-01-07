@@ -12,8 +12,8 @@ import adminRoutes from "./admin";
 import teamRoutes from "./team";
 import integrationRoutes from "./integration";
 import extensionRoutes from "./extension";
-import inboxRoutes from "./inbox";
 import billingRoutes from "./billing";
+import activityRoutes from "./activity";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -29,7 +29,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const OAUTH_CALLBACK_URL = process.env.OAUTH_CALLBACK_URL || "http://localhost:5000";
 
   if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
-    const callbackURL = process.env.GOOGLE_REDIRECT_URL || `${OAUTH_CALLBACK_URL}/api/inbox/google/callback`;
+    const callbackURL = process.env.GOOGLE_REDIRECT_URL || `${OAUTH_CALLBACK_URL}/api/auth/google/callback`;
 
     console.log("[OAuth Setup] Using callback URL:", callbackURL);
 
@@ -91,8 +91,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/team", teamRoutes);
   app.use("/api", integrationRoutes); // handles /api/api-keys, /api/v1/*
   app.use("/api/extension", extensionRoutes);
-  app.use("/api/inbox", inboxRoutes);
   app.use("/api/billing", billingRoutes);
+  app.use("/api/activity", activityRoutes);
 
   return httpServer;
 }

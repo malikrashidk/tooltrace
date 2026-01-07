@@ -352,71 +352,54 @@ export type TeamMember = typeof teamMembers.$inferSelect;
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
 export type AuditLog = typeof auditLogs.$inferSelect;
 
-// ============ OAUTH CONNECTIONS TABLE ============
-export const oauthConnections = pgTable(
-  "oauth_connections",
+// ============ DETECTED SITES TABLE ============
+export const detectedSites = pgTable(
+  "detected_sites",
   {
     id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
     userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-    provider: text("provider").notNull(), // 'google'
-    accessTokenEnc: text("access_token_enc").notNull(),
-    refreshTokenEnc: text("refresh_token_enc"),
-    scope: text("scope"),
-    tokenExpiry: timestamp("token_expiry"),
+    domainKey: text("domain_key").notNull(), // Normalized root domain
+    displayName: text("display_name"),
+    faviconUrl: text("favicon_url"),
+    firstSeenAt: timestamp("first_seen_at").defaultNow().notNull(),
+    lastSeenAt: timestamp("last_seen_at").defaultNow().notNull(),
+    visitCount7d: integer("visit_count_7d").default(0).notNull(),
+    visitCount30d: integer("visit_count_30d").default(0).notNull(),
+    visitCount90d: integer("visit_count_90d").default(0).notNull(),
+    confidenceLevel: text("confidence_level").notNull().default("visited"), // visited, likely, confirmed
+    status: text("status").notNull().default("new"), // new, added, ignored
+    toolId: varchar("tool_id").references(() => tools.id, { onDelete: "set null" }),
+    isPaid: boolean("is_paid").default(false),
+    billingAmount: numeric("billing_amount", { precision: 10, scale: 2 }),
+    currency: text("currency").default("USD"),
+    billingCycle: text("billing_cycle"), // monthly, yearly
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => ({
-    userIdIdx: index("oauth_user_id_idx").on(table.userId),
+    userIdIdx: index("detected_user_id_idx").on(table.userId),
+    domainKeyIdx: index("detected_domain_key_idx").on(table.domainKey),
+    statusIdx: index("detected_status_idx").on(table.status),
   })
 );
 
-// ============ INBOX DISCOVERY RESULTS TABLE ============
-export const inboxDiscoveryResults = pgTable(
-  "inbox_discovery_results",
+// ============ DETECTED SITES DAILY TABLE ============
+export const detectedSitesDaily = pgTable(
+  "detected_sites_daily",
   {
     id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-    userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-    provider: text("provider").notNull(), // 'google'
-    vendorName: text("vendor_name").notNull(),
-    vendorDomain: text("vendor_domain").notNull(),
-    evidenceSender: text("evidence_sender"),
-    evidenceSubject: text("evidence_subject"),
-    billingAmount: numeric("billing_amount", { precision: 10, scale: 2 }),
-    currency: text("currency").default("USD"),
-    renewalDate: timestamp("renewal_date"),
-    paymentPeriod: text("payment_period"), // monthly, yearly
-    confidence: integer("confidence").notNull(),
-    lastSeenAt: timestamp("last_seen_at"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    detectedSiteId: varchar("detected_site_id").notNull().references(() => detectedSites.id, { onDelete: "cascade" }),
+    date: text("date").notNull(), // YYYY-MM-DD
+    visitCount: integer("visit_count").default(0).notNull(),
+    usageTime: integer("usage_time").default(0).notNull(), // in seconds
   },
   (table) => ({
-    userIdIdx: index("discovery_user_id_idx").on(table.userId),
+    siteDateIdx: index("detected_daily_site_date_idx").on(table.detectedSiteId, table.date),
   })
 );
 
-// ============ INBOX DISCOVERY RUNS TABLE ============
-export const inboxDiscoveryRuns = pgTable(
-  "inbox_discovery_runs",
-  {
-    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-    userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-    provider: text("provider").notNull(),
-    startedAt: timestamp("started_at").defaultNow().notNull(),
-    finishedAt: timestamp("finished_at"),
-    status: text("status").notNull(), // 'running', 'completed', 'failed'
-    itemsFoundCount: integer("items_found_count").default(0),
-  },
-  (table) => ({
-    discoveryRunUserIdIdx: index("discovery_run_user_id_idx").on(table.userId),
-  })
-);
+export type DetectedSite = typeof detectedSites.$inferSelect;
+export type InsertDetectedSite = typeof detectedSites.$inferInsert;
 
-export type OAuthConnection = typeof oauthConnections.$inferSelect;
-export type InsertOAuthConnection = typeof oauthConnections.$inferInsert;
-
-export type InboxDiscoveryResult = typeof inboxDiscoveryResults.$inferSelect;
-export type InsertInboxDiscoveryResult = typeof inboxDiscoveryResults.$inferInsert;
-
-export type InboxDiscoveryRun = typeof inboxDiscoveryRuns.$inferSelect;
-export type InsertInboxDiscoveryRun = typeof inboxDiscoveryRuns.$inferInsert;
+export type DetectedSiteDaily = typeof detectedSitesDaily.$inferSelect;
+export type InsertDetectedSiteDaily = typeof detectedSitesDaily.$inferInsert;

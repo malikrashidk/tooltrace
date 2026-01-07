@@ -16,12 +16,10 @@ import type {
     AuditLog,
     TeamMember,
     InsertTeamMember,
-    OAuthConnection,
-    InsertOAuthConnection,
-    InboxDiscoveryResult,
-    InsertInboxDiscoveryResult,
-    InboxDiscoveryRun,
-    InsertInboxDiscoveryRun,
+    DetectedSite,
+    InsertDetectedSite,
+    DetectedSiteDaily,
+    InsertDetectedSiteDaily,
 } from "../../shared/schema";
 
 export interface IStorage {
@@ -84,21 +82,15 @@ export interface IStorage {
     updateTeamMember(id: string, updates: Partial<TeamMember>): Promise<TeamMember | undefined>;
     deleteTeamMember(id: string): Promise<boolean>;
 
-    // OAuth operations
-    getOAuthConnection(userId: string, provider: string): Promise<OAuthConnection | undefined>;
-    createOAuthConnection(conn: InsertOAuthConnection): Promise<OAuthConnection>;
-    updateOAuthConnection(id: string, updates: Partial<OAuthConnection>): Promise<OAuthConnection | undefined>;
-    deleteOAuthConnection(userId: string, provider: string): Promise<void>;
+    // Detected Sites operations
+    getDetectedSite(userId: string, domainKey: string): Promise<DetectedSite | undefined>;
+    getDetectedSites(userId: string): Promise<DetectedSite[]>;
+    createDetectedSite(site: InsertDetectedSite): Promise<DetectedSite>;
+    updateDetectedSite(id: string, updates: Partial<DetectedSite>): Promise<DetectedSite | undefined>;
 
-    // Discovery operations
-    getDiscoveryResults(userId: string): Promise<InboxDiscoveryResult[]>;
-    createDiscoveryResult(result: InsertInboxDiscoveryResult): Promise<InboxDiscoveryResult>;
-    clearDiscoveryResults(userId: string): Promise<void>;
-
-    createDiscoveryRun(run: InsertInboxDiscoveryRun): Promise<InboxDiscoveryRun>;
-    updateDiscoveryRun(id: string, updates: Partial<InboxDiscoveryRun>): Promise<InboxDiscoveryRun | undefined>;
-    getLatestDiscoveryRun(userId: string): Promise<InboxDiscoveryRun | undefined>;
-    getDiscoveryRunsThisMonth(userId: string): Promise<number>;
+    // Detected Sites Daily operations
+    getDetectedSiteDaily(siteId: string, date: string): Promise<DetectedSiteDaily | undefined>;
+    upsertDetectedSiteDaily(siteId: string, date: string, count: number, time: number): Promise<void>;
 
     // Email verification
     setEmailVerificationToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void>;
