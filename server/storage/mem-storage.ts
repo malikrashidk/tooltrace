@@ -17,12 +17,10 @@ import type {
     AuditLog,
     TeamMember,
     InsertTeamMember,
-    OAuthConnection,
-    InsertOAuthConnection,
-    InboxDiscoveryResult,
-    InsertInboxDiscoveryResult,
-    InboxDiscoveryRun,
-    InsertInboxDiscoveryRun,
+    DetectedSite,
+    InsertDetectedSite,
+    DetectedSiteDaily,
+    InsertDetectedSiteDaily,
 } from "../../shared/schema";
 import { IStorage } from "./types";
 
@@ -518,15 +516,81 @@ export class MemStorage implements IStorage {
         };
     }
 
-    async getOAuthConnection(userId: string, provider: string): Promise<OAuthConnection | undefined> { return undefined; }
-    async createOAuthConnection(conn: InsertOAuthConnection): Promise<OAuthConnection> { return { ...conn, id: randomUUID(), createdAt: new Date(), updatedAt: new Date() } as OAuthConnection; }
-    async updateOAuthConnection(id: string, updates: Partial<OAuthConnection>): Promise<OAuthConnection | undefined> { return undefined; }
-    async deleteOAuthConnection(userId: string, provider: string): Promise<void> { }
-    async getDiscoveryResults(userId: string): Promise<InboxDiscoveryResult[]> { return []; }
-    async createDiscoveryResult(result: InsertInboxDiscoveryResult): Promise<InboxDiscoveryResult> { return { ...result, id: randomUUID(), createdAt: new Date() } as InboxDiscoveryResult; }
-    async clearDiscoveryResults(userId: string): Promise<void> { }
-    async createDiscoveryRun(run: InsertInboxDiscoveryRun): Promise<InboxDiscoveryRun> { return { ...run, id: randomUUID(), startedAt: new Date(), finishedAt: null, itemsFoundCount: run.itemsFoundCount || 0 } as InboxDiscoveryRun; }
-    async updateDiscoveryRun(id: string, updates: Partial<InboxDiscoveryRun>): Promise<InboxDiscoveryRun | undefined> { return undefined; }
-    async getLatestDiscoveryRun(userId: string): Promise<InboxDiscoveryRun | undefined> { return undefined; }
-    async getDiscoveryRunsThisMonth(userId: string): Promise<number> { return 0; }
+    // Detected Sites operations
+    private detectedSites = new Map<string, DetectedSite>();
+    private detectedSitesDaily = new Map<string, DetectedSiteDaily>();
+
+    async getDetectedSite(userId: string, domainKey: string): Promise<DetectedSite | undefined> {
+        return Array.from(this.detectedSites.values()).find(
+            s => s.userId === userId && s.domainKey === domainKey
+        );
+    }
+
+    async getDetectedSites(userId: string): Promise<DetectedSite[]> {
+        return Array.from(this.detectedSites.values())
+            .filter(s => s.userId === userId)
+            .sort((a, b) => b.lastSeenAt.getTime() - a.lastSeenAt.getTime());
+    }
+
+    async createDetectedSite(site: InsertDetectedSite): Promise<DetectedSite> {
+        const id = randomUUID();
+        const fullSite = {
+            ...site,
+            id,
+            displayName: site.displayName || null,
+            faviconUrl: site.faviconUrl || null,
+            firstSeenAt: new Date(),
+            lastSeenAt: new Date(),
+            visitCount7d: 0,
+            visitCount30d: 0,
+            visitCount90d: 0,
+            confidenceLevel: site.confidenceLevel || 'visited',
+            status: site.status || 'new',
+            toolId: site.toolId || null,
+            isPaid: site.isPaid || false,
+            billingAmount: site.billingAmount || null,
+            currency: site.currency || "USD",
+            billingCycle: site.billingCycle || null,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        } as DetectedSite;
+        this.detectedSites.set(id, fullSite);
+        return fullSite;
+    }
+
+    async updateDetectedSite(id: string, updates: Partial<DetectedSite>): Promise<DetectedSite | undefined> {
+        const site = this.detectedSites.get(id);
+        if (!site) return undefined;
+        const updated = { ...site, ...updates, updatedAt: new Date() };
+        this.detectedSites.set(id, updated);
+        return updated;
+    }
+
+    // Detected Sites Daily operations
+    async getDetectedSiteDaily(siteId: string, date: string): Promise<DetectedSiteDaily | undefined> {
+        return Array.from(this.detectedSitesDaily.values()).find(
+            d => d.detectedSiteId === siteId && d.date === date
+        );
+    }
+
+    async upsertDetectedSiteDaily(siteId: string, date: string, count: number, time: number): Promise<void> {
+        const existing = await this.getDetectedSiteDaily(siteId, date);
+        if (existing) {
+            const updated = {
+                ...existing,
+                visitCount: existing.visitCount + count,
+                usageTime: existing.usageTime + time
+            };
+            this.detectedSitesDaily.set(existing.id, updated);
+        } else {
+            const id = randomUUID();
+            this.detectedSitesDaily.set(id, {
+                id,
+                detectedSiteId: siteId,
+                date,
+                visitCount: count,
+                usageTime: time
+            });
+        }
+    }
 }
