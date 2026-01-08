@@ -8,9 +8,8 @@ import type {
     Note,
     AuditLog,
     TeamMember,
-    OAuthConnection,
-    InboxDiscoveryResult,
-    InboxDiscoveryRun,
+    DetectedSite,
+    DetectedSiteDaily,
 } from "../../shared/schema";
 
 // Helper to convert snake_case database rows to camelCase TypeScript objects
@@ -164,50 +163,38 @@ export function mapAuditLog(row: any): AuditLog | undefined {
     };
 }
 
-export function mapOAuthConnection(row: any): OAuthConnection | undefined {
+export function mapDetectedSite(row: any): DetectedSite | undefined {
     if (!row) return undefined;
     return {
         id: row.id,
         userId: row.user_id,
-        provider: row.provider,
-        accessTokenEnc: row.access_token_enc,
-        refreshTokenEnc: row.refresh_token_enc,
-        scope: row.scope,
-        tokenExpiry: row.token_expiry,
+        domainKey: row.domain_key,
+        displayName: row.display_name,
+        faviconUrl: row.favicon_url,
+        firstSeenAt: row.first_seen_at,
+        lastSeenAt: row.last_seen_at,
+        visitCount7d: row.visit_count_7d,
+        visitCount30d: row.visit_count_30d,
+        visitCount90d: row.visit_count_90d,
+        confidenceLevel: row.confidence_level,
+        status: row.status,
+        toolId: row.tool_id,
+        isPaid: row.is_paid,
+        billingAmount: row.billing_amount,
+        currency: row.currency,
+        billingCycle: row.billing_cycle,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
     };
 }
 
-export function mapInboxDiscoveryResult(row: any): InboxDiscoveryResult | undefined {
+export function mapDetectedSiteDaily(row: any): DetectedSiteDaily | undefined {
     if (!row) return undefined;
     return {
         id: row.id,
-        userId: row.user_id,
-        provider: row.provider,
-        vendorName: row.vendor_name,
-        vendorDomain: row.vendor_domain,
-        evidenceSender: row.evidence_sender,
-        evidenceSubject: row.evidence_subject,
-        confidence: row.confidence,
-        lastSeenAt: row.last_seen_at,
-        billingAmount: row.billing_amount,
-        currency: row.currency,
-        renewalDate: row.renewal_date,
-        paymentPeriod: row.payment_period,
-        createdAt: row.created_at,
-    };
-}
-
-export function mapInboxDiscoveryRun(row: any): InboxDiscoveryRun | undefined {
-    if (!row) return undefined;
-    return {
-        id: row.id,
-        userId: row.user_id,
-        provider: row.provider,
-        startedAt: row.started_at,
-        finishedAt: row.finished_at,
-        status: row.status,
-        itemsFoundCount: row.items_found_count,
+        detectedSiteId: row.detected_site_id,
+        date: row.date,
+        visitCount: row.visit_count,
+        usageTime: row.usage_time,
     };
 }

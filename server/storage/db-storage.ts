@@ -16,12 +16,10 @@ import type {
     AuditLog,
     TeamMember,
     InsertTeamMember,
-    OAuthConnection,
-    InsertOAuthConnection,
-    InboxDiscoveryResult,
-    InsertInboxDiscoveryResult,
-    InboxDiscoveryRun,
-    InsertInboxDiscoveryRun,
+    DetectedSite,
+    InsertDetectedSite,
+    DetectedSiteDaily,
+    InsertDetectedSiteDaily,
 } from "../../shared/schema";
 import { users, subscriptions, tools, auditLogs } from "../../shared/schema";
 import { IStorage } from "./types";
@@ -35,9 +33,8 @@ import {
     mapPayment,
     mapReceipt,
     mapAuditLog,
-    mapOAuthConnection,
-    mapInboxDiscoveryResult,
-    mapInboxDiscoveryRun,
+    mapDetectedSite,
+    mapDetectedSiteDaily,
 } from "./mappers";
 
 export class DbStorage implements IStorage {
@@ -530,26 +527,45 @@ export class DbStorage implements IStorage {
         return mapUser(result[0])!;
     }
 
-    // OAuth operations
-    async getOAuthConnection(userId: string, provider: string): Promise<OAuthConnection | undefined> {
+    // Detected Sites operations
+    async getDetectedSite(userId: string, domainKey: string): Promise<DetectedSite | undefined> {
         const result = await sql`
-      SELECT * FROM oauth_connections 
-      WHERE user_id = ${userId} AND provider = ${provider}
-      LIMIT 1
-    `;
-        return mapOAuthConnection(result[0]);
+            SELECT * FROM detected_sites
+            WHERE user_id = ${userId} AND domain_key = ${domainKey}
+            LIMIT 1
+        `;
+        return mapDetectedSite(result[0]);
     }
 
-    async createOAuthConnection(conn: InsertOAuthConnection): Promise<OAuthConnection> {
+    async getDetectedSites(userId: string): Promise<DetectedSite[]> {
         const result = await sql`
-      INSERT INTO oauth_connections (user_id, provider, access_token_enc, refresh_token_enc, scope, token_expiry)
-      VALUES (${conn.userId}, ${conn.provider}, ${conn.accessTokenEnc}, ${conn.refreshTokenEnc}, ${conn.scope}, ${conn.tokenExpiry})
-      RETURNING *
-    `;
-        return mapOAuthConnection(result[0])!;
+            SELECT * FROM detected_sites
+            WHERE user_id = ${userId}
+            ORDER BY last_seen_at DESC
+        `;
+        return result.map((row: any) => mapDetectedSite(row)!);
     }
 
-    async updateOAuthConnection(id: string, updates: Partial<OAuthConnection>): Promise<OAuthConnection | undefined> {
+    async createDetectedSite(site: InsertDetectedSite): Promise<DetectedSite> {
+        const result = await sql`
+            INSERT INTO detected_sites (
+                user_id, domain_key, display_name, favicon_url,
+                first_seen_at, last_seen_at, visit_count_7d, visit_count_30d, visit_count_90d,
+                confidence_level, status, tool_id, is_paid, billing_amount, currency, billing_cycle
+            )
+            VALUES (
+                ${site.userId}, ${site.domainKey}, ${site.displayName || null}, ${site.faviconUrl || null},
+                ${site.firstSeenAt || new Date()}, ${site.lastSeenAt || new Date()},
+                ${site.visitCount7d || 0}, ${site.visitCount30d || 0}, ${site.visitCount90d || 0},
+                ${site.confidenceLevel || 'visited'}, ${site.status || 'new'}, ${site.toolId || null},
+                ${site.isPaid || false}, ${site.billingAmount || null}, ${site.currency || 'USD'}, ${site.billingCycle || null}
+            )
+            RETURNING *
+        `;
+        return mapDetectedSite(result[0])!;
+    }
+
+    async updateDetectedSite(id: string, updates: Partial<DetectedSite>): Promise<DetectedSite | undefined> {
         const setClauses: string[] = [];
         const values: any[] = [];
         let paramIndex = 1;
@@ -563,83 +579,32 @@ export class DbStorage implements IStorage {
 
         if (setClauses.length === 0) return undefined;
 
-        const query = `UPDATE oauth_connections SET ${setClauses.join(', ')}, updated_at = NOW() WHERE id = $${paramIndex} RETURNING *`;
+        const query = `UPDATE detected_sites SET ${setClauses.join(', ')}, updated_at = NOW() WHERE id = $${paramIndex} RETURNING *`;
         values.push(id);
 
         const result = await sql(query, values);
-        return mapOAuthConnection(result[0]);
+        return mapDetectedSite(result[0]);
     }
 
-    async deleteOAuthConnection(userId: string, provider: string): Promise<void> {
-        await sql`DELETE FROM oauth_connections WHERE user_id = ${userId} AND provider = ${provider}`;
+    // Detected Sites Daily operations
+    async getDetectedSiteDaily(siteId: string, date: string): Promise<DetectedSiteDaily | undefined> {
+        const result = await sql`
+            SELECT * FROM detected_sites_daily
+            WHERE detected_site_id = ${siteId} AND date = ${date}
+            LIMIT 1
+        `;
+        return mapDetectedSiteDaily(result[0]);
     }
 
-    // Discovery operations
-    async getDiscoveryResults(userId: string): Promise<InboxDiscoveryResult[]> {
-        const result = await sql`SELECT * FROM inbox_discovery_results WHERE user_id = ${userId} ORDER BY confidence DESC`;
-        return result.map((row: any) => mapInboxDiscoveryResult(row)!);
-    }
-
-    async createDiscoveryResult(result: InsertInboxDiscoveryResult): Promise<InboxDiscoveryResult> {
-        const res = await sql`
-      INSERT INTO inbox_discovery_results (user_id, provider, vendor_name, vendor_domain, evidence_sender, evidence_subject, confidence, last_seen_at)
-      VALUES (${result.userId}, ${result.provider}, ${result.vendorName}, ${result.vendorDomain}, ${result.evidenceSender}, ${result.evidenceSubject}, ${result.confidence}, ${result.lastSeenAt})
-      RETURNING *
-    `;
-        return mapInboxDiscoveryResult(res[0])!;
-    }
-
-    async clearDiscoveryResults(userId: string): Promise<void> {
-        await sql`DELETE FROM inbox_discovery_results WHERE user_id = ${userId}`;
-    }
-
-    async createDiscoveryRun(run: InsertInboxDiscoveryRun): Promise<InboxDiscoveryRun> {
-        const res = await sql`
-      INSERT INTO inbox_discovery_runs (user_id, provider, status)
-      VALUES (${run.userId}, ${run.provider}, ${run.status})
-      RETURNING *
-    `;
-        return mapInboxDiscoveryRun(res[0])!;
-    }
-
-    async updateDiscoveryRun(id: string, updates: Partial<InboxDiscoveryRun>): Promise<InboxDiscoveryRun | undefined> {
-        const setClauses: string[] = [];
-        const values: any[] = [];
-        let paramIndex = 1;
-
-        Object.entries(updates).forEach(([key, value]) => {
-            const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-            setClauses.push(`${snakeKey} = $${paramIndex}`);
-            values.push(value === undefined ? null : value);
-            paramIndex++;
-        });
-
-        if (setClauses.length === 0) return undefined;
-
-        const query = `UPDATE inbox_discovery_runs SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
-        values.push(id);
-
-        const res = await sql(query, values);
-        return mapInboxDiscoveryRun(res[0]);
-    }
-
-    async getLatestDiscoveryRun(userId: string): Promise<InboxDiscoveryRun | undefined> {
-        const res = await sql`
-      SELECT * FROM inbox_discovery_runs 
-      WHERE user_id = ${userId} 
-      ORDER BY started_at DESC 
-      LIMIT 1
-    `;
-        return mapInboxDiscoveryRun(res[0]);
-    }
-
-    async getDiscoveryRunsThisMonth(userId: string): Promise<number> {
-        const res = await sql`
-      SELECT COUNT(*) FROM inbox_discovery_runs 
-      WHERE user_id = ${userId} 
-      AND started_at > NOW() - INTERVAL '30 days'
-    `;
-        return parseInt(res[0].count);
+    async upsertDetectedSiteDaily(siteId: string, date: string, count: number, time: number): Promise<void> {
+        await sql`
+            INSERT INTO detected_sites_daily (detected_site_id, date, visit_count, usage_time)
+            VALUES (${siteId}, ${date}, ${count}, ${time})
+            ON CONFLICT (detected_site_id, date)
+            DO UPDATE SET
+                visit_count = detected_sites_daily.visit_count + ${count},
+                usage_time = detected_sites_daily.usage_time + ${time}
+        `;
     }
 
     async registerUserWithSubscription(
@@ -667,7 +632,7 @@ export class DbStorage implements IStorage {
                 renewalDate: subscription.renewalDate,
             });
 
-            return mapUser(newUser)!;
+            return newUser;
         });
     }
 
@@ -780,7 +745,7 @@ export class DbStorage implements IStorage {
                 createdAt: new Date()
             });
 
-            return mapTool(newTool)!;
+            return newTool;
         });
     }
 
