@@ -1,10 +1,12 @@
-import { neon, Pool, neonConfig } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-serverless";
+import { neon, neonConfig } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/node-postgres";
+import pg from "pg";
 import * as schema from "@shared/schema";
 import ws from "ws";
 
 neonConfig.webSocketConstructor = ws;
 
+const { Pool } = pg;
 const connectionString = process.env.DATABASE_URL;
 
 let sql: any;
@@ -32,13 +34,12 @@ if (!connectionString) {
   sql = { __noDb: true } as any;
   db = null as any;
 } else {
-  // Raw SQL client for queries (HTTP - lighter for simple queries)
+  // Raw SQL client for queries (using Neon HTTP driver for compatibility with existing queries)
   sql = neon(connectionString);
 
-  // Drizzle instance for schema management & transactions (WebSockets/Pool)
+  // Drizzle instance for schema management & transactions (using standard node-postgres)
   const pool = new Pool({ connectionString });
   db = drizzle(pool, { schema });
 }
 
 export { sql, db };
-

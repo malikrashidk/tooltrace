@@ -632,7 +632,7 @@ export class DbStorage implements IStorage {
                 renewalDate: subscription.renewalDate,
             });
 
-            return mapUser(newUser)!;
+            return newUser;
         });
     }
 
@@ -745,7 +745,7 @@ export class DbStorage implements IStorage {
                 createdAt: new Date()
             });
 
-            return mapTool(newTool)!;
+            return newTool;
         });
     }
 
