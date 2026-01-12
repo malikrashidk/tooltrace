@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
-import { openCheckout } from "@/lib/paddle";
+import { openPolarCheckout } from "@/lib/polar";
 import { getPriceIdForPlan } from "@/lib/plans";
 
 export function PricingPage() {
@@ -80,8 +80,13 @@ export function PricingPage() {
 
   const handleUpgrade = (planId: string) => {
     const priceId = getPriceIdForPlan(planId, billingCycle);
-    if (priceId) {
-      openCheckout(priceId, user?.email, user?.id);
+    if (priceId && user) {
+      openPolarCheckout({
+        productPriceId: priceId,
+        email: user.email,
+        userId: user.id,
+        successUrl: `${window.location.origin}/dashboard?checkout=success`,
+      });
     }
   };
 
@@ -89,8 +94,11 @@ export function PricingPage() {
     <div className="space-y-6 md:space-y-8 p-3 sm:p-4 md:p-6">
       <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 sm:p-6 md:p-8 text-center">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Simple, Transparent Pricing</h1>
-        <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
+        <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-2">
           Choose the perfect plan for managing your SaaS subscriptions.
+        </p>
+        <p className="text-xs sm:text-sm text-primary/80 font-medium max-w-xl mx-auto mb-6">
+          💡 Save hundreds per year by cutting unused subscriptions • Track everything in one place • Cancel anytime
         </p>
 
         <div className="flex items-center justify-center gap-4">
@@ -220,8 +228,10 @@ export function PricingPage() {
 
         <div className="mt-12 pt-8 border-t flex flex-col items-center justify-center gap-4">
           <p className="text-sm text-muted-foreground">Secure payments processed by</p>
-          <div className="flex items-center gap-2 opacity-70 grayscale hover:grayscale-0 transition-all">
-            <img src="https://paddle.com/images/logo-wordmark.svg" alt="Paddle" className="h-6" />
+          <div className="flex items-center gap-2 opacity-70 hover:opacity-100 transition-all">
+            <svg className="h-6" viewBox="0 0 120 30" fill="currentColor">
+              <text x="0" y="20" className="font-bold text-lg">Polar.sh</text>
+            </svg>
           </div>
         </div>
       </div>

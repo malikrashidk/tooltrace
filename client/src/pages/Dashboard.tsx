@@ -10,7 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { VerificationSuccessBanner } from "@/components/VerificationSuccessBanner";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import { useEffect, useState } from "react";
-import { openCheckout } from "@/lib/paddle";
+import { openPolarCheckout } from "@/lib/polar";
 import { getPriceIdForPlan } from "@/lib/plans";
 import { Loader2 } from "lucide-react";
 import { fromCents } from "../../../shared/money";
@@ -42,7 +42,12 @@ export function Dashboard() {
         sessionStorage.removeItem("pending_plan");
         // Open checkout
         console.log("[Dashboard] Opening checkout for:", user.email);
-        openCheckout(priceId, user.email, user.id);
+        openPolarCheckout({
+          productPriceId: priceId,
+          email: user.email,
+          userId: user.id,
+          successUrl: `${window.location.origin}/dashboard?checkout=success`,
+        });
       } else {
         // Invalid plan or free plan, just clear it
         console.warn("[Dashboard] Invalid or missing price ID for plan:", pendingPlan);

@@ -13,8 +13,8 @@ export const users = pgTable(
     name: text("name").notNull(),
     plan: text("plan").notNull().default("free"), // free, pro, enterprise
     isAdmin: boolean("is_admin").notNull().default(false),
-    paddleCustomerId: text("paddle_customer_id"),
-    paddleSubscriptionId: text("paddle_subscription_id"),
+    polarCustomerId: text("polar_customer_id"),
+    polarSubscriptionId: text("polar_subscription_id"),
     // OAuth fields
     googleId: text("google_id").unique(),
     facebookId: text("facebook_id").unique(),
@@ -116,7 +116,7 @@ export const payments = pgTable(
     amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
     currency: text("currency").notNull().default("USD"),
     status: text("status").notNull().default("pending"), // pending, completed, failed
-    paddlePaymentId: text("paddle_payment_id"),
+    polarOrderId: text("polar_order_id"),
     planUpgrade: text("plan_upgrade"), // free->pro, pro->enterprise
     description: text("description"),
     createdAt: timestamp("created_at").defaultNow().notNull(),

@@ -1,11 +1,11 @@
 export const PRICE_IDS = {
   pro: {
-    monthly: import.meta.env.VITE_PADDLE_PRICE_ID_PRO || "pri_pro_placeholder",
-    yearly: import.meta.env.VITE_PADDLE_PRICE_ID_PRO_YEARLY || "pri_pro_yearly_placeholder",
+    monthly: import.meta.env.VITE_POLAR_PRICE_ID_PRO || "pri_pro_placeholder",
+    yearly: import.meta.env.VITE_POLAR_PRICE_ID_PRO_YEARLY || "pri_pro_yearly_placeholder",
   },
   enterprise: {
-    monthly: import.meta.env.VITE_PADDLE_PRICE_ID_ENTERPRISE || "pri_enterprise_placeholder",
-    yearly: import.meta.env.VITE_PADDLE_PRICE_ID_ENTERPRISE_YEARLY || "pri_enterprise_yearly_placeholder",
+    monthly: import.meta.env.VITE_POLAR_PRICE_ID_ENTERPRISE || "pri_enterprise_placeholder",
+    yearly: import.meta.env.VITE_POLAR_PRICE_ID_ENTERPRISE_YEARLY || "pri_enterprise_yearly_placeholder",
   }
 };
 

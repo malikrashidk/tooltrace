@@ -237,8 +237,8 @@ export class DbStorage implements IStorage {
     // Payment operations
     async createPayment(payment: InsertPayment): Promise<Payment> {
         const result = await sql`
-      INSERT INTO payments (user_id, amount, currency, status, paddle_payment_id, plan_upgrade, description)
-      VALUES (${payment.userId}, ${payment.amount}, ${payment.currency}, ${payment.status}, ${payment.paddlePaymentId}, ${payment.planUpgrade}, ${payment.description})
+      INSERT INTO payments (user_id, amount, currency, status, polar_order_id, plan_upgrade, description)
+      VALUES (${payment.userId}, ${payment.amount}, ${payment.currency}, ${payment.status}, ${payment.polarOrderId}, ${payment.planUpgrade}, ${payment.description})
       RETURNING *
     `;
         return mapPayment(result[0])!;

@@ -177,26 +177,9 @@ function AppContent() {
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
-  // Global Paddle Event Listener
-  useEffect(() => {
-    const handlePaddleEvent = (e: any) => {
-      const data = e.detail;
-      if (data?.name === "checkout.completed") {
-        console.log("[App] Payment completed!", data);
-        setPaymentSuccess(true);
-        // Clear any pending plan flag
-        sessionStorage.removeItem("pending_plan");
+  // Payment event handling is now done in the Polar checkout popup
+  // See client/src/lib/polar.ts for the message event listener
 
-        // Refresh after 3 seconds
-        setTimeout(() => {
-          window.location.reload();
-        }, 3000);
-      }
-    };
-
-    window.addEventListener("paddle:event", handlePaddleEvent);
-    return () => window.removeEventListener("paddle:event", handlePaddleEvent);
-  }, []);
 
   // Check for pending plan on load
   useEffect(() => {
