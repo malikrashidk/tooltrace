@@ -80,8 +80,8 @@ export class MemStorage implements IStorage {
             budgetThreshold: null,
             lastLoginAt: new Date(),
             emailVerifiedAt: new Date(),
-            paddleCustomerId: null,
-            paddleSubscriptionId: null
+            polarCustomerId: null,
+            polarSubscriptionId: null
         } as User;
         this.users.set(id, fullUser);
         return fullUser;
@@ -101,8 +101,8 @@ export class MemStorage implements IStorage {
             language: (user as any).language || "en",
             budgetThreshold: null,
             lastLoginAt: new Date(),
-            paddleCustomerId: null,
-            paddleSubscriptionId: null
+            polarCustomerId: null,
+            polarSubscriptionId: null
         } as any;
         this.users.set(id, fullUser);
         return fullUser;
@@ -377,8 +377,8 @@ export class MemStorage implements IStorage {
             budgetThreshold: null,
             lastLoginAt: new Date(),
             emailVerifiedAt: null,
-            paddleCustomerId: null,
-            paddleSubscriptionId: null,
+            polarCustomerId: null,
+            polarSubscriptionId: null,
             twoFactorEnabled: false,
             twoFactorSecret: null,
             twoFactorBackupCodes: null,

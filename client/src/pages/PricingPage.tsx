@@ -226,8 +226,19 @@ export function PricingPage() {
           </div>
         </div>
 
+        <div className="mt-16 p-6 bg-primary/5 rounded-xl border border-primary/10 text-center max-w-4xl mx-auto">
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <Zap className="h-6 w-6 text-primary fill-primary/20" />
+            <span className="font-bold text-lg">Satisfaction Guaranteed</span>
+          </div>
+          <p className="text-muted-foreground text-sm max-w-2xl mx-auto">
+            Not happy with your plan? We offer a no-questions-asked refund within the first 14 days of your subscription.
+            Join hundreds of founders managing their SaaS smarter.
+          </p>
+        </div>
+
         <div className="mt-12 pt-8 border-t flex flex-col items-center justify-center gap-4">
-          <p className="text-sm text-muted-foreground">Secure payments processed by</p>
+          <p className="text-sm text-muted-foreground">Secure, encrypted payments processed by Polar.sh. We never store your credit card information.</p>
           <div className="flex items-center gap-2 opacity-70 hover:opacity-100 transition-all">
             <svg className="h-6" viewBox="0 0 120 30" fill="currentColor">
               <text x="0" y="20" className="font-bold text-lg">Polar.sh</text>
