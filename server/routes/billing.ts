@@ -203,7 +203,7 @@ router.post("/webhooks/polar", async (req, res) => {
  */
 router.post("/checkout", async (req, res) => {
   if (!req.isAuthenticated()) {
-    return res.status(401).send("Unauthorized");
+    return res.status(401).json({ error: "Unauthorized", message: "Please log in to continue" });
   }
 
   const { productPriceId } = req.body;

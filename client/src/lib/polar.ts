@@ -36,7 +36,6 @@ export async function openPolarCheckout({
 
     try {
         // Call our backend to create a valid, signed checkout session
-        // This avoids 404s by using the official Polar SDK on the server
         const response = await fetch('/api/billing/checkout', {
             method: 'POST',
             headers: {
@@ -47,12 +46,19 @@ export async function openPolarCheckout({
             }),
         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to create checkout session');
+        if (response.status === 401) {
+            // User session expired or not logged in, redirect to signup/login
+            window.location.href = '/signup';
+            return;
         }
 
-        const { url } = await response.json();
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || data.error || 'Failed to create checkout session');
+        }
+
+        const { url } = data;
 
         console.log('[Polar] Redirecting to checkout session:', url);
 
@@ -61,7 +67,7 @@ export async function openPolarCheckout({
 
     } catch (error: any) {
         console.error('[Polar] Checkout error:', error);
-        alert(`Failed to open checkout: ${error.message}`);
+        alert(`Billing Error: ${error.message}`);
     }
 }
 
