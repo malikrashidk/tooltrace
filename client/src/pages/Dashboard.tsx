@@ -9,7 +9,7 @@ import { useCurrency } from "@/context/CurrencyContext";
 import { useAuth } from "@/context/AuthContext";
 import { VerificationSuccessBanner } from "@/components/VerificationSuccessBanner";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { openPolarCheckout } from "@/lib/polar";
 import { getPriceIdForPlan } from "@/lib/plans";
 import { Loader2 } from "lucide-react";
@@ -19,6 +19,7 @@ export function Dashboard() {
   const [, setLocation] = useLocation();
   const { formatAmount } = useCurrency();
   const { user, refreshUser } = useAuth();
+  const hasHandledSuccess = useRef(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(() => {
     return !!sessionStorage.getItem("pending_plan");
   });
@@ -27,18 +28,20 @@ export function Dashboard() {
   // Handle Polar Checkout Success
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("checkout") === "success") {
+    if (params.get("checkout") === "success" && !hasHandledSuccess.current) {
       console.log("[Dashboard] Payment success detected via URL");
+      hasHandledSuccess.current = true;
       setPaymentSuccess(true);
 
-      // Refresh user data to show new plan immediately
-      refreshUser();
+      // Clean up URL immediately to prevent loops on re-mount
+      window.history.replaceState({}, "", window.location.pathname);
+
+      // Refresh user data silently in the background
+      refreshUser(true);
 
       // Clear the overlay after 4 seconds
       const timer = setTimeout(() => {
         setPaymentSuccess(false);
-        // Clean up URL without reload
-        window.history.replaceState({}, "", window.location.pathname);
       }, 4000);
 
       return () => clearTimeout(timer);

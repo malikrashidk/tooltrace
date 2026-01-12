@@ -23,7 +23,7 @@ interface AuthContextType {
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
   setUser: (user: User | null) => void;
-  refreshUser: () => Promise<void>;
+  refreshUser: (silent?: boolean) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const fetchUserProfile = useCallback(async () => {
+  const fetchUserProfile = useCallback(async (silent = false) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -59,8 +59,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Ensure loading is true while fetching
-      setIsLoading(true);
+      // Only show global loader if not a silent background refresh
+      if (!silent) {
+        setIsLoading(true);
+      }
 
       // GET user profile endpoint is `/api/user/profile` on the server
       const response = await fetch("/api/user/profile", {
