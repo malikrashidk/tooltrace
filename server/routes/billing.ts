@@ -220,11 +220,14 @@ router.post("/checkout", authMiddleware, async (req, res) => {
     const user = req.user as any;
 
     // Create a checkout session using the SDK
-    // This is the most reliable way as it generates a short-lived, valid URL
     const checkout = await polarClient.checkouts.create({
       products: [productPriceId],
       successUrl: `${process.env.VITE_APP_URL || 'https://app.tooltrace.io'}/dashboard?checkout=success`,
       customerEmail: user.email,
+      // If the user already has a subscription, pass the ID handled as an upgrade/downgrade
+      subscriptionId: user.polarSubscriptionId || undefined,
+      // Link to our internal user ID
+      externalCustomerId: user.id,
       // Pass metadata so we can identify the user in the webhook
       metadata: {
         userId: user.id
