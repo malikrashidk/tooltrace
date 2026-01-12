@@ -35,16 +35,19 @@ export async function openPolarCheckout({
     }
 
     try {
+        // Use organization slug if available, otherwise fallback to ID (though slug is preferred by Polar)
+        const orgIdentifier = import.meta.env.VITE_POLAR_ORGANIZATION_SLUG || POLAR_ORGANIZATION_ID;
+
         // Construct the Polar checkout URL
+        // Standard format: https://polar.sh/{org_slug}/checkout?priceId={price_id}
         const baseUrl = POLAR_ENV === 'sandbox'
-            ? 'https://sandbox.polar.sh'
-            : 'https://polar.sh';
+            ? `https://sandbox.polar.sh/${orgIdentifier}`
+            : `https://polar.sh/${orgIdentifier}`;
 
-        // Build checkout URL with parameters
-        const checkoutUrl = new URL(`${baseUrl}/checkout/${POLAR_ORGANIZATION_ID}`);
+        const checkoutUrl = new URL(`${baseUrl}/checkout`);
 
-        // Add product price ID
-        checkoutUrl.searchParams.set('price_id', productPriceId);
+        // Add product price ID (Polar uses priceId camelCase)
+        checkoutUrl.searchParams.set('priceId', productPriceId);
 
         // Add optional parameters
         if (email) {
