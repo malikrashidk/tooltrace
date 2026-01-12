@@ -13,11 +13,11 @@ const POLAR_WEBHOOK_SECRET = process.env.POLAR_WEBHOOK_SECRET;
 const POLAR_ENV = process.env.POLAR_ENV || 'production'; // 'production' or 'sandbox'
 
 // Initialize Polar client
-// Note: Polar SDK uses production by default
-// For sandbox, you need to use a different access token from sandbox.polar.sh
 export const polarClient = POLAR_ACCESS_TOKEN
     ? new Polar({
         accessToken: POLAR_ACCESS_TOKEN,
+        // Fix: Use literal strings "sandbox" or "production" to satisfy SDK types
+        server: POLAR_ENV === 'sandbox' ? 'sandbox' : 'production'
     })
     : null;
 
