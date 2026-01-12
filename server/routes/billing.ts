@@ -2,6 +2,7 @@ import { Router } from "express";
 import { polarClient, verifyPolarWebhook } from "../lib/polar";
 import { storage } from "../storage";
 import { toCents } from "../../shared/money";
+import { authMiddleware } from "../middleware";
 
 const router = Router();
 
@@ -201,8 +202,8 @@ router.post("/webhooks/polar", async (req, res) => {
  * POST /api/billing/checkout
  * Create a Polar checkout session and return the URL
  */
-router.post("/checkout", async (req, res) => {
-  if (!req.isAuthenticated()) {
+router.post("/checkout", authMiddleware, async (req, res) => {
+  if (!req.user) {
     return res.status(401).json({ error: "Unauthorized", message: "Please log in to continue" });
   }
 
