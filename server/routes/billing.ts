@@ -36,11 +36,12 @@ const PLAN_LIMITS: Record<string, string> = {
  */
 router.post("/webhooks/polar", async (req, res) => {
   try {
-    // Get the raw body for signature verification
-    const rawBody = JSON.stringify(req.body);
+    // For signature verification, we MUST use the exact raw body string/buffer
+    // We captured this in server/app.ts as req.rawBody
+    const payload = (req as any).rawBody || JSON.stringify(req.body);
 
     // Verify webhook signature
-    const isValid = await verifyPolarWebhook(rawBody, req.headers);
+    const isValid = await verifyPolarWebhook(payload, req.headers);
 
     if (!isValid) {
       console.error("[Polar Webhook] Signature verification failed");

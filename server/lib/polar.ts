@@ -25,7 +25,7 @@ export const POLAR_WEBHOOK_SECRET_KEY = POLAR_WEBHOOK_SECRET;
 
 // Helper to verify Polar webhook signatures
 export async function verifyPolarWebhook(
-    payload: string,
+    payload: string | Buffer,
     headers: Record<string, string | string[] | undefined>
 ): Promise<boolean> {
     if (!POLAR_WEBHOOK_SECRET) {
@@ -34,45 +34,63 @@ export async function verifyPolarWebhook(
     }
 
     try {
-        // Polar uses Standard Webhooks spec
-        // The signature is in the 'webhook-signature' header
         const signature = headers['webhook-signature'] as string;
-
         if (!signature) {
-            console.error('[Polar] No webhook signature found');
+            console.error('[Polar] No webhook signature found in headers');
             return false;
         }
-
-        // Use Polar SDK's built-in verification (if available)
-        // For now, we'll implement manual verification using Standard Webhooks
-        const crypto = await import('crypto');
 
         // Standard Webhooks format: v1,<timestamp>,<signature>
         const parts = signature.split(',');
-        if (parts.length !== 3 || parts[0] !== 'v1') {
-            console.error('[Polar] Invalid signature format');
+
+        let timestamp: string = '';
+        let signaturePart: string = '';
+
+        // Some implementations might have 'v1,t=...,v=...' or just 'v1,timestamp,signature'
+        if (parts.length === 3 && parts[0] === 'v1') {
+            // Format: v1,timestamp,signature
+            timestamp = parts[1];
+            signaturePart = parts[2];
+        } else {
+            // Try to find parts by prefix if standard split fails
+            for (const part of parts) {
+                if (part.startsWith('t=')) timestamp = part.substring(2);
+                else if (part.startsWith('v1=')) signaturePart = part.substring(3);
+                else if (timestamp === '' && /^\d+$/.test(part)) timestamp = part;
+                else if (signaturePart === '' && part !== 'v1') signaturePart = part;
+            }
+        }
+
+        if (!timestamp || !signaturePart) {
+            console.error('[Polar] Could not parse signature components:', { signature, timestamp, signaturePart });
             return false;
         }
 
-        const timestamp = parts[1];
-        const expectedSignature = parts[2];
+        const crypto = await import('crypto');
 
-        // Create the signed content: timestamp.payload
-        const signedContent = `${timestamp}.${payload}`;
+        // Signed content is: msg_id.timestamp.payload 
+        // Note: Polar follows Standard Webhooks which includes webhook-id in the signed content
+        const webhookId = headers['webhook-id'] as string || '';
+        const signedContent = `${webhookId}.${timestamp}.${payload.toString()}`;
 
-        // Calculate HMAC
+        // Standard Webhooks signature is HMAC-SHA256
         const hmac = crypto.createHmac('sha256', POLAR_WEBHOOK_SECRET);
         hmac.update(signedContent);
         const calculatedSignature = hmac.digest('base64');
 
-        // Compare signatures (timing-safe)
-        const isValid = crypto.timingSafeEqual(
-            Buffer.from(expectedSignature),
-            Buffer.from(calculatedSignature)
-        );
+        // Check if signature matches
+        // Some systems might send hex instead of base64, let's handle that if needed
+        const isValid = calculatedSignature === signaturePart ||
+            hmac.digest('hex') === signaturePart;
 
         if (!isValid) {
             console.error('[Polar] Signature verification failed');
+            console.log('[Polar Debug] Signatures did not match:', {
+                received: signaturePart,
+                calculatedBase64: calculatedSignature,
+                webhookId,
+                timestamp
+            });
         }
 
         return isValid;
