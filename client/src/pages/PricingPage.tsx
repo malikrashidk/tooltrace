@@ -79,8 +79,14 @@ export function PricingPage() {
   ];
 
   const handleUpgrade = (planId: string) => {
+    // If user is not logged in, redirect to signup with plan intent
+    if (!user) {
+      window.location.href = `/signup?plan=${planId}&cycle=${billingCycle}`;
+      return;
+    }
+
     const priceId = getPriceIdForPlan(planId, billingCycle);
-    if (priceId && user) {
+    if (priceId) {
       openPolarCheckout({
         productPriceId: priceId,
         email: user.email,

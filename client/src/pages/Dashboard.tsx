@@ -28,20 +28,24 @@ export function Dashboard() {
   // NOTE: This logic is now handled globally in App.tsx to support upgrades from PricingPage
   // We keep this clear to avoid double handling.
 
-  // Handle pending plan upgrade from Signup/Login
+  // Handle pending plan upgrade from Signup/Login (Branding Site flow)
   useEffect(() => {
     const pendingPlan = sessionStorage.getItem("pending_plan");
+    const pendingCycle = sessionStorage.getItem("pending_cycle") as "monthly" | "yearly" || "monthly";
+
     if (pendingPlan && user) {
-      console.log("[Dashboard] Found pending plan:", pendingPlan);
-      const priceId = getPriceIdForPlan(pendingPlan);
-      console.log("[Dashboard] Resolved Price ID:", priceId);
+      console.log("[Dashboard] Found pending plan choice:", { pendingPlan, pendingCycle });
+
+      const priceId = getPriceIdForPlan(pendingPlan, pendingCycle);
 
       if (priceId) {
         setIsProcessingPayment(true);
-        // Clear it immediately to avoid loops or double triggers
+        // Clear them immediately to avoid loops
         sessionStorage.removeItem("pending_plan");
-        // Open checkout
-        console.log("[Dashboard] Opening checkout for:", user.email);
+        sessionStorage.removeItem("pending_cycle");
+
+        // Open checkout automatically
+        console.log("[Dashboard] Triggering auto-checkout for:", pendingPlan);
         openPolarCheckout({
           productPriceId: priceId,
           email: user.email,
@@ -49,9 +53,8 @@ export function Dashboard() {
           successUrl: `${window.location.origin}/dashboard?checkout=success`,
         });
       } else {
-        // Invalid plan or free plan, just clear it
-        console.warn("[Dashboard] Invalid or missing price ID for plan:", pendingPlan);
         sessionStorage.removeItem("pending_plan");
+        sessionStorage.removeItem("pending_cycle");
       }
     }
   }, [user]);

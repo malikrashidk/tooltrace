@@ -35,36 +35,39 @@ export async function openPolarCheckout({
     }
 
     try {
-        // Use organization slug if available, otherwise fallback to ID
-        // Note: Using a direct URL is more reliable if session cookies are restricted
-        const orgIdentifier = import.meta.env.VITE_POLAR_ORGANIZATION_SLUG || POLAR_ORGANIZATION_ID;
+        const token = localStorage.getItem("token");
 
-        const baseUrl = POLAR_ENV === 'sandbox'
-            ? `https://sandbox.polar.sh/${orgIdentifier}`
-            : `https://polar.sh/${orgIdentifier}`;
+        // Call our backend to create a valid, signed checkout session
+        // We use the backend SDK because manual URLs are prone to 404s
+        const response = await fetch('/api/billing/checkout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({
+                productPriceId,
+            }),
+        });
 
-        const checkoutUrl = new URL(`${baseUrl}/checkout`);
-
-        // Add product price ID (Polar uses priceId camelCase)
-        checkoutUrl.searchParams.set('priceId', productPriceId);
-
-        // Add user email if available
-        if (email) {
-            checkoutUrl.searchParams.set('customer_email', email);
+        if (response.status === 401) {
+            // If not logged in, redirect to signup
+            window.location.href = '/signup';
+            return;
         }
 
-        // Add metadata
-        if (userId) {
-            checkoutUrl.searchParams.set('metadata[userId]', userId);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || data.error || 'Failed to create checkout session');
         }
 
-        // Default success URL
-        checkoutUrl.searchParams.set('success_url', `${window.location.origin}/dashboard?checkout=success`);
+        const { url } = data;
 
-        console.log('[Polar] Redirecting to direct checkout:', checkoutUrl.toString());
+        console.log('[Polar] Redirecting to session URL:', url);
 
         // Redirect to Polar checkout
-        window.location.href = checkoutUrl.toString();
+        window.location.href = url;
 
     } catch (error: any) {
         console.error('[Polar] Checkout error:', error);

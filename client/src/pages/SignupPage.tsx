@@ -40,12 +40,17 @@ export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { signup } = useAuth();
 
-  // Capture plan intent on mount
+  // Capture plan intent on mount (from branding site or pricing page)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const plan = urlParams.get("plan");
+    const cycle = urlParams.get("cycle"); // monthly or yearly
+
     if (plan) {
       sessionStorage.setItem("pending_plan", plan);
+      if (cycle) {
+        sessionStorage.setItem("pending_cycle", cycle);
+      }
     }
   }, []);
 
