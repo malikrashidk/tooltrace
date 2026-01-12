@@ -175,60 +175,11 @@ function UnauthenticatedApp() {
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-
-  // Payment event handling is now done in the Polar checkout popup
-  // See client/src/lib/polar.ts for the message event listener
-
-
-  // Check for pending plan on load
-  useEffect(() => {
-    if (isAuthenticated && sessionStorage.getItem("pending_plan")) {
-      setIsProcessingPayment(true);
-    }
-  }, [isAuthenticated]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // Payment Success / Processing Overlay
-  if (paymentSuccess || isProcessingPayment) {
-    return (
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex flex-col items-center justify-center p-4">
-        <div className="bg-card border shadow-lg rounded-lg p-8 max-w-md w-full text-center space-y-4">
-          {paymentSuccess ? (
-            <div className="mx-auto h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-              <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-          ) : (
-            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-          )}
-          <h2 className="text-2xl font-semibold">
-            {paymentSuccess ? "Payment Successful!" : "Finalizing your subscription..."}
-          </h2>
-          <p className="text-muted-foreground">
-            {paymentSuccess
-              ? "Your plan has been upgraded. Refreshing your dashboard in a moment..."
-              : "Please complete the payment in the popup window. Your dashboard will be ready momentarily."}
-          </p>
-          {!paymentSuccess && (
-            <Button
-              variant="outline"
-              onClick={() => setIsProcessingPayment(false)}
-              className="mt-4"
-            >
-              Cancel and View Dashboard
-            </Button>
-          )}
-        </div>
       </div>
     );
   }

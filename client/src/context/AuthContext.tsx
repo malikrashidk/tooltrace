@@ -1,4 +1,4 @@
-﻿import { createContext, useContext, useState, useEffect } from "react";
+﻿import { createContext, useContext, useState, useEffect, useCallback } from "react";
 
 interface User {
   id: string;
@@ -41,17 +41,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return !!localStorage.getItem("token");
   });
 
-  // Auto-fetch user profile on mount if token exists
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      fetchUserProfile();
-    } else {
-      setIsLoading(false);
-    }
+
+
+  const logout = useCallback(() => {
+    setUser(null);
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    setIsLoading(false);
   }, []);
 
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -85,8 +85,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [logout]);
 
+  // Auto-fetch user profile on mount if token exists
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetchUserProfile();
+    } else {
+      setIsLoading(false);
+    }
+  }, [fetchUserProfile]);
   const login = async (email: string, password: string) => {
     const response = await fetch("/api/auth/login", {
       method: "POST",
@@ -134,15 +143,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Set cookie for extension sync
     document.cookie = `token=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; sameSite=Lax`;
   };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    setIsLoading(false);
-  };
-
   return (
     <AuthContext.Provider
       value={{
