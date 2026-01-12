@@ -60,6 +60,7 @@ function AuthenticatedApp() {
           <main className="flex-1 overflow-y-auto bg-background">
             <Switch>
               <Route path="/" component={Dashboard} />
+              <Route path="/dashboard" component={Dashboard} />
               <Route path="/tools" component={ToolsPage} />
               <Route path="/tools-advanced" component={AdvancedToolsManagement} />
               <Route path="/analytics" component={AnalyticsPage} />

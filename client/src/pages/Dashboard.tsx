@@ -18,15 +18,32 @@ import { fromCents } from "../../../shared/money";
 export function Dashboard() {
   const [, setLocation] = useLocation();
   const { formatAmount } = useCurrency();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [isProcessingPayment, setIsProcessingPayment] = useState(() => {
     return !!sessionStorage.getItem("pending_plan");
   });
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
-  // Listen for Paddle events
-  // NOTE: This logic is now handled globally in App.tsx to support upgrades from PricingPage
-  // We keep this clear to avoid double handling.
+  // Handle Polar Checkout Success
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") === "success") {
+      console.log("[Dashboard] Payment success detected via URL");
+      setPaymentSuccess(true);
+
+      // Refresh user data to show new plan immediately
+      refreshUser();
+
+      // Clear the overlay after 4 seconds
+      const timer = setTimeout(() => {
+        setPaymentSuccess(false);
+        // Clean up URL without reload
+        window.history.replaceState({}, "", window.location.pathname);
+      }, 4000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [refreshUser]);
 
   // Handle pending plan upgrade from Signup/Login (Branding Site flow)
   useEffect(() => {
