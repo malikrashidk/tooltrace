@@ -34,43 +34,40 @@ export async function verifyPolarWebhook(
     }
 
     try {
-        const signature = headers['webhook-signature'] as string;
-        if (!signature) {
+        const signatureHeader = headers['webhook-signature'] as string;
+        if (!signatureHeader) {
             console.error('[Polar] No webhook signature found in headers');
             return false;
         }
 
-        // Standard Webhooks format: v1,<timestamp>,<signature>
-        const parts = signature.split(',');
-
-        let timestamp: string = '';
+        // Standard Webhooks format: v1,base64_signature (multiple can be comma separated)
+        const parts = signatureHeader.split(' '); // Split multiple signatures if present
         let signaturePart: string = '';
 
-        // Some implementations might have 'v1,t=...,v=...' or just 'v1,timestamp,signature'
-        if (parts.length === 3 && parts[0] === 'v1') {
-            // Format: v1,timestamp,signature
-            timestamp = parts[1];
-            signaturePart = parts[2];
-        } else {
-            // Try to find parts by prefix if standard split fails
-            for (const part of parts) {
-                if (part.startsWith('t=')) timestamp = part.substring(2);
-                else if (part.startsWith('v1=')) signaturePart = part.substring(3);
-                else if (timestamp === '' && /^\d+$/.test(part)) timestamp = part;
-                else if (signaturePart === '' && part !== 'v1') signaturePart = part;
+        for (const part of parts) {
+            const [version, sig] = part.split(',');
+            if (version === 'v1') {
+                signaturePart = sig;
+                break;
             }
         }
 
+        // Get ID and Timestamp from their specific headers
+        const webhookId = headers['webhook-id'] as string || '';
+        const timestamp = headers['webhook-timestamp'] as string || '';
+
         if (!timestamp || !signaturePart) {
-            console.error('[Polar] Could not parse signature components:', { signature, timestamp, signaturePart });
+            console.error('[Polar] Missing required signature components:', {
+                hasTimestamp: !!timestamp,
+                hasSignature: !!signaturePart,
+                webhookId
+            });
             return false;
         }
 
         const crypto = await import('crypto');
 
         // Signed content is: msg_id.timestamp.payload 
-        // Note: Polar follows Standard Webhooks which includes webhook-id in the signed content
-        const webhookId = headers['webhook-id'] as string || '';
         const signedContent = `${webhookId}.${timestamp}.${payload.toString()}`;
 
         // Standard Webhooks signature is HMAC-SHA256
