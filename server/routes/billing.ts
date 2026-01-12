@@ -198,41 +198,46 @@ router.post("/webhooks/polar", async (req, res) => {
 });
 
 /**
- * Optional: Create a checkout session endpoint
- * This can be used by the frontend to create checkout sessions via API
- * 
- * NOTE: Currently using popup-based checkout in frontend (client/src/lib/polar.ts)
- * This endpoint is optional and can be implemented if needed for backend-initiated checkouts
+ * POST /api/billing/checkout
+ * Create a Polar checkout session and return the URL
  */
-/*
-router.post("/create-checkout", async (req, res) => {
+router.post("/checkout", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).send("Unauthorized");
+  }
+
+  const { productPriceId } = req.body;
+  if (!productPriceId) {
+    return res.status(400).send("Product Price ID is required");
+  }
+
+  if (!polarClient) {
+    return res.status(503).send("Billing system not configured");
+  }
+
   try {
-    const { productPriceId, email, userId } = req.body;
+    const user = req.user as any;
 
-    if (!polarClient) {
-      return res.status(500).json({ error: "Polar not configured" });
-    }
-
-    if (!productPriceId) {
-      return res.status(400).json({ error: "productPriceId required" });
-    }
-
-    // Create checkout session using Polar SDK
-    // Refer to Polar SDK documentation for exact API
+    // Create a checkout session using the SDK
+    // This is the most reliable way as it generates a short-lived, valid URL
     const checkout = await polarClient.checkouts.create({
-      // Polar checkout creation parameters
-      // Check SDK docs: https://docs.polar.sh
+      products: [productPriceId],
+      successUrl: `${process.env.VITE_APP_URL || 'https://app.tooltrace.io'}/dashboard?checkout=success`,
+      customerEmail: user.email,
+      // Pass metadata so we can identify the user in the webhook
+      metadata: {
+        userId: user.id
+      }
     });
 
-    res.json({ 
-      checkoutUrl: checkout.url,
-      checkoutId: checkout.id,
+    res.json({ url: checkout.url });
+  } catch (error: any) {
+    console.error("[Polar Checkout] Error creating session:", error);
+    res.status(500).json({
+      error: "Failed to create checkout session",
+      message: error.message
     });
-  } catch (error) {
-    console.error("[Billing] Failed to create checkout:", error);
-    res.status(500).json({ error: "Failed to create checkout" });
   }
 });
-*/
 
 export default router;

@@ -35,50 +35,33 @@ export async function openPolarCheckout({
     }
 
     try {
-        // Use organization slug if available, otherwise fallback to ID (though slug is preferred by Polar)
-        const orgIdentifier = import.meta.env.VITE_POLAR_ORGANIZATION_SLUG || POLAR_ORGANIZATION_ID;
-
-        // Construct the Polar checkout URL
-        // Standard format: https://polar.sh/{org_slug}/checkout?priceId={price_id}
-        const baseUrl = POLAR_ENV === 'sandbox'
-            ? `https://sandbox.polar.sh/${orgIdentifier}`
-            : `https://polar.sh/${orgIdentifier}`;
-
-        const checkoutUrl = new URL(`${baseUrl}/checkout`);
-
-        // Add product price ID (Polar uses priceId camelCase)
-        checkoutUrl.searchParams.set('priceId', productPriceId);
-
-        // Add optional parameters
-        if (email) {
-            checkoutUrl.searchParams.set('email', email);
-        }
-
-        if (userId) {
-            // Polar supports custom metadata
-            checkoutUrl.searchParams.set('metadata[userId]', userId);
-        }
-
-        if (successUrl) {
-            checkoutUrl.searchParams.set('success_url', successUrl);
-        } else {
-            // Default success URL
-            checkoutUrl.searchParams.set('success_url', `${window.location.origin}/dashboard?checkout=success`);
-        }
-
-        console.log('[Polar] Redirecting to checkout:', {
-            productPriceId,
-            email,
-            userId,
-            env: POLAR_ENV,
+        // Call our backend to create a valid, signed checkout session
+        // This avoids 404s by using the official Polar SDK on the server
+        const response = await fetch('/api/billing/checkout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productPriceId,
+            }),
         });
 
-        // Redirect to Polar checkout
-        window.location.href = checkoutUrl.toString();
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to create checkout session');
+        }
 
-    } catch (error) {
+        const { url } = await response.json();
+
+        console.log('[Polar] Redirecting to checkout session:', url);
+
+        // Redirect to Polar checkout
+        window.location.href = url;
+
+    } catch (error: any) {
         console.error('[Polar] Checkout error:', error);
-        alert('Failed to open checkout. Please try again or contact support.');
+        alert(`Failed to open checkout: ${error.message}`);
     }
 }
 
