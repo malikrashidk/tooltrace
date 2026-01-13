@@ -89,8 +89,13 @@ export function PricingPage() {
 
     // Safety Check: If user is already on a paid plan (updating), confirm intent
     // because this will charge their card immediately.
-    if (userPlan !== 'free' && userPlan !== planId) {
-      if (!window.confirm(`Are you sure you want to upgrade to ${planId === 'pro' ? 'Pro' : 'Enterprise'}? Your payment method on file will be charged for the difference immediately.`)) {
+    const normalizedUserPlan = userPlan ? userPlan.toLowerCase() : 'free';
+    console.log('[Pricing] handleUpgrade clicked', { planId, userPlan, normalizedUserPlan });
+
+    if (normalizedUserPlan !== 'free' && normalizedUserPlan !== 'starter' && normalizedUserPlan !== planId) {
+      const confirmMessage = `Are you sure you want to upgrade to ${planId === 'pro' ? 'Pro' : 'Enterprise'}? Your payment method on file will be charged for the difference immediately.`;
+      if (!window.confirm(confirmMessage)) {
+        console.log('[Pricing] Upgrade cancelled by user');
         return;
       }
     }
