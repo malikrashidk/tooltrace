@@ -97,6 +97,28 @@ export async function verifyPolarWebhook(
     }
 }
 
+// Helper to list subscriptions for a customer by email
+export async function listSubscriptionsByEmail(email: string) {
+    if (!polarClient) return [];
+    try {
+        // 1. Find customer by email
+        const customers = await polarClient.customers.list({ email });
+        if (customers.result.items.length === 0) return [];
+
+        const customerId = customers.result.items[0].id;
+
+        // 2. Find active subscriptions for this customer
+        const result = await polarClient.subscriptions.list({
+            customerId,
+            active: true
+        });
+        return result.result.items;
+    } catch (error) {
+        console.error('[Polar] Error listing subscriptions by email:', error);
+        return [];
+    }
+}
+
 // Log initialization status
 if (polarClient) {
     console.log(`[Polar] Client initialized successfully (${POLAR_ENV} mode)`);

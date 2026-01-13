@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { polarClient, verifyPolarWebhook } from "../lib/polar";
+import { polarClient, verifyPolarWebhook, listSubscriptionsByEmail } from "../lib/polar";
 import { storage } from "../storage";
 import { toCents } from "../../shared/money";
 import { authMiddleware } from "../middleware";
@@ -13,6 +13,14 @@ const POLAR_ID_TO_PLAN: Record<string, string> = {
   [process.env.POLAR_PRICE_ID_PRO_YEARLY || process.env.VITE_POLAR_PRICE_ID_PRO_YEARLY || ""]: "pro",
   [process.env.POLAR_PRICE_ID_ENTERPRISE_MONTHLY || process.env.VITE_POLAR_PRICE_ID_ENTERPRISE || ""]: "enterprise",
   [process.env.POLAR_PRICE_ID_ENTERPRISE_YEARLY || process.env.VITE_POLAR_PRICE_ID_ENTERPRISE_YEARLY || ""]: "enterprise",
+};
+
+// Aliases for compatibility if needed
+const PLAN_ALIASES: Record<string, string> = {
+  pro: "pro",
+  enterprise: "enterprise",
+  standard: "pro",
+  premium: "enterprise"
 };
 
 // Remove empty keys
@@ -266,13 +274,51 @@ router.post("/checkout", authMiddleware, async (req, res) => {
   try {
     const user = req.user as any;
 
+    // --- PROACTIVE SYNC: Fix for "Active Subscription" error during upgrades/re-creations ---
+    let polarSubscriptionId = user.polarSubscriptionId;
+
+    if (!polarSubscriptionId) {
+      console.log(`[Polar Checkout] No subscriptionId in DB for ${user.email}, checking Polar API...`);
+      const existingSubs = await listSubscriptionsByEmail(user.email);
+
+      if (existingSubs && existingSubs.length > 0) {
+        // Take the first active subscription
+        const activeSub = existingSubs[0];
+        polarSubscriptionId = activeSub.id;
+
+        console.log(`[Polar Checkout] Proactive sync found active sub ${polarSubscriptionId} for ${user.email}`);
+
+        // Determine the plan using SDK properties (camelCase)
+        const activeSubTyped = activeSub as any;
+        const plan = POLAR_ID_TO_PLAN[activeSubTyped.priceId || activeSubTyped.price_id || ""] ||
+          POLAR_ID_TO_PLAN[activeSub.productId] || "free";
+
+        // Update our DB so we don't need to check Polar API next time
+        await storage.updateUser(user.id, {
+          polarSubscriptionId: activeSub.id,
+          polarCustomerId: activeSub.customerId,
+          plan: plan as any
+        });
+
+        // Update subscription record as well
+        const userSub = await storage.getUserSubscription(user.id);
+        if (userSub) {
+          await storage.updateSubscription(userSub.id, {
+            plan: plan as any,
+            status: activeSub.status as any,
+            renewalDate: activeSub.currentPeriodEnd ? new Date(activeSub.currentPeriodEnd) : null
+          });
+        }
+      }
+    }
+
     // Create a checkout session using the SDK
     const checkout = await polarClient.checkouts.create({
       products: [productPriceId],
       successUrl: `${process.env.VITE_APP_URL || 'https://app.tooltrace.io'}/dashboard?checkout=success`,
       customerEmail: user.email,
       // If the user already has a subscription, pass the ID handled as an upgrade/downgrade
-      subscriptionId: user.polarSubscriptionId || undefined,
+      subscriptionId: polarSubscriptionId || undefined,
       // Link to our internal user ID
       externalCustomerId: user.id,
       // Pass metadata so we can identify the user in the webhook

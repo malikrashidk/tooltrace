@@ -75,7 +75,7 @@ router.post("/tools", authMiddleware, emailVerificationMiddleware, async (req, r
       return res
         .status(403)
         .json({
-          error: `Tool limit reached.Upgrade to ${subscription.plan === "free" ? "Standard" : "Premium"} for more tools.`,
+          error: `Tool limit reached. Upgrade to Pro or Enterprise for more tools.`,
         });
     }
 
@@ -342,7 +342,7 @@ const paidPlanMiddleware = async (req: any, res: any, next: any) => {
   try {
     const user = await storage.getUser(req.userId!);
     if (!user) {
-      return res.status(403).json({ error: "Receipt storage is only available for Standard and Premium plans" });
+      return res.status(403).json({ error: "Receipt storage is only available for Pro and Enterprise plans" });
     }
 
     // Allow admins regardless of plan
@@ -351,8 +351,8 @@ const paidPlanMiddleware = async (req: any, res: any, next: any) => {
     }
 
     const plan = (user.plan || "").toString().toLowerCase().trim();
-    if (plan !== "standard" && plan !== "premium") {
-      return res.status(403).json({ error: "Receipt storage is only available for Standard and Premium plans" });
+    if (plan !== "pro" && plan !== "enterprise") {
+      return res.status(403).json({ error: "Receipt storage is only available for Pro and Enterprise plans" });
     }
     next();
   } catch (error) {
