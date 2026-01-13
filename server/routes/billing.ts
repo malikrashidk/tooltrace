@@ -3,6 +3,7 @@ import { polarClient, verifyPolarWebhook, listSubscriptionsByEmail } from "../li
 import { storage } from "../storage";
 import { toCents } from "../../shared/money";
 import { authMiddleware } from "../middleware";
+import { syncUserSubscription } from "../lib/sync-utils";
 
 const router = Router();
 
@@ -179,6 +180,21 @@ router.post("/webhooks/polar", async (req, res) => {
           }
         );
 
+        // --- UPGRADE CLEANUP ---
+        // If they just got a new subscription and it's different from the old one,
+        // we should cancel the old one in Polar to avoid double billing.
+        const oldSubId = user.polarSubscriptionId;
+        if (isActive && oldSubId && oldSubId !== subscription.id) {
+          console.log(`[Polar Webhook] New subscription ${subscription.id} is different from old ${oldSubId}. Revoking old one...`);
+          const { cancelSubscription } = await import("../lib/polar");
+          try {
+            await cancelSubscription(oldSubId);
+            console.log(`[Polar Webhook] Successfully revoked old sub ${oldSubId}`);
+          } catch (err) {
+            console.error(`[Polar Webhook] Failed to revoke old sub ${oldSubId}:`, err);
+          }
+        }
+
         console.log(`[Polar Webhook] Updated user ${user.id} (${user.email}) to plan ${plan} (Status: ${status})`);
         break;
       }
@@ -274,51 +290,27 @@ router.post("/checkout", authMiddleware, async (req, res) => {
   try {
     const user = req.user as any;
 
-    // --- PROACTIVE SYNC: Fix for "Active Subscription" error during upgrades/re-creations ---
+    // --- PROACTIVE SYNC: Use centralized helper ---
     let polarSubscriptionId = user.polarSubscriptionId;
 
     if (!polarSubscriptionId) {
-      console.log(`[Polar Checkout] No subscriptionId in DB for ${user.email}, checking Polar API...`);
-      const existingSubs = await listSubscriptionsByEmail(user.email);
-
-      if (existingSubs && existingSubs.length > 0) {
-        // Take the first active subscription
-        const activeSub = existingSubs[0];
-        polarSubscriptionId = activeSub.id;
-
-        console.log(`[Polar Checkout] Proactive sync found active sub ${polarSubscriptionId} for ${user.email}`);
-
-        // Determine the plan using SDK properties (camelCase)
-        const activeSubTyped = activeSub as any;
-        const plan = POLAR_ID_TO_PLAN[activeSubTyped.priceId || activeSubTyped.price_id || ""] ||
-          POLAR_ID_TO_PLAN[activeSub.productId] || "free";
-
-        // Update our DB so we don't need to check Polar API next time
-        await storage.updateUser(user.id, {
-          polarSubscriptionId: activeSub.id,
-          polarCustomerId: activeSub.customerId,
-          plan: plan as any
-        });
-
-        // Update subscription record as well
-        const userSub = await storage.getUserSubscription(user.id);
-        if (userSub) {
-          await storage.updateSubscription(userSub.id, {
-            plan: plan as any,
-            status: activeSub.status as any,
-            renewalDate: activeSub.currentPeriodEnd ? new Date(activeSub.currentPeriodEnd) : null
-          });
-        }
+      const syncResult = await syncUserSubscription(user.id, user.email);
+      if (syncResult) {
+        polarSubscriptionId = syncResult.subscriptionId;
       }
     }
 
     // Create a checkout session using the SDK
+    const currentPlan = (user.plan || "").toString().toLowerCase();
+    const isFree = currentPlan === "free" || !currentPlan;
+
     const checkout = await polarClient.checkouts.create({
       products: [productPriceId],
       successUrl: `${process.env.VITE_APP_URL || 'https://app.tooltrace.io'}/dashboard?checkout=success`,
       customerEmail: user.email,
-      // If the user already has a subscription, pass the ID handled as an upgrade/downgrade
-      subscriptionId: polarSubscriptionId || undefined,
+      // Polar: Only pass subscriptionId for upgrades FROM a free plan
+      // Passing it for paid-to-paid causes "Only free subscriptions can be upgraded" error
+      subscriptionId: isFree ? (polarSubscriptionId || undefined) : undefined,
       // Link to our internal user ID
       externalCustomerId: user.id,
       // Pass metadata so we can identify the user in the webhook

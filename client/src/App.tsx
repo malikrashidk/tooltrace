@@ -175,6 +175,23 @@ function UnauthenticatedApp() {
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
+  const search = useSearch();
+
+  // Robust Intent Capture: Listen for plan/cycle params globally
+  // This ensures intent is saved even if user is redirected (e.g., from /signup to /login)
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    const plan = params.get("plan");
+    const cycle = params.get("cycle");
+
+    if (plan) {
+      console.log("[App] Capturing plan intent:", { plan, cycle });
+      sessionStorage.setItem("pending_plan", plan);
+      if (cycle) {
+        sessionStorage.setItem("pending_cycle", cycle);
+      }
+    }
+  }, [search]);
 
   if (isLoading) {
     return (

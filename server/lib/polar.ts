@@ -119,6 +119,22 @@ export async function listSubscriptionsByEmail(email: string) {
     }
 }
 
+// Helper to cancel a subscription
+export async function cancelSubscription(subscriptionId: string) {
+    if (!polarClient) return null;
+    try {
+        console.log(`[Polar] Cancelling subscription: ${subscriptionId}`);
+        // In Polar SDK, we use revoke to cancel/revoke
+        return await polarClient.subscriptions.revoke({
+            id: subscriptionId
+        });
+    } catch (error) {
+        // Log but don't throw to prevent webhook failure
+        console.error('[Polar] Error cancelling subscription:', error);
+        return null;
+    }
+}
+
 // Log initialization status
 if (polarClient) {
     console.log(`[Polar] Client initialized successfully (${POLAR_ENV} mode)`);

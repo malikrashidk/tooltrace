@@ -38,15 +38,18 @@ export function Dashboard() {
       window.history.replaceState({}, "", window.location.pathname);
 
       // Handle refresh with a retry loop to account for webhook latency
-      const attemptRefresh = async (retries = 2) => {
+      // Increased retries to 5 and delay to 3s for better reliability
+      const attemptRefresh = async (retries = 5) => {
         const oldPlan = (user as any)?.plan;
+        console.log(`[Dashboard] Attempting refresh (retries left: ${retries}). Current plan: ${oldPlan}`);
+
         const updatedUser = await refreshUser(true) as any;
 
         // If plan is still the same and it wasn't free to begin with, 
         // or if we just want to be sure, retry after a delay.
         if (updatedUser?.plan === oldPlan && retries > 0) {
-          console.log(`[Dashboard] Plan still ${oldPlan}, retrying in 2s...`);
-          setTimeout(() => attemptRefresh(retries - 1), 2000);
+          console.log(`[Dashboard] Plan still ${oldPlan}, retrying in 3s...`);
+          setTimeout(() => attemptRefresh(retries - 1), 3000);
         } else {
           console.log("[Dashboard] Plan update confirmed:", updatedUser?.plan);
           // Invalidate all queries to refresh spending stats and tool lists
@@ -63,7 +66,7 @@ export function Dashboard() {
 
       return () => clearTimeout(timer);
     }
-  }, [refreshUser, queryClient, user?.plan]);
+  }, [refreshUser, queryClient, user]);
 
   // Handle pending plan upgrade from Signup/Login (Branding Site flow)
   useEffect(() => {
@@ -345,6 +348,3 @@ export function Dashboard() {
     </div>
   );
 }
-
-
-

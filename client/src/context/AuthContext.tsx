@@ -41,8 +41,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return !!localStorage.getItem("token");
   });
 
-
-
   const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem("user");
@@ -64,8 +62,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(true);
       }
 
-      // GET user profile endpoint is `/api/user/profile` on the server
-      const response = await fetch("/api/user/profile", {
+      // GET user profile endpoint with cache buster
+      const response = await fetch(`/api/user/profile?t=${Date.now()}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -101,6 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
   }, [fetchUserProfile]);
+
   const login = async (email: string, password: string) => {
     const response = await fetch("/api/auth/login", {
       method: "POST",
@@ -148,6 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Set cookie for extension sync
     document.cookie = `token=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; sameSite=Lax`;
   };
+
   return (
     <AuthContext.Provider
       value={{
@@ -173,6 +173,3 @@ export function useAuth() {
   }
   return context;
 }
-
-
-

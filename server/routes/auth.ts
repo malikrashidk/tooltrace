@@ -14,6 +14,7 @@ import {
   generateBackupCodes,
   verifyBackupCode,
 } from "../twoFactor";
+import { syncUserSubscription } from "../lib/sync-utils";
 
 const router = Router();
 
@@ -54,7 +55,14 @@ router.post("/register", async (req, res) => {
     try {
       await sendEmailVerificationEmail(user.email, verifyUrl);
     } catch (e) {
-      console.error("Failed to send verification email:", e);
+      console.log("Failed to send verification email:", e);
+    }
+
+    // Proactive sync for users who bought on branding site before registering
+    try {
+      await syncUserSubscription(user.id, user.email);
+    } catch (syncErr) {
+      console.error("[Auth] Background sync failed:", syncErr);
     }
 
     const token = generateToken(user);
@@ -191,6 +199,11 @@ router.post("/login", async (req, res) => {
 
     // Update last login time
     await storage.updateUser(user.id, { lastLoginAt: new Date() });
+
+    // Background sync on login to ensure plan is up to date
+    syncUserSubscription(user.id, user.email).catch(err =>
+      console.error("[Auth] Login sync failed:", err)
+    );
 
     await auditLog(user.id, "login", "user", user.id, {}, req);
 
@@ -380,6 +393,11 @@ router.post("/oauth/handoff", async (req, res) => {
 
     // Update last login
     await storage.updateUser(user.id, { lastLoginAt: new Date() });
+
+    // Background sync on OAuth handoff
+    syncUserSubscription(user.id, user.email).catch(err =>
+      console.error("[Auth] OAuth sync failed:", err)
+    );
 
     const token = generateToken(user);
     res.json({

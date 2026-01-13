@@ -39,8 +39,9 @@ export function PricingPage() {
       id: "pro",
       name: "Pro",
       description: "For founders and growing teams",
-      price: billingCycle === "monthly" ? 9.99 : 8.99, // ~10% discount off 9.99
+      price: billingCycle === "monthly" ? 9.99 : 8.33,
       originalPrice: 9.99,
+      yearlyPrice: 100,
       tools: "Unlimited",
       features: [
         "Unlimited tools",
@@ -60,8 +61,9 @@ export function PricingPage() {
       id: "enterprise",
       name: "Enterprise",
       description: "For teams and agencies",
-      price: billingCycle === "monthly" ? 24.99 : 22.49, // ~10% discount
+      price: billingCycle === "monthly" ? 24.99 : 20.83,
       originalPrice: 24.99,
+      yearlyPrice: 250,
       tools: "Unlimited",
       features: [
         "Everything in Pro",
@@ -117,7 +119,7 @@ export function PricingPage() {
             onCheckedChange={(checked) => setBillingCycle(checked ? "yearly" : "monthly")}
           />
           <Label htmlFor="billing-toggle" className={`text-sm ${billingCycle === "yearly" ? "font-bold text-foreground" : "text-muted-foreground"}`}>
-            Yearly <Badge variant="secondary" className="ml-1.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0">Save up to $30/year</Badge>
+            Yearly <Badge variant="secondary" className="ml-1.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0">Save up to $50/year</Badge>
           </Label>
         </div>
       </div>
@@ -155,7 +157,7 @@ export function PricingPage() {
                 </div>
                 {billingCycle === "yearly" && plan.price > 0 && (
                   <p className="text-xs text-green-600 dark:text-green-400 font-medium">
-                    Billed ${Math.round(plan.price * 12 * 100) / 100} yearly
+                    Billed ${(plan as any).yearlyPrice} yearly
                   </p>
                 )}
                 {billingCycle === "monthly" && (

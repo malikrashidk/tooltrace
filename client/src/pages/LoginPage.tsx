@@ -59,10 +59,14 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
 
-    // Capture plan intent
+    // Capture plan intent (backup for global listener in App.tsx)
     const plan = urlParams.get("plan");
+    const cycle = urlParams.get("cycle");
     if (plan) {
       sessionStorage.setItem("pending_plan", plan);
+      if (cycle) {
+        sessionStorage.setItem("pending_cycle", cycle);
+      }
     }
 
     // Capture OAuth Code or Token (Legacy)
