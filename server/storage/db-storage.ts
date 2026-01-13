@@ -21,9 +21,10 @@ import type {
     DetectedSiteDaily,
     InsertDetectedSiteDaily,
 } from "../../shared/schema";
-import { users, subscriptions, tools, auditLogs } from "../../shared/schema";
+import { users, subscriptions, tools, auditLogs, payments, receipts } from "../../shared/schema";
 import { IStorage } from "./types";
-import { db, sql } from "../db";
+import { db, sql as neonSql } from "../db";
+import { eq, and, sql } from "drizzle-orm";
 import {
     mapUser,
     mapTool,
@@ -42,7 +43,7 @@ export class DbStorage implements IStorage {
     async getUser(id: string): Promise<User | undefined> {
         if (!id) return undefined;
         try {
-            const result = await sql`SELECT * FROM users WHERE id = ${id} LIMIT 1`;
+            const result = await neonSql`SELECT * FROM users WHERE id = ${id} LIMIT 1`;
             if (!result || !Array.isArray(result) || result.length === 0) return undefined;
             return mapUser(result[0]);
         } catch (error: any) {
@@ -54,7 +55,7 @@ export class DbStorage implements IStorage {
     async getUserByEmail(email: string): Promise<User | undefined> {
         if (!email) return undefined;
         try {
-            const result = await sql`SELECT * FROM users WHERE email = ${email} LIMIT 1`;
+            const result = await neonSql`SELECT * FROM users WHERE email = ${email} LIMIT 1`;
             if (!result || !Array.isArray(result) || result.length === 0) return undefined;
             return mapUser(result[0]);
         } catch (error) {
@@ -64,23 +65,23 @@ export class DbStorage implements IStorage {
     }
 
     async getUserByGoogleId(googleId: string): Promise<User | undefined> {
-        const result = await sql`SELECT * FROM users WHERE google_id = ${googleId} LIMIT 1`;
+        const result = await neonSql`SELECT * FROM users WHERE google_id = ${googleId} LIMIT 1`;
         return mapUser(result[0]);
     }
 
     async getUserByFacebookId(facebookId: string): Promise<User | undefined> {
-        const result = await sql`SELECT * FROM users WHERE facebook_id = ${facebookId} LIMIT 1`;
+        const result = await neonSql`SELECT * FROM users WHERE facebook_id = ${facebookId} LIMIT 1`;
         return mapUser(result[0]);
     }
 
     async getUserByPolarCustomerId(customerId: string): Promise<User | undefined> {
-        const result = await sql`SELECT * FROM users WHERE polar_customer_id = ${customerId} LIMIT 1`;
+        const result = await neonSql`SELECT * FROM users WHERE polar_customer_id = ${customerId} LIMIT 1`;
         return mapUser(result[0]);
     }
 
     async getUserByResetToken(token: string): Promise<User | undefined> {
         try {
-            const result = await sql`SELECT * FROM users WHERE reset_token = ${token} LIMIT 1`;
+            const result = await neonSql`SELECT * FROM users WHERE reset_token = ${token} LIMIT 1`;
             if (!result || !Array.isArray(result) || result.length === 0) return undefined;
             return mapUser(result[0]);
         } catch (error) {
@@ -90,12 +91,12 @@ export class DbStorage implements IStorage {
     }
 
     async getAllUsers(): Promise<User[]> {
-        const result = await sql`SELECT * FROM users`;
+        const result = await neonSql`SELECT * FROM users`;
         return result.map((row: any) => mapUser(row)!);
     }
 
     async createUser(user: InsertUser): Promise<User> {
-        const result = await sql`
+        const result = await neonSql`
       INSERT INTO users (email, password, name)
       VALUES (${user.email}, ${user.password}, ${user.name})
       RETURNING *
@@ -104,7 +105,7 @@ export class DbStorage implements IStorage {
     }
 
     async createOAuthUser(userData: Partial<User>): Promise<User> {
-        const result = await sql`
+        const result = await neonSql`
       INSERT INTO users (email, name, password, google_id, facebook_id, oauth_provider, avatar_url, email_verified_at)
       VALUES (
         ${userData.email!},
@@ -139,7 +140,7 @@ export class DbStorage implements IStorage {
             const query = `UPDATE users SET ${setClauses.join(', ')}, updated_at = NOW() WHERE id = $${paramIndex} RETURNING *`;
             values.push(id);
 
-            const result = await sql(query, values);
+            const result = await neonSql(query, values);
             return mapUser(result[0]);
         } catch (error) {
             console.error("[DbStorage.updateUser] Error:", error);
@@ -148,23 +149,23 @@ export class DbStorage implements IStorage {
     }
 
     async deleteUser(id: string): Promise<boolean> {
-        const result = await sql`DELETE FROM users WHERE id = ${id} RETURNING id`;
+        const result = await neonSql`DELETE FROM users WHERE id = ${id} RETURNING id`;
         return result.length > 0;
     }
 
     // Tool operations
     async getTool(id: string): Promise<Tool | undefined> {
-        const result = await sql`SELECT * FROM tools WHERE id = ${id} LIMIT 1`;
+        const result = await neonSql`SELECT * FROM tools WHERE id = ${id} LIMIT 1`;
         return mapTool(result[0]);
     }
 
     async getUserTools(userId: string): Promise<Tool[]> {
-        const result = await sql`SELECT * FROM tools WHERE user_id = ${userId} ORDER BY created_at DESC`;
+        const result = await neonSql`SELECT * FROM tools WHERE user_id = ${userId} ORDER BY created_at DESC`;
         return result.map((row: any) => mapTool(row)!);
     }
 
     async createTool(tool: InsertTool & { userId: string }): Promise<Tool> {
-        const result = await sql`
+        const result = await neonSql`
       INSERT INTO tools (user_id, name, website_url, logo_url, notes, is_paid, billing_amount, billing_cycle, next_renewal_date, categories, tags, usage_frequency, payment_method, credentials, secure_note, is_pinned)
       VALUES (${tool.userId}, ${tool.name}, ${tool.websiteUrl}, ${tool.logoUrl}, ${tool.notes}, ${tool.isPaid}, ${tool.billingAmount}, ${tool.billingCycle}, ${tool.nextRenewalDate}, ${tool.categories}, ${tool.tags}, ${tool.usageFrequency}, ${tool.paymentMethod}, ${tool.credentials}, ${tool.secureNote || null}, ${tool.isPinned || false})
       RETURNING *
@@ -189,28 +190,28 @@ export class DbStorage implements IStorage {
         const query = `UPDATE tools SET ${setClauses.join(', ')}, updated_at = NOW() WHERE id = $${paramIndex} RETURNING *`;
         values.push(id);
 
-        const result = await sql(query, values);
+        const result = await neonSql(query, values);
         return mapTool(result[0]);
     }
 
     async deleteTool(id: string): Promise<boolean> {
-        const result = await sql`DELETE FROM tools WHERE id = ${id} RETURNING id`;
+        const result = await neonSql`DELETE FROM tools WHERE id = ${id} RETURNING id`;
         return result.length > 0;
     }
 
     async getUserToolsCount(userId: string): Promise<number> {
-        const result = await sql`SELECT COUNT(*) FROM tools WHERE user_id = ${userId}`;
+        const result = await neonSql`SELECT COUNT(*) FROM tools WHERE user_id = ${userId}`;
         return parseInt(result[0].count);
     }
 
     // Subscription operations
     async getUserSubscription(userId: string): Promise<Subscription | undefined> {
-        const result = await sql`SELECT * FROM subscriptions WHERE user_id = ${userId} LIMIT 1`;
+        const result = await neonSql`SELECT * FROM subscriptions WHERE user_id = ${userId} LIMIT 1`;
         return mapSubscription(result[0]);
     }
 
     async createSubscription(sub: InsertSubscription): Promise<Subscription> {
-        const result = await sql`
+        const result = await neonSql`
       INSERT INTO subscriptions (user_id, plan, status, current_tools_count, tools_limit, start_date, renewal_date)
       VALUES (${sub.userId}, ${sub.plan}, ${sub.status || 'active'}, ${sub.currentToolsCount || 0}, ${sub.toolsLimit}, ${sub.startDate || new Date()}, ${sub.renewalDate})
       RETURNING *
@@ -235,13 +236,13 @@ export class DbStorage implements IStorage {
         const query = `UPDATE subscriptions SET ${setClauses.join(', ')}, updated_at = NOW() WHERE id = $${paramIndex} RETURNING *`;
         values.push(id);
 
-        const result = await sql(query, values);
+        const result = await neonSql(query, values);
         return mapSubscription(result[0]);
     }
 
     // Payment operations
     async createPayment(payment: InsertPayment): Promise<Payment> {
-        const result = await sql`
+        const result = await neonSql`
       INSERT INTO payments (user_id, amount, currency, status, polar_order_id, plan_upgrade, description)
       VALUES (${payment.userId}, ${payment.amount}, ${payment.currency}, ${payment.status}, ${payment.polarOrderId}, ${payment.planUpgrade}, ${payment.description})
       RETURNING *
@@ -250,18 +251,18 @@ export class DbStorage implements IStorage {
     }
 
     async getPayment(id: string): Promise<Payment | undefined> {
-        const result = await sql`SELECT * FROM payments WHERE id = ${id} LIMIT 1`;
+        const result = await neonSql`SELECT * FROM payments WHERE id = ${id} LIMIT 1`;
         return mapPayment(result[0]);
     }
 
     async getUserPayments(userId: string): Promise<Payment[]> {
-        const result = await sql`SELECT * FROM payments WHERE user_id = ${userId} ORDER BY created_at DESC`;
+        const result = await neonSql`SELECT * FROM payments WHERE user_id = ${userId} ORDER BY created_at DESC`;
         return result.map((row: any) => mapPayment(row)!);
     }
 
     // Receipt operations
     async createReceipt(receipt: InsertReceipt): Promise<Receipt> {
-        const result = await sql`
+        const result = await neonSql`
       INSERT INTO receipts (user_id, tool_id, file_name, file_url, upload_date, amount, receipt_date)
       VALUES (${receipt.userId}, ${receipt.toolId}, ${receipt.fileName}, ${receipt.fileUrl}, ${receipt.uploadDate || new Date()}, ${receipt.amount}, ${receipt.receiptDate})
       RETURNING *
@@ -270,18 +271,18 @@ export class DbStorage implements IStorage {
     }
 
     async getUserReceipts(userId: string): Promise<Receipt[]> {
-        const result = await sql`SELECT * FROM receipts WHERE user_id = ${userId} ORDER BY upload_date DESC`;
+        const result = await neonSql`SELECT * FROM receipts WHERE user_id = ${userId} ORDER BY upload_date DESC`;
         return result.map((row: any) => mapReceipt(row)!);
     }
 
     async deleteReceipt(id: string): Promise<boolean> {
-        const result = await sql`DELETE FROM receipts WHERE id = ${id} RETURNING id`;
+        const result = await neonSql`DELETE FROM receipts WHERE id = ${id} RETURNING id`;
         return result.length > 0;
     }
 
     // API Key operations
     async createApiKey(apiKey: InsertApiKey): Promise<ApiKey> {
-        const result = await sql`
+        const result = await neonSql`
       INSERT INTO api_keys (user_id, name, key, secret, is_active)
       VALUES (${apiKey.userId}, ${apiKey.name}, ${apiKey.key}, ${apiKey.secret}, ${apiKey.isActive ?? true})
       RETURNING *
@@ -290,23 +291,23 @@ export class DbStorage implements IStorage {
     }
 
     async getUserApiKeys(userId: string): Promise<ApiKey[]> {
-        const result = await sql`SELECT * FROM api_keys WHERE user_id = ${userId} ORDER BY created_at DESC`;
+        const result = await neonSql`SELECT * FROM api_keys WHERE user_id = ${userId} ORDER BY created_at DESC`;
         return result.map((row: any) => mapApiKey(row)!);
     }
 
     async getApiKeyByKey(key: string): Promise<ApiKey | undefined> {
-        const result = await sql`SELECT * FROM api_keys WHERE key = ${key} AND is_active = true LIMIT 1`;
+        const result = await neonSql`SELECT * FROM api_keys WHERE key = ${key} AND is_active = true LIMIT 1`;
         return mapApiKey(result[0]);
     }
 
     async deleteApiKey(id: string): Promise<boolean> {
-        const result = await sql`DELETE FROM api_keys WHERE id = ${id} RETURNING id`;
+        const result = await neonSql`DELETE FROM api_keys WHERE id = ${id} RETURNING id`;
         return result.length > 0;
     }
 
     // Note operations
     async createNote(note: InsertNote & { userId: string }): Promise<Note> {
-        const result = await sql`
+        const result = await neonSql`
       INSERT INTO notes (user_id, title, content, is_pinned)
       VALUES (${note.userId}, ${note.title}, ${note.content}, ${note.isPinned || false})
       RETURNING *
@@ -315,7 +316,7 @@ export class DbStorage implements IStorage {
     }
 
     async getUserNotes(userId: string): Promise<Note[]> {
-        const result = await sql`
+        const result = await neonSql`
       SELECT * FROM notes 
       WHERE user_id = ${userId} 
       ORDER BY is_pinned DESC, updated_at DESC
@@ -324,7 +325,7 @@ export class DbStorage implements IStorage {
     }
 
     async getNote(id: string): Promise<Note | undefined> {
-        const result = await sql`SELECT * FROM notes WHERE id = ${id} LIMIT 1`;
+        const result = await neonSql`SELECT * FROM notes WHERE id = ${id} LIMIT 1`;
         return mapNote(result[0]);
     }
 
@@ -345,18 +346,18 @@ export class DbStorage implements IStorage {
         const query = `UPDATE notes SET ${setClauses.join(', ')}, updated_at = NOW() WHERE id = $${paramIndex} RETURNING *`;
         values.push(id);
 
-        const result = await sql(query, values);
+        const result = await neonSql(query, values);
         return mapNote(result[0]);
     }
 
     async deleteNote(id: string): Promise<boolean> {
-        const result = await sql`DELETE FROM notes WHERE id = ${id} RETURNING id`;
+        const result = await neonSql`DELETE FROM notes WHERE id = ${id} RETURNING id`;
         return result.length > 0;
     }
 
     // Audit Log operations
     async createAuditLog(log: Omit<AuditLog, "id" | "createdAt">): Promise<AuditLog> {
-        const result = await sql`
+        const result = await neonSql`
       INSERT INTO audit_logs (user_id, action, resource, resource_id, changes, ip_address, user_agent)
       VALUES (${log.userId}, ${log.action}, ${log.resource}, ${log.resourceId}, ${log.changes}, ${log.ipAddress}, ${log.userAgent})
       RETURNING *
@@ -367,7 +368,7 @@ export class DbStorage implements IStorage {
     async getAuditLogs(limit = 100, offset = 0, userId?: string): Promise<AuditLog[]> {
         let result;
         if (userId) {
-            result = await sql`
+            result = await neonSql`
         SELECT * FROM audit_logs 
         WHERE user_id = ${userId} 
         ORDER BY created_at DESC 
@@ -375,7 +376,7 @@ export class DbStorage implements IStorage {
         OFFSET ${offset}
       `;
         } else {
-            result = await sql`
+            result = await neonSql`
         SELECT * FROM audit_logs 
         ORDER BY created_at DESC 
         LIMIT ${limit}
@@ -387,7 +388,7 @@ export class DbStorage implements IStorage {
 
     // Team Member operations
     async getTeamMembers(teamOwnerId: string): Promise<TeamMember[]> {
-        const result = await sql`SELECT * FROM team_members WHERE team_owner_id = ${teamOwnerId} ORDER BY created_at DESC`;
+        const result = await neonSql`SELECT * FROM team_members WHERE team_owner_id = ${teamOwnerId} ORDER BY created_at DESC`;
         return result.map((row: any) => ({
             id: row.id,
             teamOwnerId: row.team_owner_id,
@@ -405,7 +406,7 @@ export class DbStorage implements IStorage {
     }
 
     async getTeamMember(id: string): Promise<TeamMember | undefined> {
-        const result = await sql`SELECT * FROM team_members WHERE id = ${id} LIMIT 1`;
+        const result = await neonSql`SELECT * FROM team_members WHERE id = ${id} LIMIT 1`;
         if (!result[0]) return undefined;
         const row = result[0];
         return {
@@ -425,7 +426,7 @@ export class DbStorage implements IStorage {
     }
 
     async getTeamMemberByToken(token: string): Promise<TeamMember | undefined> {
-        const result = await sql`SELECT * FROM team_members WHERE invitation_token = ${token} LIMIT 1`;
+        const result = await neonSql`SELECT * FROM team_members WHERE invitation_token = ${token} LIMIT 1`;
         if (!result[0]) return undefined;
         const row = result[0];
         return {
@@ -445,7 +446,7 @@ export class DbStorage implements IStorage {
     }
 
     async createTeamMember(member: InsertTeamMember): Promise<TeamMember> {
-        const result = await sql`
+        const result = await neonSql`
       INSERT INTO team_members (team_owner_id, user_id, email, role, status, invited_by, invitation_token, invitation_expires_at)
       VALUES (${member.teamOwnerId}, ${member.userId || null}, ${member.email}, ${member.role || 'member'}, ${member.status || 'pending'}, ${member.invitedBy}, ${member.invitationToken || null}, ${member.invitationExpiresAt || null})
       RETURNING *
@@ -484,7 +485,7 @@ export class DbStorage implements IStorage {
         const query = `UPDATE team_members SET ${setClauses.join(', ')}, updated_at = NOW() WHERE id = $${paramIndex} RETURNING *`;
         values.push(id);
 
-        const result = await sql(query, values);
+        const result = await neonSql(query, values);
         const row = result[0];
         return {
             id: row.id,
@@ -503,13 +504,13 @@ export class DbStorage implements IStorage {
     }
 
     async deleteTeamMember(id: string): Promise<boolean> {
-        const result = await sql`DELETE FROM team_members WHERE id = ${id} RETURNING id`;
+        const result = await neonSql`DELETE FROM team_members WHERE id = ${id} RETURNING id`;
         return result.length > 0;
     }
 
     // Email verification helpers
     async setEmailVerificationToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
-        await sql`
+        await neonSql`
       UPDATE users
       SET email_verify_token_hash = ${tokenHash},
           email_verify_token_expires_at = ${expiresAt}
@@ -518,7 +519,7 @@ export class DbStorage implements IStorage {
     }
 
     async verifyEmailByTokenHash(tokenHash: string): Promise<User | null> {
-        const result = await sql`
+        const result = await neonSql`
       UPDATE users
       SET email_verified_at = NOW(),
           email_verify_token_hash = NULL,
@@ -534,7 +535,7 @@ export class DbStorage implements IStorage {
 
     // Detected Sites operations
     async getDetectedSite(userId: string, domainKey: string): Promise<DetectedSite | undefined> {
-        const result = await sql`
+        const result = await neonSql`
             SELECT * FROM detected_sites
             WHERE user_id = ${userId} AND domain_key = ${domainKey}
             LIMIT 1
@@ -543,7 +544,7 @@ export class DbStorage implements IStorage {
     }
 
     async getDetectedSites(userId: string): Promise<DetectedSite[]> {
-        const result = await sql`
+        const result = await neonSql`
             SELECT * FROM detected_sites
             WHERE user_id = ${userId}
             ORDER BY last_seen_at DESC
@@ -552,7 +553,7 @@ export class DbStorage implements IStorage {
     }
 
     async createDetectedSite(site: InsertDetectedSite): Promise<DetectedSite> {
-        const result = await sql`
+        const result = await neonSql`
             INSERT INTO detected_sites (
                 user_id, domain_key, display_name, favicon_url,
                 first_seen_at, last_seen_at, visit_count_7d, visit_count_30d, visit_count_90d,
@@ -587,13 +588,13 @@ export class DbStorage implements IStorage {
         const query = `UPDATE detected_sites SET ${setClauses.join(', ')}, updated_at = NOW() WHERE id = $${paramIndex} RETURNING *`;
         values.push(id);
 
-        const result = await sql(query, values);
+        const result = await neonSql(query, values);
         return mapDetectedSite(result[0]);
     }
 
     // Detected Sites Daily operations
     async getDetectedSiteDaily(siteId: string, date: string): Promise<DetectedSiteDaily | undefined> {
-        const result = await sql`
+        const result = await neonSql`
             SELECT * FROM detected_sites_daily
             WHERE detected_site_id = ${siteId} AND date = ${date}
             LIMIT 1
@@ -602,7 +603,7 @@ export class DbStorage implements IStorage {
     }
 
     async upsertDetectedSiteDaily(siteId: string, date: string, count: number, time: number): Promise<void> {
-        await sql`
+        await neonSql`
             INSERT INTO detected_sites_daily (detected_site_id, date, visit_count, usage_time)
             VALUES (${siteId}, ${date}, ${count}, ${time})
             ON CONFLICT (detected_site_id, date)
@@ -661,7 +662,7 @@ export class DbStorage implements IStorage {
     }
 
     async getExpiredSubscriptions(): Promise<Subscription[]> {
-        const result = await sql`
+        const result = await neonSql`
             SELECT * FROM subscriptions 
             WHERE status = 'cancelled' 
             AND renewal_date < NOW()
@@ -670,7 +671,7 @@ export class DbStorage implements IStorage {
     }
 
     async getToolsByExpiration(days: number): Promise<{ tool: Tool; user: User }[]> {
-        const result = await sql`
+        const result = await neonSql`
             SELECT t.*, u.id as user_id, u.email as user_email, u.name as user_name, u.plan as user_plan
             FROM tools t
             JOIN users u ON t.user_id = u.id
@@ -691,44 +692,20 @@ export class DbStorage implements IStorage {
     }
 
     async updateUserSubscription(userId: string, userUpdates: Partial<User>, subUpdates: Partial<Subscription>): Promise<void> {
-        await db.transaction(async (tx: any) => {
+        await db.transaction(async (tx) => {
             // Update User
-            const userSetClauses: string[] = [];
-            const userValues: any[] = [];
-            let i = 1;
-
-            Object.entries(userUpdates).forEach(([key, value]) => {
-                const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-                userSetClauses.push(`${snakeKey} = $${i}`);
-                userValues.push(value === undefined ? null : value);
-                i++;
-            });
-
-            if (userSetClauses.length > 0) {
-                const query = `UPDATE users SET ${userSetClauses.join(', ')}, updated_at = NOW() WHERE id = $${i}`;
-                userValues.push(userId);
-                await tx.execute(sql(query, userValues));
+            if (Object.keys(userUpdates).length > 0) {
+                await tx.update(users)
+                    .set({ ...userUpdates, updatedAt: new Date() })
+                    .where(eq(users.id, userId));
             }
 
             // Update Subscription
             const sub = await this.getUserSubscription(userId);
-            if (sub) {
-                const subSetClauses: string[] = [];
-                const subValues: any[] = [];
-                let j = 1;
-
-                Object.entries(subUpdates).forEach(([key, value]) => {
-                    const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-                    subSetClauses.push(`${snakeKey} = $${j}`);
-                    subValues.push(value === undefined ? null : value);
-                    j++;
-                });
-
-                if (subSetClauses.length > 0) {
-                    const query = `UPDATE subscriptions SET ${subSetClauses.join(', ')}, updated_at = NOW() WHERE id = $${j}`;
-                    subValues.push(sub.id);
-                    await tx.execute(sql(query, subValues));
-                }
+            if (sub && Object.keys(subUpdates).length > 0) {
+                await tx.update(subscriptions)
+                    .set({ ...subUpdates, updatedAt: new Date() })
+                    .where(eq(subscriptions.id, sub.id));
             }
         });
     }
@@ -755,8 +732,10 @@ export class DbStorage implements IStorage {
     }
 
     async deleteToolWithAudit(userId: string, toolId: string): Promise<boolean> {
-        return await db.transaction(async (tx: any) => {
-            const result = await tx.delete(tools).where(sql`id = ${toolId} AND user_id = ${userId}`).returning();
+        return await db.transaction(async (tx) => {
+            const result = await tx.delete(tools)
+                .where(and(eq(tools.id, toolId), eq(tools.userId, userId)))
+                .returning();
             if (result.length === 0) return false;
 
             await tx.insert(auditLogs).values({
@@ -783,7 +762,7 @@ export class DbStorage implements IStorage {
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         const activeUsersCount = users.filter(u => u.lastLoginAt && new Date(u.lastLoginAt) > thirtyDaysAgo).length;
 
-        const totalRevenueResult = await sql`
+        const totalRevenueResult = await neonSql`
             SELECT SUM(amount)::numeric as total 
             FROM payments 
             WHERE status = 'succeeded' OR status = 'completed'
