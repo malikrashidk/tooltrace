@@ -692,7 +692,7 @@ export class DbStorage implements IStorage {
     }
 
     async updateUserSubscription(userId: string, userUpdates: Partial<User>, subUpdates: Partial<Subscription>): Promise<void> {
-        await db.transaction(async (tx) => {
+        await db.transaction(async (tx: any) => {
             // Update User
             if (Object.keys(userUpdates).length > 0) {
                 await tx.update(users)
@@ -732,7 +732,7 @@ export class DbStorage implements IStorage {
     }
 
     async deleteToolWithAudit(userId: string, toolId: string): Promise<boolean> {
-        return await db.transaction(async (tx) => {
+        return await db.transaction(async (tx: any) => {
             const result = await tx.delete(tools)
                 .where(and(eq(tools.id, toolId), eq(tools.userId, userId)))
                 .returning();
