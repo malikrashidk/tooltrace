@@ -87,6 +87,14 @@ export function PricingPage() {
       return;
     }
 
+    // Safety Check: If user is already on a paid plan (updating), confirm intent
+    // because this will charge their card immediately.
+    if (userPlan !== 'free' && userPlan !== planId) {
+      if (!window.confirm(`Are you sure you want to upgrade to ${planId === 'pro' ? 'Pro' : 'Enterprise'}? Your payment method on file will be charged for the difference immediately.`)) {
+        return;
+      }
+    }
+
     const priceId = getPriceIdForPlan(planId, billingCycle);
     if (priceId) {
       openPolarCheckout({
