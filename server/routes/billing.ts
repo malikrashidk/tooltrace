@@ -304,42 +304,28 @@ router.post("/checkout", authMiddleware, async (req, res) => {
     const currentPlan = (user.plan || "").toString().toLowerCase();
     const isFree = currentPlan === "free" || !currentPlan;
 
-    // --- PAID USER UPGRADE FLOW (Customer Portal) ---
+    // --- PAID USER UPGRADE FLOW (Instant Update) ---
     if (!isFree && polarSubscriptionId) {
-      console.log(`[Checkout] User ${user.email} has active paid sub ${polarSubscriptionId}. Redirecting to Customer Portal.`);
+      console.log(`[Checkout] User ${user.email} has active paid sub ${polarSubscriptionId}. Executing direct API update.`);
       try {
-        // For paid users, we redirect them to the Customer Portal to manage/upgrade their plan.
-        // This avoids the "Active subscription" error on checkout and gives them a UI to confirm changes.
-        const { createCustomerPortalSession } = await import("../lib/polar");
+        const targetProductId = productPriceId; // Direct mapping per user setup request
 
-        // We need the polarCustomerId. If not on user, use the one from subscription sync script
-        // Assuming syncUserSubscription populated user.polarCustomerId
-        const customerId = user.polarCustomerId;
+        if (targetProductId) {
+          const { updateSubscription } = await import("../lib/polar");
+          await updateSubscription(polarSubscriptionId, targetProductId);
 
-        if (customerId) {
-          const session = await createCustomerPortalSession(customerId);
-          const sessionData = session as any;
-          // Check both potential property names (SDK vs API)
-          const portalUrl = sessionData.customerPortalUrl || sessionData.customer_portal_url;
+          console.log(`[Checkout] Successfully updated subscription ${polarSubscriptionId} to product ${targetProductId}`);
 
-          if (portalUrl) {
-            return res.json({ url: portalUrl });
-          }
+          // Use specific success code for Upgrades so frontend can show "Plan Updated" instead of "Payment Successful"
+          const successUrl = `${process.env.VITE_APP_URL || 'https://app.tooltrace.io'}/dashboard?checkout=upgrade_success`;
+          return res.json({ url: successUrl });
         }
 
-        // If we can't create a portal session (e.g. missing ID), fall through?
-        // Or error out. Better to log and error.
-        console.warn(`[Checkout] Could not create portal session for user ${user.id} (Polar Customer ID: ${customerId})`);
-        return res.status(500).json({
-          error: "Portal creation failed",
-          message: "Could not open subscription management. Please contact support."
-        });
-
       } catch (err: any) {
-        console.error("[Checkout] Portal creation failed:", err);
+        console.error("[Checkout] Update attempted but failed:", err);
         return res.status(500).json({
           error: "Upgrade failed",
-          message: "Could not access subscription settings. Please contact support."
+          message: "Could not update your subscription automatically. Please contact support."
         });
       }
     }

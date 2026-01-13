@@ -171,7 +171,9 @@ export function Dashboard() {
           </h2>
           <p className="text-muted-foreground">
             {paymentSuccess
-              ? "Your plan has been upgraded. Refreshing your dashboard in a moment..."
+              ? (new URLSearchParams(window.location.search).get("checkout") === "upgrade_success"
+                ? "Your plan has been updated successfully."
+                : "Your plan has been upgraded. Refreshing your dashboard in a moment...")
               : "Please complete the payment in the popup window. Your dashboard will be ready momentarily."}
           </p>
           {!paymentSuccess && (

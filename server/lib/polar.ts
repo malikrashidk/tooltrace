@@ -138,18 +138,23 @@ export async function cancelSubscription(subscriptionId: string) {
 
 
 
-// Helper to create a customer portal session
-export async function createCustomerPortalSession(polarCustomerId: string) {
+// Helper to update a subscription (Upgrade/Downgrade)
+export async function updateSubscription(subscriptionId: string, newProductId: string) {
     if (!polarClient) return null;
     try {
-        console.log(`[Polar] Creating customer portal session for ${polarCustomerId}`);
-        const session = await polarClient.customerSessions.create({
-            customerId: polarCustomerId
+        console.log(`[Polar] Updating subscription ${subscriptionId} to product ${newProductId}`);
+        const result = await polarClient.subscriptions.update({
+            id: subscriptionId,
+            subscriptionUpdate: {
+                productId: newProductId,
+                prorationBehavior: 'prorate'
+            }
         });
-        console.log('[Polar] Created session:', JSON.stringify(session, null, 2));
-        return session;
+
+        console.log('[Polar] Update result:', JSON.stringify(result, null, 2));
+        return result;
     } catch (error) {
-        console.error('[Polar] Error creating customer portal session:', error);
+        console.error('[Polar] Error updating subscription:', error);
         throw error;
     }
 }
