@@ -48,6 +48,7 @@ export const users = pgTable(
     planIdx: index("plan_idx").on(table.plan),
     googleIdIdx: index("google_id_idx").on(table.googleId),
     facebookIdIdx: index("facebook_id_idx").on(table.facebookId),
+    polarCustomerIdIdx: index("polar_customer_id_idx").on(table.polarCustomerId),
   })
 );
 

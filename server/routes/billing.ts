@@ -6,9 +6,9 @@ import { authMiddleware } from "../middleware";
 
 const router = Router();
 
-// Map Polar product price IDs to internal plan names
+// Map Polar product or price IDs to internal plan names
 // We use both VITE_ and standard env vars to be resilient
-const POLAR_PRICE_ID_TO_PLAN: Record<string, string> = {
+const POLAR_ID_TO_PLAN: Record<string, string> = {
   [process.env.POLAR_PRICE_ID_PRO_MONTHLY || process.env.VITE_POLAR_PRICE_ID_PRO || ""]: "pro",
   [process.env.POLAR_PRICE_ID_PRO_YEARLY || process.env.VITE_POLAR_PRICE_ID_PRO_YEARLY || ""]: "pro",
   [process.env.POLAR_PRICE_ID_ENTERPRISE_MONTHLY || process.env.VITE_POLAR_PRICE_ID_ENTERPRISE || ""]: "enterprise",
@@ -16,11 +16,11 @@ const POLAR_PRICE_ID_TO_PLAN: Record<string, string> = {
 };
 
 // Remove empty keys
-Object.keys(POLAR_PRICE_ID_TO_PLAN).forEach(key => {
-  if (key === "" || key === "undefined") delete POLAR_PRICE_ID_TO_PLAN[key];
+Object.keys(POLAR_ID_TO_PLAN).forEach(key => {
+  if (key === "" || key === "undefined") delete POLAR_ID_TO_PLAN[key];
 });
 
-console.log("[Billing] Polar Price ID Mapping Initialized:", JSON.stringify(POLAR_PRICE_ID_TO_PLAN, null, 2));
+console.log("[Billing] Polar ID Mapping Initialized:", JSON.stringify(POLAR_ID_TO_PLAN, null, 2));
 
 const PLAN_LIMITS: Record<string, string> = {
   free: "10",
@@ -130,6 +130,7 @@ router.post("/webhooks/polar", async (req, res) => {
         break;
       }
 
+      case "subscription.created":
       case "subscription.active":
       case "subscription.updated": {
         // Subscription created or updated
@@ -140,13 +141,14 @@ router.post("/webhooks/polar", async (req, res) => {
           return res.status(200).send("OK - No user found");
         }
 
-        // Determine plan from product price ID
+        // Determine plan from product ID OR price ID
         const priceId = subscription.price_id;
-        const plan = POLAR_PRICE_ID_TO_PLAN[priceId] || "free";
+        const productId = subscription.product_id;
+        const plan = POLAR_ID_TO_PLAN[priceId] || POLAR_ID_TO_PLAN[productId] || "free";
         const status = subscription.status; // 'active', 'canceled', 'incomplete', etc.
 
         console.log(`[Polar Webhook] Subscription for user ${user.id}`);
-        console.log(`[Polar Webhook] Price ID: ${priceId} -> Plan: ${plan}`);
+        console.log(`[Polar Webhook] Price ID: ${priceId}, Product ID: ${productId} -> Plan: ${plan}`);
         console.log(`[Polar Webhook] Status: ${status}`);
 
         // Update user and subscription
