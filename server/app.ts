@@ -98,12 +98,34 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+
       if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        // Deep clone or just mask for logging
+        const sanitizeForLog = (obj: any): any => {
+          if (!obj || typeof obj !== 'object') return obj;
+          if (Array.isArray(obj)) return obj.map(sanitizeForLog);
+
+          const sanitized: any = {};
+          const sensitiveKeys = ['password', 'credentials', 'token', 'secret', 'secureNote', 'twoFactorSecret', 'recoveryCodes'];
+
+          for (const key in obj) {
+            if (sensitiveKeys.some(sk => key.toLowerCase().includes(sk.toLowerCase()))) {
+              sanitized[key] = '[MASKED]';
+            } else if (typeof obj[key] === 'object') {
+              sanitized[key] = sanitizeForLog(obj[key]);
+            } else {
+              sanitized[key] = obj[key];
+            }
+          }
+          return sanitized;
+        };
+
+        const safeOutput = sanitizeForLog(capturedJsonResponse);
+        logLine += ` :: ${JSON.stringify(safeOutput)}`;
       }
 
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "â€¦";
+      if (logLine.length > 200) { // Increased limit for better debugging but still capped
+        logLine = logLine.slice(0, 199) + "...";
       }
 
       log(logLine);

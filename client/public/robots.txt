@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Allow: /pricing
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /api/
+Disallow: /admin
+
+Sitemap: https://app.tooltrace.io/sitemap.xml
