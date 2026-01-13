@@ -308,7 +308,28 @@ router.post("/checkout", authMiddleware, async (req, res) => {
     if (!isFree && polarSubscriptionId) {
       console.log(`[Checkout] User ${user.email} has active paid sub ${polarSubscriptionId}. Executing direct API update.`);
       try {
-        const targetProductId = productPriceId; // Direct mapping per user setup request
+        // Robust ID Resolution: Check if input is a PRICE ID or PRODUCT ID
+        // The user might be passing a Price ID (env var name) or Product ID.
+        // We iterate products to see if we find this Price ID inside one.
+        let targetProductId = productPriceId;
+
+        try {
+          const productsResponse = await polarClient.products.list({});
+          // Handle async iterator yielding PAGES
+          for await (const page of productsResponse) {
+            const products = (page as any).items || [];
+            for (const product of products) {
+              if (product.prices?.some((p: any) => p.id === productPriceId)) {
+                console.log(`[Checkout] Found Product ID ${product.id} for Price ID ${productPriceId}`);
+                targetProductId = product.id;
+                break;
+              }
+            }
+            if (targetProductId) break;
+          }
+        } catch (lookupErr) {
+          console.warn('[Checkout] Product lookup skipped/failed, using ID as-is:', lookupErr);
+        }
 
         if (targetProductId) {
           const { updateSubscription } = await import("../lib/polar");
