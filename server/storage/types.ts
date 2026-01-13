@@ -29,6 +29,7 @@ export interface IStorage {
     getUserByGoogleId(googleId: string): Promise<User | undefined>;
     getUserByFacebookId(facebookId: string): Promise<User | undefined>;
     getUserByResetToken(token: string): Promise<User | undefined>;
+    getUserByPolarCustomerId(customerId: string): Promise<User | undefined>;
     getAllUsers(): Promise<User[]>;
     createUser(user: InsertUser): Promise<User>;
     createOAuthUser(userData: Partial<User>): Promise<User>;

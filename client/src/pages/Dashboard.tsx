@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Package, TrendingUp, DollarSign, AlertCircle, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -17,6 +17,7 @@ import { fromCents } from "../../../shared/money";
 
 export function Dashboard() {
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
   const { formatAmount } = useCurrency();
   const { user, refreshUser } = useAuth();
   const hasHandledSuccess = useRef(false);
@@ -36,8 +37,24 @@ export function Dashboard() {
       // Clean up URL immediately to prevent loops on re-mount
       window.history.replaceState({}, "", window.location.pathname);
 
-      // Refresh user data silently in the background
-      refreshUser(true);
+      // Handle refresh with a retry loop to account for webhook latency
+      const attemptRefresh = async (retries = 2) => {
+        const oldPlan = (user as any)?.plan;
+        const updatedUser = await refreshUser(true) as any;
+
+        // If plan is still the same and it wasn't free to begin with, 
+        // or if we just want to be sure, retry after a delay.
+        if (updatedUser?.plan === oldPlan && retries > 0) {
+          console.log(`[Dashboard] Plan still ${oldPlan}, retrying in 2s...`);
+          setTimeout(() => attemptRefresh(retries - 1), 2000);
+        } else {
+          console.log("[Dashboard] Plan update confirmed:", updatedUser?.plan);
+          // Invalidate all queries to refresh spending stats and tool lists
+          queryClient.invalidateQueries();
+        }
+      };
+
+      attemptRefresh();
 
       // Clear the overlay after 4 seconds
       const timer = setTimeout(() => {
@@ -46,7 +63,7 @@ export function Dashboard() {
 
       return () => clearTimeout(timer);
     }
-  }, [refreshUser]);
+  }, [refreshUser, queryClient, user?.plan]);
 
   // Handle pending plan upgrade from Signup/Login (Branding Site flow)
   useEffect(() => {

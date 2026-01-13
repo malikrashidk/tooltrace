@@ -23,7 +23,7 @@ interface AuthContextType {
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
   setUser: (user: User | null) => void;
-  refreshUser: (silent?: boolean) => Promise<void>;
+  refreshUser: (silent?: boolean) => Promise<User | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = localStorage.getItem("token");
       if (!token) {
         setIsLoading(false);
-        return;
+        return null;
       }
 
       // Only show global loader if not a silent background refresh
@@ -77,13 +77,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem("user", JSON.stringify(data.user));
         // Ensure cookie is in sync for extension even on refresh
         document.cookie = `token=${token}; path=/; max-age=${60 * 60 * 24 * 30}; sameSite=Lax`;
+        return data.user as User;
       } else {
         // Token invalid, clear auth
         logout();
+        return null;
       }
     } catch (error) {
       console.error("Failed to fetch user profile:", error);
       logout();
+      return null;
     } finally {
       setIsLoading(false);
     }

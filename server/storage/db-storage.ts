@@ -73,6 +73,11 @@ export class DbStorage implements IStorage {
         return mapUser(result[0]);
     }
 
+    async getUserByPolarCustomerId(customerId: string): Promise<User | undefined> {
+        const result = await sql`SELECT * FROM users WHERE polar_customer_id = ${customerId} LIMIT 1`;
+        return mapUser(result[0]);
+    }
+
     async getUserByResetToken(token: string): Promise<User | undefined> {
         try {
             const result = await sql`SELECT * FROM users WHERE reset_token = ${token} LIMIT 1`;

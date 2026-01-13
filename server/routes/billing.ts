@@ -7,12 +7,18 @@ import { authMiddleware } from "../middleware";
 const router = Router();
 
 // Map Polar product price IDs to internal plan names
+// We use both VITE_ and standard env vars to be resilient
 const POLAR_PRICE_ID_TO_PLAN: Record<string, string> = {
-  [process.env.POLAR_PRICE_ID_PRO_MONTHLY || process.env.VITE_POLAR_PRICE_ID_PRO || "pri_pro_monthly_placeholder"]: "pro",
-  [process.env.POLAR_PRICE_ID_PRO_YEARLY || process.env.VITE_POLAR_PRICE_ID_PRO_YEARLY || "pri_pro_yearly_placeholder"]: "pro",
-  [process.env.POLAR_PRICE_ID_ENTERPRISE_MONTHLY || process.env.VITE_POLAR_PRICE_ID_ENTERPRISE || "pri_enterprise_monthly_placeholder"]: "enterprise",
-  [process.env.POLAR_PRICE_ID_ENTERPRISE_YEARLY || process.env.VITE_POLAR_PRICE_ID_ENTERPRISE_YEARLY || "pri_enterprise_yearly_placeholder"]: "enterprise",
+  [process.env.POLAR_PRICE_ID_PRO_MONTHLY || process.env.VITE_POLAR_PRICE_ID_PRO || ""]: "pro",
+  [process.env.POLAR_PRICE_ID_PRO_YEARLY || process.env.VITE_POLAR_PRICE_ID_PRO_YEARLY || ""]: "pro",
+  [process.env.POLAR_PRICE_ID_ENTERPRISE_MONTHLY || process.env.VITE_POLAR_PRICE_ID_ENTERPRISE || ""]: "enterprise",
+  [process.env.POLAR_PRICE_ID_ENTERPRISE_YEARLY || process.env.VITE_POLAR_PRICE_ID_ENTERPRISE_YEARLY || ""]: "enterprise",
 };
+
+// Remove empty keys
+Object.keys(POLAR_PRICE_ID_TO_PLAN).forEach(key => {
+  if (key === "" || key === "undefined") delete POLAR_PRICE_ID_TO_PLAN[key];
+});
 
 console.log("[Billing] Polar Price ID Mapping Initialized:", JSON.stringify(POLAR_PRICE_ID_TO_PLAN, null, 2));
 
@@ -53,23 +59,66 @@ router.post("/webhooks/polar", async (req, res) => {
     const eventType = event.type;
 
     console.log(`[Polar Webhook] Received event: ${eventType}`);
-    console.log(`[Polar Webhook] Event data:`, JSON.stringify(event, null, 2));
+    // console.log(`[Polar Webhook] Event data:`, JSON.stringify(event, null, 2));
+
+    /**
+     * Helper to find a user from a Polar event
+     */
+    const findUserFromPolarEvent = async (data: any) => {
+      // 1. Try userId in metadata
+      let userId = data.metadata?.userId as string;
+      if (userId) {
+        console.log(`[Polar Webhook] Found userId in metadata: ${userId}`);
+        const user = await storage.getUser(userId);
+        if (user) return user;
+      }
+
+      // 2. Try customer external_id (which we set to our userId)
+      const externalId = data.customer?.external_id || data.customer_external_id;
+      if (externalId && typeof externalId === 'string') {
+        console.log(`[Polar Webhook] Found externalId: ${externalId}`);
+        const user = await storage.getUser(externalId);
+        if (user) return user;
+      }
+
+      // 3. Try lookup by polarCustomerId
+      const polarCustomerId = data.customer_id;
+      if (polarCustomerId) {
+        console.log(`[Polar Webhook] Looking up by polarCustomerId: ${polarCustomerId}`);
+        const user = await storage.getUserByPolarCustomerId(polarCustomerId);
+        if (user) return user;
+      }
+
+      // 4. Try email from customer object as last resort
+      const email = data.customer?.email || data.customer_email;
+      if (email) {
+        console.log(`[Polar Webhook] Looking up by email: ${email}`);
+        const user = await storage.getUserByEmail(email);
+        if (user) return user;
+      }
+
+      console.warn(`[Polar Webhook] Could not find user for event: ${eventType}`, JSON.stringify({
+        metadata: data.metadata,
+        customerId: data.customer_id,
+        externalId: externalId
+      }));
+      return null;
+    };
 
     // Handle different event types
     switch (eventType) {
       case "order.created": {
         // New order (one-time or first subscription payment)
         const order = event.data;
-        const userId = order.metadata?.userId as string;
+        const user = await findUserFromPolarEvent(order);
 
-        if (!userId) {
-          console.warn("[Polar Webhook] No userId in order metadata");
-          return res.status(200).send("OK - No userId");
+        if (!user) {
+          return res.status(200).send("OK - No user found");
         }
 
         // Log payment
         await storage.createPayment({
-          userId,
+          userId: user.id,
           amount: String(toCents(order.amount)),
           currency: order.currency,
           status: "completed",
@@ -77,20 +126,18 @@ router.post("/webhooks/polar", async (req, res) => {
           description: `Polar Order ${order.id}`,
         });
 
-        console.log(`[Polar Webhook] Order logged for user ${userId}`);
+        console.log(`[Polar Webhook] Order logged for user ${user.id}`);
         break;
       }
 
-      case "subscription.created":
       case "subscription.active":
       case "subscription.updated": {
         // Subscription created or updated
         const subscription = event.data;
-        const userId = subscription.metadata?.userId as string;
+        const user = await findUserFromPolarEvent(subscription);
 
-        if (!userId) {
-          console.warn("[Polar Webhook] No userId in subscription metadata");
-          return res.status(200).send("OK - No userId");
+        if (!user) {
+          return res.status(200).send("OK - No user found");
         }
 
         // Determine plan from product price ID
@@ -98,7 +145,7 @@ router.post("/webhooks/polar", async (req, res) => {
         const plan = POLAR_PRICE_ID_TO_PLAN[priceId] || "free";
         const status = subscription.status; // 'active', 'canceled', 'incomplete', etc.
 
-        console.log(`[Polar Webhook] Subscription for user ${userId}`);
+        console.log(`[Polar Webhook] Subscription for user ${user.id}`);
         console.log(`[Polar Webhook] Price ID: ${priceId} -> Plan: ${plan}`);
         console.log(`[Polar Webhook] Status: ${status}`);
 
@@ -106,7 +153,7 @@ router.post("/webhooks/polar", async (req, res) => {
         const isActive = status === "active" || status === "trialing";
 
         await storage.updateUserSubscription(
-          userId,
+          user.id,
           {
             polarCustomerId: subscription.customer_id,
             polarSubscriptionId: subscription.id,
@@ -122,24 +169,23 @@ router.post("/webhooks/polar", async (req, res) => {
           }
         );
 
-        console.log(`[Polar Webhook] Updated user ${userId} to plan ${plan} (Status: ${status})`);
+        console.log(`[Polar Webhook] Updated user ${user.id} (${user.email}) to plan ${plan} (Status: ${status})`);
         break;
       }
 
       case "subscription.canceled": {
         // Subscription canceled
         const subscription = event.data;
-        const userId = subscription.metadata?.userId as string;
+        const user = await findUserFromPolarEvent(subscription);
 
-        if (!userId) {
-          console.warn("[Polar Webhook] No userId in canceled subscription");
-          return res.status(200).send("OK - No userId");
+        if (!user) {
+          return res.status(200).send("OK - No user found");
         }
 
-        console.log(`[Polar Webhook] Subscription canceled for user ${userId}`);
+        console.log(`[Polar Webhook] Subscription canceled for user ${user.id}`);
 
         // Mark subscription as canceled
-        const userSub = await storage.getUserSubscription(userId);
+        const userSub = await storage.getUserSubscription(user.id);
         if (userSub) {
           await storage.updateSubscription(userSub.id, {
             status: "cancelled",
@@ -159,18 +205,17 @@ router.post("/webhooks/polar", async (req, res) => {
       case "subscription.revoked": {
         // Subscription revoked (immediate cancellation, e.g., refund)
         const subscription = event.data;
-        const userId = subscription.metadata?.userId as string;
+        const user = await findUserFromPolarEvent(subscription);
 
-        if (!userId) {
-          console.warn("[Polar Webhook] No userId in revoked subscription");
-          return res.status(200).send("OK - No userId");
+        if (!user) {
+          return res.status(200).send("OK - No user found");
         }
 
-        console.log(`[Polar Webhook] Subscription REVOKED for user ${userId}`);
+        console.log(`[Polar Webhook] Subscription REVOKED for user ${user.id}`);
 
         // Immediately downgrade to free
         await storage.updateUserSubscription(
-          userId,
+          user.id,
           {
             plan: "free",
             polarSubscriptionId: null,
@@ -183,7 +228,7 @@ router.post("/webhooks/polar", async (req, res) => {
           }
         );
 
-        console.log(`[Polar Webhook] User ${userId} immediately downgraded to free`);
+        console.log(`[Polar Webhook] User ${user.id} immediately downgraded to free`);
         break;
       }
 
