@@ -304,31 +304,42 @@ router.post("/checkout", authMiddleware, async (req, res) => {
     const currentPlan = (user.plan || "").toString().toLowerCase();
     const isFree = currentPlan === "free" || !currentPlan;
 
-    // --- PAID USER UPGRADE FLOW ---
+    // --- PAID USER UPGRADE FLOW (Customer Portal) ---
     if (!isFree && polarSubscriptionId) {
-      console.log(`[Checkout] User ${user.email} has active paid sub ${polarSubscriptionId}. Attempting direct update.`);
+      console.log(`[Checkout] User ${user.email} has active paid sub ${polarSubscriptionId}. Redirecting to Customer Portal.`);
       try {
-        // Since we have 4 separate Products (Pro Monthly, Pro Yearly, Ent Monthly, Ent Yearly),
-        // the id sent from frontend IS the target Product ID (or mapped directly to it).
-        // No need to look up which product contains a price.
-        const targetProductId = productPriceId;
+        // For paid users, we redirect them to the Customer Portal to manage/upgrade their plan.
+        // This avoids the "Active subscription" error on checkout and gives them a UI to confirm changes.
+        const { createCustomerPortalSession } = await import("../lib/polar");
 
-        if (targetProductId) {
-          const { updateSubscription } = await import("../lib/polar");
-          await updateSubscription(polarSubscriptionId, targetProductId);
+        // We need the polarCustomerId. If not on user, use the one from subscription sync script
+        // Assuming syncUserSubscription populated user.polarCustomerId
+        const customerId = user.polarCustomerId;
 
-          console.log(`[Checkout] Successfully updated subscription ${polarSubscriptionId} to product ${targetProductId}`);
+        if (customerId) {
+          const session = await createCustomerPortalSession(customerId);
+          const sessionData = session as any;
+          // Check both potential property names (SDK vs API)
+          const portalUrl = sessionData.customerPortalUrl || sessionData.customer_portal_url;
 
-          // Return success URL immediately to trigger dashboard refresh logic
-          const successUrl = `${process.env.VITE_APP_URL || 'https://app.tooltrace.io'}/dashboard?checkout=success`;
-          return res.json({ url: successUrl });
+          if (portalUrl) {
+            return res.json({ url: portalUrl });
+          }
         }
 
+        // If we can't create a portal session (e.g. missing ID), fall through?
+        // Or error out. Better to log and error.
+        console.warn(`[Checkout] Could not create portal session for user ${user.id} (Polar Customer ID: ${customerId})`);
+        return res.status(500).json({
+          error: "Portal creation failed",
+          message: "Could not open subscription management. Please contact support."
+        });
+
       } catch (err: any) {
-        console.error("[Checkout] Update attempted but failed:", err);
+        console.error("[Checkout] Portal creation failed:", err);
         return res.status(500).json({
           error: "Upgrade failed",
-          message: "Could not update your subscription automatically. Please contact support."
+          message: "Could not access subscription settings. Please contact support."
         });
       }
     }
