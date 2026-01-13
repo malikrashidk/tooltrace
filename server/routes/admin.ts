@@ -7,16 +7,34 @@ const router = Router();
 
 router.get("/users", authMiddleware, adminMiddleware, async (req, res) => {
   try {
+    // Get pagination params
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 100); // Max 100
+    const offset = parseInt(req.query.offset as string) || 0;
+
     const users = await storage.getAllUsers();
+    const total = users.length;
+    
+    // Apply pagination
+    const paginatedUsers = users.slice(offset, offset + limit);
+    
     // Enrich users with tool count
-    const usersWithCounts = await Promise.all(users.map(async (user) => {
+    const usersWithCounts = await Promise.all(paginatedUsers.map(async (user) => {
       const count = await storage.getUserToolsCount(user.id);
       return {
         ...user,
         toolsCount: count
       };
     }));
-    res.json({ users: usersWithCounts });
+    
+    res.json({ 
+      users: usersWithCounts,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total
+      }
+    });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch users" });
   }

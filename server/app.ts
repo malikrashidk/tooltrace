@@ -24,6 +24,14 @@ export function log(message: string, source = "express") {
 
 export const app = express();
 
+// ============ HTTPS ENFORCEMENT (Production) ============
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV === "production" && req.header('x-forwarded-proto') !== 'https') {
+    return res.redirect(`https://${req.header('host')}${req.url}`);
+  }
+  next();
+});
+
 // Set up Content Security Policy
 app.use((_req, res, next) => {
   // Remove potentially existing headers to prevent duplicates
@@ -36,16 +44,17 @@ app.use((_req, res, next) => {
       "default-src 'self' https://app.tooltrace.io",
       "base-uri 'self'",
       "object-src 'none'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://public.profitwell.com",
-      "script-src-elem 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://public.profitwell.com",
-      "script-src-attr 'none'", // Debug marker
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com",
+      "script-src-elem 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com",
+      "script-src-attr 'none'",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://app.tooltrace.io",
       "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://app.tooltrace.io",
       "font-src 'self' https://fonts.gstatic.com https://r2cdn.perplexity.ai data:",
       "img-src 'self' data: https:",
-      "connect-src 'self' https://app.tooltrace.io https://accounts.google.com https://www.googleapis.com https://gmail.googleapis.com https://api.polar.sh https://sandbox-api.polar.sh",
+      "connect-src 'self' https://app.tooltrace.io https://accounts.google.com https://www.googleapis.com https://api.polar.sh https://sandbox-api.polar.sh",
       "frame-ancestors 'self'",
       "frame-src 'self' https://accounts.google.com https://polar.sh https://sandbox.polar.sh",
+      "upgrade-insecure-requests",
     ].join("; ")
   );
   next();
@@ -183,6 +192,16 @@ export default async function runApp(
   // Bind to all network interfaces for VPS/Docker accessibility
   const host = '0.0.0.0';
 
+  // Global error handlers for unhandled rejections
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('[UNHANDLED REJECTION]', { reason, promise });
+  });
+
+  process.on('uncaughtException', (error) => {
+    console.error('[UNCAUGHT EXCEPTION]', error);
+    // Exit after logging to prevent app in broken state
+    process.exit(1);
+  });
 
   server.listen({
     port,

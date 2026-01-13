@@ -2,7 +2,11 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import type { User } from "@shared/schema";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
+const JWT_SECRET_VALUE = process.env.JWT_SECRET;
+if (!JWT_SECRET_VALUE) {
+  throw new Error("JWT_SECRET environment variable is required for production");
+}
+const JWT_SECRET: string = JWT_SECRET_VALUE;
 const JWT_EXPIRY = "7d";
 
 export interface AuthToken {
@@ -14,6 +18,9 @@ export interface AuthToken {
 
 // Hash password with bcrypt-like security
 export async function hashPassword(password: string): Promise<string> {
+  if (password.length < 8) {
+    throw new Error("Password must be at least 8 characters");
+  }
   return new Promise((resolve, reject) => {
     const salt = crypto.randomBytes(16).toString("hex");
     crypto.pbkdf2(password, salt, 100000, 64, "sha512", (err, derivedKey) => {

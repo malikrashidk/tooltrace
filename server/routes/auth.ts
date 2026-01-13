@@ -26,6 +26,10 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ error: parsed.error.errors });
     }
 
+    if (parsed.data.password && parsed.data.password.length < 8) {
+      return res.status(400).json({ error: "Password must be at least 8 characters" });
+    }
+
     const existingUser = await storage.getUserByEmail(parsed.data.email);
     if (existingUser) {
       return res.status(409).json({ error: "Email already registered" });
@@ -290,8 +294,8 @@ router.post("/reset-password", async (req, res) => {
       return res.status(400).json({ error: "Token and new password are required" });
     }
 
-    if (newPassword.length < 6) {
-      return res.status(400).json({ error: "Password must be at least 6 characters" });
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: "Password must be at least 8 characters" });
     }
 
     const user = await storage.getUserByResetToken(token);

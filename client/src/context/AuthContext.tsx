@@ -73,8 +73,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const data = await response.json();
         setUser(data.user);
         localStorage.setItem("user", JSON.stringify(data.user));
-        // Ensure cookie is in sync for extension even on refresh
-        document.cookie = `token=${token}; path=/; max-age=${60 * 60 * 24 * 30}; sameSite=Lax`;
+        // Ensure cookie is in sync for extension even on refresh (Secure flag for HTTPS)
+        const secureFlagStr = window.location.protocol === 'https:' ? '; Secure' : '';
+        document.cookie = `token=${token}; path=/; max-age=${60 * 60 * 24 * 30}; sameSite=Strict${secureFlagStr}`;
         return data.user as User;
       } else {
         // Token invalid, clear auth
@@ -123,8 +124,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("user", JSON.stringify(data.user));
     localStorage.setItem("token", data.token);
 
-    // Set cookie for extension sync
-    document.cookie = `token=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; sameSite=Lax`;
+    // Set cookie for extension sync (Secure flag for HTTPS)
+    const secureFlagStr = window.location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `token=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; sameSite=Strict${secureFlagStr}`;
   };
 
   const signup = async (email: string, password: string, name: string) => {
