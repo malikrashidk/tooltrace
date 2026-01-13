@@ -101,6 +101,11 @@ export function PricingPage() {
     }
 
     const priceId = getPriceIdForPlan(planId, billingCycle);
+
+    if (!priceId) {
+      alert('Configuration Error: Price ID not found for this plan. Please contact support.');
+      return;
+    }
     if (priceId) {
       openPolarCheckout({
         productPriceId: priceId,
