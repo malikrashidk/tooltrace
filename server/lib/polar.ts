@@ -135,6 +135,27 @@ export async function cancelSubscription(subscriptionId: string) {
     }
 }
 
+
+
+
+// Helper to update a subscription (Upgrade/Downgrade)
+export async function updateSubscription(subscriptionId: string, newProductId: string) {
+    if (!polarClient) return null;
+    try {
+        console.log(`[Polar] Updating subscription ${subscriptionId} to product ${newProductId}`);
+        return await polarClient.subscriptions.update({
+            id: subscriptionId,
+            subscriptionUpdate: {
+                productId: newProductId,
+                prorationBehavior: 'prorate'
+            }
+        });
+    } catch (error) {
+        console.error('[Polar] Error updating subscription:', error);
+        throw error;
+    }
+}
+
 // Log initialization status
 if (polarClient) {
     console.log(`[Polar] Client initialized successfully (${POLAR_ENV} mode)`);

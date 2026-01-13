@@ -304,6 +304,35 @@ router.post("/checkout", authMiddleware, async (req, res) => {
     const currentPlan = (user.plan || "").toString().toLowerCase();
     const isFree = currentPlan === "free" || !currentPlan;
 
+    // --- PAID USER UPGRADE FLOW ---
+    if (!isFree && polarSubscriptionId) {
+      console.log(`[Checkout] User ${user.email} has active paid sub ${polarSubscriptionId}. Attempting direct update.`);
+      try {
+        // Since we have 4 separate Products (Pro Monthly, Pro Yearly, Ent Monthly, Ent Yearly),
+        // the id sent from frontend IS the target Product ID (or mapped directly to it).
+        // No need to look up which product contains a price.
+        const targetProductId = productPriceId;
+
+        if (targetProductId) {
+          const { updateSubscription } = await import("../lib/polar");
+          await updateSubscription(polarSubscriptionId, targetProductId);
+
+          console.log(`[Checkout] Successfully updated subscription ${polarSubscriptionId} to product ${targetProductId}`);
+
+          // Return success URL immediately to trigger dashboard refresh logic
+          const successUrl = `${process.env.VITE_APP_URL || 'https://app.tooltrace.io'}/dashboard?checkout=success`;
+          return res.json({ url: successUrl });
+        }
+
+      } catch (err: any) {
+        console.error("[Checkout] Update attempted but failed:", err);
+        return res.status(500).json({
+          error: "Upgrade failed",
+          message: "Could not update your subscription automatically. Please contact support."
+        });
+      }
+    }
+
     const checkout = await polarClient.checkouts.create({
       products: [productPriceId],
       successUrl: `${process.env.VITE_APP_URL || 'https://app.tooltrace.io'}/dashboard?checkout=success`,
