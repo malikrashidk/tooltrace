@@ -108,12 +108,25 @@ router.post("/events", async (req, res, next) => {
   }
 });
 
-// ============ SMART SCAN UI ROUTES ============
+// ============ SMART TRACKER UI ROUTES ============
+// Smart Tracker is available for Pro and Enterprise plans only
 
-// GET /api/smart-scan
-// Returns detected sites + indication if they match an existing tool (though we filter that in logic usually)
+// GET /api/activity/smart-scan
+// Returns detected sites + indication if they match an existing tool
+// Requires Pro or Enterprise plan
 router.get("/smart-scan", authMiddleware, async (req, res) => {
   try {
+    const user = req.user as any;
+    const userPlan = (user?.plan || 'free').toLowerCase();
+    
+    // Only Pro and Enterprise have access to Smart Tracker
+    if (userPlan !== 'pro' && userPlan !== 'enterprise') {
+      return res.status(403).json({ 
+        error: "FEATURE_LOCKED",
+        message: "Smart Tracker is available on Pro and Enterprise plans only." 
+      });
+    }
+
     const sites = await storage.getDetectedSites(req.userId!);
     // Filter out ignored sites? Or let frontend filter?
     // Let's return all non-ignored, or let frontend handle filters.
@@ -126,14 +139,27 @@ router.get("/smart-scan", authMiddleware, async (req, res) => {
 
     res.json({ sites });
   } catch (error) {
-    console.error("Smart scan fetch error:", error);
-    res.status(500).json({ error: "Failed to fetch smart scan results" });
+    console.error("Smart Tracker fetch error:", error);
+    res.status(500).json({ error: "Failed to fetch Smart Tracker results" });
   }
 });
 
-// PATCH /api/smart-scan/:id
+// PATCH /api/activity/smart-scan/:id
+// Update detected site status (mark as added, ignored, etc)
+// Requires Pro or Enterprise plan
 router.patch("/smart-scan/:id", authMiddleware, async (req, res) => {
   try {
+    const user = req.user as any;
+    const userPlan = (user?.plan || 'free').toLowerCase();
+    
+    // Only Pro and Enterprise have access to Smart Tracker
+    if (userPlan !== 'pro' && userPlan !== 'enterprise') {
+      return res.status(403).json({ 
+        error: "FEATURE_LOCKED",
+        message: "Smart Tracker is available on Pro and Enterprise plans only." 
+      });
+    }
+
     const { id } = req.params;
     const updates = req.body;
 
@@ -169,10 +195,22 @@ router.patch("/smart-scan/:id", authMiddleware, async (req, res) => {
   }
 });
 
-// PATCH /api/smart-scan/:id/mark-added
+// PATCH /api/activity/smart-scan/:id/mark-added
 // Called when a tool is created from this site
+// Requires Pro or Enterprise plan
 router.patch("/smart-scan/:id/mark-added", authMiddleware, async (req, res) => {
     try {
+        const user = req.user as any;
+        const userPlan = (user?.plan || 'free').toLowerCase();
+        
+        // Only Pro and Enterprise have access to Smart Tracker
+        if (userPlan !== 'pro' && userPlan !== 'enterprise') {
+          return res.status(403).json({ 
+            error: "FEATURE_LOCKED",
+            message: "Smart Tracker is available on Pro and Enterprise plans only." 
+          });
+        }
+
         const { id } = req.params;
         const { toolId } = req.body;
 

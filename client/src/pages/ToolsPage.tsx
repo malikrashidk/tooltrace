@@ -249,6 +249,11 @@ export function ToolsPage() {
           <h1 className="text-xl sm:text-2xl font-semibold">All Tools</h1>
           <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
             {tools.length} tool{tools.length === 1 ? "" : "s"} tracked
+            {(user as any)?.plan === "free" && tools.length > 0 && (
+              <span className="ml-2 text-primary font-medium">
+                ({Math.min(tools.length, 10)} of 10 available)
+              </span>
+            )}
           </p>
         </div>
         <div className="flex gap-2">
@@ -280,8 +285,9 @@ export function ToolsPage() {
                 toast({ title: "Exported", description: "Your tools have been exported to CSV." });
               }
             }}
-            disabled={tools.length === 0}
+            disabled={tools.length === 0 || (user as any)?.plan === "free"}
             className="shadow-sm hidden sm:flex"
+            title={(user as any)?.plan === "free" ? "CSV export available on Pro and Enterprise plans" : ""}
           >
             <Download className="h-4 w-4 mr-2" />
             Export
@@ -337,14 +343,17 @@ export function ToolsPage() {
               </div>
             ) : viewMode === "grid" ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {filteredTools.map((tool) => (
-                  <ToolCard
-                    key={tool.id}
-                    tool={tool}
-                    onEdit={handleEditTool}
-                    onDelete={handleDeleteTool}
-                  />
-                ))}
+                {filteredTools.map((tool, index) => {
+                  const isDisabledForFreeUser = (user as any)?.plan === "free" && index >= 10;
+                  return (
+                    <ToolCard
+                      key={tool.id}
+                      tool={{ ...tool, isLocked: isDisabledForFreeUser } as any}
+                      onEdit={isDisabledForFreeUser ? undefined : handleEditTool}
+                      onDelete={isDisabledForFreeUser ? undefined : handleDeleteTool}
+                    />
+                  );
+                })}
               </div>
             ) : (
               <div className="border rounded-lg overflow-x-auto">
@@ -360,94 +369,101 @@ export function ToolsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredTools.map((tool) => (
-                      <TableRow key={tool.id} data-testid={`table-row-${tool.id}`}>
-                        <TableCell>
-                          <div className="flex items-center gap-2 sm:gap-3">
-                            <Avatar className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg border flex-shrink-0">
-                              <AvatarImage
-                                src={tool.logoUrl || (tool.websiteUrl ? `https://www.google.com/s2/favicons?domain=${new URL(tool.websiteUrl.startsWith('http') ? tool.websiteUrl : `https://${tool.websiteUrl}`).hostname}&sz=128` : undefined)}
-                                alt={tool.name}
-                                className="object-contain p-0.5"
-                              />
-                              <AvatarFallback className="rounded-lg text-xs">
-                                {getInitials(tool.name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="min-w-0 flex-1">
-                              <p className="font-medium text-sm sm:text-base break-words">{tool.name}</p>
-                              <a
-                                href={tool.websiteUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 mt-0.5"
-                              >
-                                Visit <ExternalLink className="h-3 w-3" />
-                              </a>
+                    {filteredTools.map((tool, index) => {
+                      const isDisabledForFreeUser = (user as any)?.plan === "free" && index >= 10;
+                      return (
+                        <TableRow key={tool.id} data-testid={`table-row-${tool.id}`} className={isDisabledForFreeUser ? "opacity-50" : ""}>
+                          <TableCell>
+                            <div className="flex items-center gap-2 sm:gap-3">
+                              <Avatar className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg border flex-shrink-0">
+                                <AvatarImage
+                                  src={tool.logoUrl || (tool.websiteUrl ? `https://www.google.com/s2/favicons?domain=${new URL(tool.websiteUrl.startsWith('http') ? tool.websiteUrl : `https://${tool.websiteUrl}`).hostname}&sz=128` : undefined)}
+                                  alt={tool.name}
+                                  className="object-contain p-0.5"
+                                />
+                                <AvatarFallback className="rounded-lg text-xs">
+                                  {getInitials(tool.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-sm sm:text-base break-words">{tool.name}</p>
+                                <a
+                                  href={tool.websiteUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 mt-0.5"
+                                >
+                                  Visit <ExternalLink className="h-3 w-3" />
+                                </a>
+                              </div>
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <div className="flex flex-wrap gap-1">
-                            {tool.categories?.slice(0, 2).map((cat) => (
-                              <Badge key={cat} variant="outline" className="text-xs">
-                                {cat}
-                              </Badge>
-                            ))}
-                            {(tool.categories?.length || 0) > 2 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{(tool.categories?.length || 0) - 2}
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <Badge
-                            variant="secondary"
-                            className={`text-xs ${tool.usageFrequency === "daily"
-                              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                              : tool.usageFrequency === "weekly"
-                                ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                                : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                              }`}
-                          >
-                            {tool.usageFrequency}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-xs sm:text-sm whitespace-nowrap">
-                          {tool.isPaid && tool.billingAmount
-                            ? formatAmount(fromCents(tool.billingAmount))
-                            : "Free"}
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell text-sm text-muted-foreground whitespace-nowrap">
-                          {tool.nextRenewalDate
-                            ? new Date(tool.nextRenewalDate).toLocaleDateString()
-                            : "-"}
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleEditTool(tool)}>
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleDeleteTool(tool)}
-                                className="text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            <div className="flex flex-wrap gap-1">
+                              {tool.categories?.slice(0, 2).map((cat) => (
+                                <Badge key={cat} variant="outline" className="text-xs">
+                                  {cat}
+                                </Badge>
+                              ))}
+                              {(tool.categories?.length || 0) > 2 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{(tool.categories?.length || 0) - 2}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            <Badge
+                              variant="secondary"
+                              className={`text-xs ${tool.usageFrequency === "daily"
+                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                : tool.usageFrequency === "weekly"
+                                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                                  : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                                }`}
+                            >
+                              {tool.usageFrequency}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-xs sm:text-sm whitespace-nowrap">
+                            {tool.isPaid && tool.billingAmount
+                              ? formatAmount(fromCents(tool.billingAmount))
+                              : "Free"}
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell text-sm text-muted-foreground whitespace-nowrap">
+                            {tool.nextRenewalDate
+                              ? new Date(tool.nextRenewalDate).toLocaleDateString()
+                              : "-"}
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isDisabledForFreeUser}>
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => !isDisabledForFreeUser && handleEditTool(tool)}
+                                  disabled={isDisabledForFreeUser}
+                                >
+                                  <Pencil className="h-4 w-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => !isDisabledForFreeUser && handleDeleteTool(tool)}
+                                  className="text-destructive"
+                                  disabled={isDisabledForFreeUser}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

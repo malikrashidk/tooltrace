@@ -43,8 +43,7 @@ export function PricingPage() {
         "Notes per tool",
         "Basic Receipts Storage",
         "Renewal Alerts",
-        "Basic Cost Analytics",
-        "Smart Scan (5 scans/mo)"
+        "Basic Cost Analytics"
       ],
       cta: userPlan === "free" ? "Current Plan" : null,
       ctaVariant: userPlan === "free" ? ("outline" as const) : ("default" as const),
@@ -60,7 +59,7 @@ export function PricingPage() {
       tools: "Unlimited",
       features: [
         "Unlimited tools",
-        "Smart Scan (30 scans/mo)",
+        "Smart Tracker (Unlimited)",
         "Advanced Analytics & Forecasting",
         "Low Usage Detection",
         "Data Export (CSV/PDF)",
@@ -82,7 +81,6 @@ export function PricingPage() {
       tools: "Unlimited",
       features: [
         "Everything in Pro",
-        "Unlimited Smart Scans",
         "Team Collaboration",
         "Role-based Access",
         "Admin Controls",
