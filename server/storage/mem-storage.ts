@@ -56,6 +56,10 @@ export class MemStorage implements IStorage {
         return Array.from(this.users.values()).find((u) => u.resetToken === token);
     }
 
+    async getUserByPolarCustomerId(customerId: string): Promise<User | undefined> {
+        return Array.from(this.users.values()).find((u) => u.polarCustomerId === customerId);
+    }
+
     async createOAuthUser(userData: Partial<User>): Promise<User> {
         const id = randomUUID();
         const fullUser = {

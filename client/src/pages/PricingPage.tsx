@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Zap, Crown, Building } from "lucide-react";
+import { Check, Zap, Crown, Building, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,10 +8,25 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 import { openPolarCheckout } from "@/lib/polar";
 import { getPriceIdForPlan } from "@/lib/plans";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export function PricingPage() {
   const { user } = useAuth();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
+
+  // Upgrade Dialog State
+  const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const userPlan = user ? (user as any).plan || "free" : "free";
 
@@ -80,6 +95,32 @@ export function PricingPage() {
     },
   ];
 
+  const processUpgrade = async (planId: string) => {
+    setIsProcessing(true);
+    try {
+      const priceId = getPriceIdForPlan(planId, billingCycle);
+
+      if (!priceId) {
+        alert('Configuration Error: Price ID not found for this plan. Please contact support.');
+        setIsProcessing(false);
+        return;
+      }
+
+      // Note: openPolarCheckout handles the error alert internally
+      await openPolarCheckout({
+        productPriceId: priceId,
+        email: user?.email,
+        userId: user?.id,
+        successUrl: `${window.location.origin}/dashboard?checkout=success`,
+      });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsProcessing(false);
+      setUpgradeDialogOpen(false);
+    }
+  };
+
   const handleUpgrade = (planId: string) => {
     // If user is not logged in, redirect to signup with plan intent
     if (!user) {
@@ -93,27 +134,12 @@ export function PricingPage() {
     console.log('[Pricing] handleUpgrade clicked', { planId, userPlan, normalizedUserPlan });
 
     if (normalizedUserPlan !== 'free' && normalizedUserPlan !== 'starter' && normalizedUserPlan !== planId) {
-      const confirmMessage = `Are you sure you want to upgrade to ${planId === 'pro' ? 'Pro' : 'Enterprise'}? Your payment method on file will be charged for the difference immediately.`;
-      if (!window.confirm(confirmMessage)) {
-        console.log('[Pricing] Upgrade cancelled by user');
-        return;
-      }
-    }
-
-    const priceId = getPriceIdForPlan(planId, billingCycle);
-
-    if (!priceId) {
-      alert('Configuration Error: Price ID not found for this plan. Please contact support.');
+      setSelectedPlanId(planId);
+      setUpgradeDialogOpen(true);
       return;
     }
-    if (priceId) {
-      openPolarCheckout({
-        productPriceId: priceId,
-        email: user.email,
-        userId: user.id,
-        successUrl: `${window.location.origin}/dashboard?checkout=success`,
-      });
-    }
+
+    processUpgrade(planId);
   };
 
   return (
@@ -272,6 +298,38 @@ export function PricingPage() {
           </div>
         </div>
       </div>
+
+      <AlertDialog open={upgradeDialogOpen} onOpenChange={setUpgradeDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Upgrade</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to upgrade to <span className="font-semibold text-foreground capitalize">{selectedPlanId}</span>?
+              Your saved payment method will be charged for the difference immediately.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (selectedPlanId) processUpgrade(selectedPlanId);
+              }}
+              disabled={isProcessing}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Confirm Upgrade"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
