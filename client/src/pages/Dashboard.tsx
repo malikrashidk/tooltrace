@@ -54,6 +54,10 @@ export function Dashboard() {
           console.log("[Dashboard] Plan update confirmed:", updatedUser?.plan);
           // Invalidate all queries to refresh spending stats and tool lists
           queryClient.invalidateQueries();
+          // Auto-refresh page after 2 seconds to show updated UI
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
         }
       };
 
@@ -176,6 +180,14 @@ export function Dashboard() {
                 : "Your plan has been upgraded. Refreshing your dashboard in a moment...")
               : "Please complete the payment in the popup window. Your dashboard will be ready momentarily."}
           </p>
+          {paymentSuccess && (
+            <Button
+              onClick={() => window.location.reload()}
+              className="mt-4 w-full"
+            >
+              Reload Dashboard
+            </Button>
+          )}
           {!paymentSuccess && (
             <Button
               variant="outline"
