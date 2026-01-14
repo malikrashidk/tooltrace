@@ -24,14 +24,6 @@ export function log(message: string, source = "express") {
 
 export const app = express();
 
-// ============ HTTPS ENFORCEMENT (Production) ============
-app.use((req, res, next) => {
-  if (process.env.NODE_ENV === "production" && req.header('x-forwarded-proto') !== 'https') {
-    return res.redirect(`https://${req.header('host')}${req.url}`);
-  }
-  next();
-});
-
 // Set up Content Security Policy
 app.use((_req, res, next) => {
   // Remove potentially existing headers to prevent duplicates
