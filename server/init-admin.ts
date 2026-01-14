@@ -30,10 +30,12 @@ async function initializeAdmin() {
         console.log("✅ Admin permissions fixed");
       }
       console.log("✅ Admin user already exists");
-      console.log(`   Email: ${ADMIN_EMAIL}`);
-      console.log(`   Name: ${existingUser.name}`);
-      console.log(`   Plan: enterprise`);
-      console.log(`   Is Admin: true`);
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`   Email: ${ADMIN_EMAIL}`);
+        console.log(`   Name: ${existingUser.name}`);
+        console.log(`   Plan: enterprise`);
+        console.log(`   Is Admin: true`);
+      }
       return;
     }
 
@@ -61,10 +63,12 @@ async function initializeAdmin() {
     });
 
     console.log("✅ Admin user created successfully!");
-    console.log(`   Email: ${ADMIN_EMAIL}`);
-    console.log(`   Name: ${ADMIN_NAME}`);
-    console.log(`   Plan: enterprise`);
-    console.log(`   Tools Limit: Unlimited`);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`   Email: ${ADMIN_EMAIL}`);
+      console.log(`   Name: ${ADMIN_NAME}`);
+      console.log(`   Plan: enterprise`);
+      console.log(`   Tools Limit: Unlimited`);
+    }
     console.log("");
     console.log("⚠️  Please change the password after first login!");
   } catch (error) {

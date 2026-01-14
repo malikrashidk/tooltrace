@@ -29,7 +29,11 @@ Object.keys(POLAR_ID_TO_PLAN).forEach(key => {
   if (key === "" || key === "undefined") delete POLAR_ID_TO_PLAN[key];
 });
 
-console.log("[Billing] Polar ID Mapping Initialized:", JSON.stringify(POLAR_ID_TO_PLAN, null, 2));
+if (process.env.NODE_ENV !== "production") {
+  console.log("[Billing] Polar ID Mapping Initialized:", JSON.stringify(POLAR_ID_TO_PLAN, null, 2));
+} else {
+  console.log("[Billing] Polar ID Mapping Initialized");
+}
 
 const PLAN_LIMITS: Record<string, string> = {
   free: "10",
