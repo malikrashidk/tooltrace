@@ -190,8 +190,8 @@ router.patch("/smart-scan/:id", authMiddleware, async (req, res) => {
     const updated = await storage.updateDetectedSite(id, allowedUpdates);
     res.json({ site: updated });
   } catch (error) {
-    console.error("Smart scan update error:", error);
-    res.status(500).json({ error: "Failed to update smart scan result" });
+    console.error("Smart tracker update error:", error);
+    res.status(500).json({ error: "Failed to update smart tracker result" });
   }
 });
 

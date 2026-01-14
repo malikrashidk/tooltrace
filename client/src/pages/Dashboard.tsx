@@ -209,7 +209,6 @@ export function Dashboard() {
       <OnboardingChecklist
         hasTools={tools.length > 0}
         hasCurrencySet={!!(user && (user as any).currency && (user as any).currency !== "USD")} // Assuming default is USD, check if changed
-        hasConnectedGmail={!!inboxStatus?.connected}
       />
 
       <div>

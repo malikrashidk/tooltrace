@@ -166,7 +166,7 @@ export default function SmartScanPage() {
     return (
         <div className="container mx-auto p-4 md:p-8 max-w-6xl space-y-8">
             <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight">Smart Scan</h1>
+                <h1 className="text-3xl font-bold tracking-tight">Smart Tracker</h1>
                 <p className="text-muted-foreground">
                     Discover accounts based on your browsing activity.
                 </p>

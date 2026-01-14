@@ -64,7 +64,7 @@ export function ToolCard({ tool, onEdit, onDelete, onCredentialsUpdate }: ToolCa
         <div className="absolute inset-0 z-20 bg-background/60 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 text-center">
           <Lock className="h-8 w-8 text-muted-foreground mb-2" />
           <p className="font-semibold text-sm">Subscription Locked</p>
-          <p className="text-xs text-muted-foreground mt-1 max-w-[150px]">Upgrade your plan to unlock and manage this tool.</p>
+          <p className="text-xs text-muted-foreground mt-1 max-w-[150px]">This tool is available on Pro and Enterprise plans.</p>
           <Button variant="ghost" size="sm" className="mt-2 h-auto p-0 text-primary underline-offset-4 hover:underline" onClick={() => window.location.href = '/pricing'}>
             View Plans
           </Button>

@@ -43,7 +43,7 @@ export function InboxDiscovery({ onAddTool }: { onAddTool: (tool: Partial<Tool>)
         queryKey: ["/api/user/profile"],
     });
 
-    // Check if Gmail OAuth connection exists for Smart Scan
+    // Check if Gmail OAuth connection exists for Smart Tracker
     const { data: connectionData } = useQuery<any>({
         queryKey: ["/api/inbox/connection-status"],
     });
@@ -107,7 +107,7 @@ export function InboxDiscovery({ onAddTool }: { onAddTool: (tool: Partial<Tool>)
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-xl flex items-center gap-2">
                         <RefreshCw className={`h-5 w-5 text-primary ${isScanning ? 'animate-spin' : ''}`} />
-                        Smart Scan
+                        Smart Tracker
                     </CardTitle>
                     <Badge variant="outline" className="bg-primary/10 text-primary border-none text-[10px] uppercase font-bold tracking-wider">
                         Beta
@@ -236,7 +236,7 @@ export function InboxDiscovery({ onAddTool }: { onAddTool: (tool: Partial<Tool>)
                                         ) : (
                                             <RefreshCw className="h-4 w-4 mr-2" />
                                         )}
-                                        Start Smart Scan
+                                        Start Smart Tracker
                                     </Button>
                                 </div>
                             )

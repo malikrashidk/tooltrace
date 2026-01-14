@@ -118,7 +118,7 @@ export function ApiKeysPage() {
               </div>
               <h2 className="text-xl sm:text-2xl font-semibold">Upgrade to Access API Keys</h2>
               <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
-                API key management is exclusively available on the Enterprise plan. Upgrade to get programmatic access to your SaaS tools.
+                API keys are available on the Enterprise plan. Upgrade to get programmatic access to your SaaS tools.
               </p>
               <Button 
                 onClick={() => setLocation("/pricing")}

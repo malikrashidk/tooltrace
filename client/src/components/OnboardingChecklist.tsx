@@ -7,10 +7,9 @@ import { useAuth } from "@/context/AuthContext";
 interface OnboardingChecklistProps {
   hasTools: boolean;
   hasCurrencySet: boolean;
-  hasConnectedGmail: boolean;
 }
 
-export function OnboardingChecklist({ hasTools, hasCurrencySet, hasConnectedGmail }: OnboardingChecklistProps) {
+export function OnboardingChecklist({ hasTools, hasCurrencySet }: OnboardingChecklistProps) {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
 
@@ -18,7 +17,7 @@ export function OnboardingChecklist({ hasTools, hasCurrencySet, hasConnectedGmai
     {
       id: "add-tool",
       label: "Add your first tool",
-      description: "Start tracking your subscriptions manually or via import.",
+      description: "Start tracking your subscriptions manually or import from CSV.",
       completed: hasTools,
       action: () => setLocation("/tools"),
       actionLabel: "Add Tool"
@@ -26,18 +25,10 @@ export function OnboardingChecklist({ hasTools, hasCurrencySet, hasConnectedGmai
     {
       id: "currency",
       label: "Set currency preference",
-      description: "Ensure your analytics match your bank account.",
+      description: "Ensure your spending calculations match your location.",
       completed: hasCurrencySet,
       action: () => setLocation("/settings"),
       actionLabel: "Settings"
-    },
-    {
-      id: "connect",
-      label: "Connect Gmail (Smart Scan)",
-      description: "Automate discovery of tools from your inbox.",
-      completed: hasConnectedGmail,
-      action: () => setLocation("/smart-scan"),
-      actionLabel: "Connect"
     }
   ];
 

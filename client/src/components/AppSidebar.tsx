@@ -64,7 +64,7 @@ export function AppSidebar() {
       icon: Package,
     },
     {
-      title: "Smart Scan",
+      title: "Smart Tracker",
       url: "/smart-scan",
       icon: Sparkles,
       badge: "BETA",

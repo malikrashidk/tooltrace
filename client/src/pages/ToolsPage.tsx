@@ -298,7 +298,7 @@ export function ToolsPage() {
             className="shadow-sm border-primary/20 hover:bg-primary/5"
           >
             <RefreshCw className="h-4 w-4 mr-2 text-primary" />
-            Smart Scan
+            Smart Tracker
           </Button>
         </div>
       </div>
