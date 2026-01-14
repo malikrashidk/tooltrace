@@ -60,10 +60,10 @@ export function PricingPage() {
       features: [
         "Unlimited tools",
         "Smart Tracker (Unlimited)",
-        "Advanced Analytics & Forecasting",
+        "Advanced Analytics",
         "Low Usage Detection",
-        "Data Export (CSV/PDF)",
-        "Priority Support",
+        "Data Export (CSV)",
+        "Email Support",
         "Everything in Starter"
       ],
       cta: userPlan === "pro" ? "Current Plan" : (userPlan === "enterprise" ? null : "Upgrade to Pro"),

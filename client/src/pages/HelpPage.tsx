@@ -183,13 +183,13 @@ const helpSections = [
     icon: Sparkles,
     topics: [
       {
-        title: "CSV Import/Export",
-        description: "Bulk manage your tools with CSV",
+        title: "CSV Export",
+        description: "Export your tools for backup or analysis",
         details: [
-          "Export: Download all tools as CSV for backup or analysis",
-          "Import: Upload CSV to add multiple tools at once",
-          "Go to 'Advanced Tools' …†’ 'Export Tools'",
+          "Download all tools as CSV from the Tools page",
+          "Use for backup, analysis, or external tracking",
           "CSV format: Name, Cost, Billing Cycle, Category, Usage Frequency",
+          "Compatible with Excel, Google Sheets, and other spreadsheet tools",
         ],
       },
       {
