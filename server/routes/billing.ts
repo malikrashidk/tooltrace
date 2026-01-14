@@ -284,7 +284,11 @@ router.post("/checkout", authMiddleware, async (req, res) => {
   }
 
   if (!polarClient) {
-    return res.status(503).send("Billing system not configured");
+    console.warn('[Checkout] Polar client not initialized - missing POLAR_ACCESS_TOKEN');
+    return res.status(503).json({ 
+      error: "Payment service unavailable", 
+      message: "POLAR_ACCESS_TOKEN is not configured" 
+    });
   }
 
   try {

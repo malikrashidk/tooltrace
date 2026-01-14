@@ -83,7 +83,7 @@ All HIGH, MEDIUM, and LOW priority security fixes have been implemented. The app
   - Warns about optional variables in development
   - Utility functions: `getRequiredEnv()`, `getEnv()`
 - **Integration:** Called in `server/index-prod.ts` before app starts
-- **Required Vars:** `JWT_SECRET`, `DATABASE_URL`, `POLAR_API_KEY`, OAuth keys, SMTP config, etc.
+- **Required Vars:** `JWT_SECRET`, `DATABASE_URL`, `POLAR_ACCESS_TOKEN`, OAuth keys, SMTP config, etc.
 
 #### 9. **Unhandled Error Handlers** ✅
 - **Added:**
@@ -140,7 +140,7 @@ NODE_ENV=production
 PORT=5000
 JWT_SECRET=<generate-strong-random-string>
 DATABASE_URL=postgresql://user:pass@host/dbname
-POLAR_API_KEY=<your-polar-api-key>
+POLAR_ACCESS_TOKEN=<your-polar-access-token>
 POLAR_WEBHOOK_SECRET=<your-polar-webhook-secret>
 GOOGLE_CLIENT_ID=<your-google-oauth-id>
 GOOGLE_CLIENT_SECRET=<your-google-oauth-secret>
