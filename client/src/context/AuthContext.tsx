@@ -146,8 +146,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("user", JSON.stringify(data.user));
     localStorage.setItem("token", data.token);
 
-    // Set cookie for extension sync
-    document.cookie = `token=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; sameSite=Lax`;
+    // Set cookie for extension sync (Secure flag for HTTPS)
+    const secureFlagStr = window.location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `token=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; sameSite=Strict${secureFlagStr}`;
   };
 
   return (

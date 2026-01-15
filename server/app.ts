@@ -24,6 +24,18 @@ export function log(message: string, source = "express") {
 
 export const app = express();
 
+// Enforce HTTPS in production
+if (process.env.NODE_ENV === "production") {
+  app.use((req, res, next) => {
+    // Check x-forwarded-proto which is set by reverse proxies like Nginx/Caddy
+    if (req.headers["x-forwarded-proto"] !== "https") {
+      log(`Redirecting to HTTPS: ${req.headers.host}${req.url}`);
+      return res.redirect(`https://${req.headers.host}${req.url}`);
+    }
+    next();
+  });
+}
+
 // Set up Content Security Policy
 app.use((_req, res, next) => {
   // Remove potentially existing headers to prevent duplicates
