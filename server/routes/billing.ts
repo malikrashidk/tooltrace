@@ -14,6 +14,10 @@ const POLAR_ID_TO_PLAN: Record<string, string> = {
   [process.env.POLAR_PRICE_ID_PRO_YEARLY || process.env.VITE_POLAR_PRICE_ID_PRO_YEARLY || ""]: "pro",
   [process.env.POLAR_PRICE_ID_ENTERPRISE_MONTHLY || process.env.VITE_POLAR_PRICE_ID_ENTERPRISE || ""]: "enterprise",
   [process.env.POLAR_PRICE_ID_ENTERPRISE_YEARLY || process.env.VITE_POLAR_PRICE_ID_ENTERPRISE_YEARLY || ""]: "enterprise",
+
+  // Product IDs for direct updates and robust sync
+  [process.env.POLAR_PRODUCT_ID_PRO || ""]: "pro",
+  [process.env.POLAR_PRODUCT_ID_ENTERPRISE || ""]: "enterprise"
 };
 
 // Aliases for compatibility if needed
@@ -274,6 +278,38 @@ router.post("/webhooks/polar", async (req, res) => {
 });
 
 /**
+ * POST /api/billing/sync
+ * Manually trigger a sync of the current user's subscription from Polar
+ * Useful for post-payment UI updates to avoid webhook latency
+ */
+router.post("/sync", authMiddleware, async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  try {
+    const user = req.user as any;
+    console.log(`[Billing Sync] Proactive sync requested for ${user.email}`);
+
+    const syncResult = await syncUserSubscription(user.id, user.email);
+
+    if (syncResult) {
+      console.log(`[Billing Sync] Sync successful. New plan: ${syncResult.plan}`);
+      return res.json({
+        success: true,
+        plan: syncResult.plan,
+        subscriptionId: syncResult.subscriptionId
+      });
+    }
+
+    res.json({ success: false, message: "No active subscription found on Polar" });
+  } catch (error: any) {
+    console.error("[Billing Sync] Error during manual sync:", error);
+    res.status(500).json({ error: "Sync failed", message: error.message });
+  }
+});
+
+/**
  * POST /api/billing/checkout
  * Create a Polar checkout session and return the URL
  */
@@ -306,29 +342,39 @@ router.post("/checkout", authMiddleware, async (req, res) => {
 
     // Create a checkout session using the SDK
     const currentPlan = (user.plan || "").toString().toLowerCase();
-    const isFree = currentPlan === "free" || !currentPlan;
+    const isFree = currentPlan === "free" || currentPlan === "starter" || !currentPlan;
 
     // --- PAID USER UPGRADE FLOW (Instant Update) ---
     if (!isFree && polarSubscriptionId) {
       console.log(`[Checkout] User ${user.email} has active paid sub ${polarSubscriptionId}. Executing direct API update.`);
       try {
-        // Correctly resolve the Price ID to a Product ID as required by the updateSubscription function
+        // Robust ID Resolution: Is this a PRICE ID or PRODUCT ID?
+        // Polar SDK checkout create takes a list of Product or Price IDs.
+        // But the subscription update API specifically needs a PRODUCT ID.
         let targetProductId: string | undefined = undefined;
-        try {
-          const productsResponse = await polarClient.products.list({});
-          for await (const page of productsResponse) {
-            const products = (page as any).items || [];
-            for (const product of products) {
-              if (product.prices?.some((p: any) => p.id === productPriceId)) {
-                console.log(`[Checkout] Found Product ID ${product.id} for Price ID ${productPriceId}`);
-                targetProductId = product.id;
-                break;
+
+        // If the ID looks like a Product ID already, use it
+        if (productPriceId.startsWith('prod_')) {
+          targetProductId = productPriceId;
+        } else {
+          // It's a Price ID, we need to find the parent Product ID
+          try {
+            const productsResponse = await polarClient.products.list({});
+            // Handle async iterator
+            for await (const page of productsResponse) {
+              const products = (page as any).items || [];
+              for (const product of products) {
+                if (product.prices?.some((p: any) => p.id === productPriceId)) {
+                  console.log(`[Checkout] Resolved Price ID ${productPriceId} to Product ID ${product.id}`);
+                  targetProductId = product.id;
+                  break;
+                }
               }
+              if (targetProductId) break;
             }
-            if (targetProductId) break;
+          } catch (lookupErr) {
+            console.warn('[Checkout] Product lookup failed:', lookupErr);
           }
-        } catch (lookupErr) {
-          console.warn('[Checkout] Product lookup failed, falling back to standard checkout.', lookupErr);
         }
 
         if (targetProductId) {
@@ -337,15 +383,20 @@ router.post("/checkout", authMiddleware, async (req, res) => {
 
           console.log(`[Checkout] Successfully updated subscription ${polarSubscriptionId} to product ${targetProductId}`);
 
-          // Use specific success code for Upgrades so frontend can show "Plan Updated" instead of "Payment Successful"
+          // Sync immediately so the user record is updated before they redirect back
+          await syncUserSubscription(user.id, user.email);
+
           const successUrl = `${process.env.VITE_APP_URL || 'https://app.tooltrace.io'}/dashboard?checkout=upgrade_success`;
           return res.json({ url: successUrl });
         } else {
-            console.log(`[Checkout] Could not find a matching Product ID for Price ID ${productPriceId}. Falling back to standard checkout.`);
+          console.warn(`[Checkout] Could not resolve ${productPriceId} to a Product ID. Falling back to standard checkout.`);
+          // If we can't resolve it, the fallback below (standard checkout) will handle it
+          // although it might show the "active subscription" error if Polar thinks it's a conflict.
         }
 
       } catch (err: any) {
         console.error("[Checkout] Instant update failed. Falling back to standard checkout.", err);
+        // Fall back to standard checkout flow instead of erroring
       }
     }
 

@@ -25,12 +25,15 @@ export function Dashboard() {
     return !!sessionStorage.getItem("pending_plan");
   });
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<string>("Connecting to Polar...");
 
   // Handle Polar Checkout Success
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("checkout") === "success" && !hasHandledSuccess.current) {
-      console.log("[Dashboard] Payment success detected via URL");
+    const checkoutType = params.get("checkout");
+
+    if ((checkoutType === "success" || checkoutType === "upgrade_success") && !hasHandledSuccess.current) {
+      console.log("[Dashboard] Payment success detected via URL:", checkoutType);
       hasHandledSuccess.current = true;
       setPaymentSuccess(true);
 
@@ -38,35 +41,54 @@ export function Dashboard() {
       window.history.replaceState({}, "", window.location.pathname);
 
       // Handle refresh with a retry loop to account for webhook latency
-      // Increased retries to 5 and delay to 3s for better reliability
-      const attemptRefresh = async (retries = 5) => {
+      const attemptRefresh = async (retries = 8) => {
         const oldPlan = (user as any)?.plan;
-        console.log(`[Dashboard] Attempting refresh (retries left: ${retries}). Current plan: ${oldPlan}`);
+
+        try {
+          setSyncStatus("Syncing your account status...");
+          // Proactively ask the server to check Polar for updates
+          const syncResponse = await fetch("/api/billing/sync", { method: "POST" });
+          const syncData = await syncResponse.json();
+          console.log("[Dashboard] Proactive sync result:", syncData);
+
+          if (syncData.success) {
+            setSyncStatus("Account synced! Updating dashboard...");
+          }
+        } catch (syncErr) {
+          console.warn("[Dashboard] Proactive sync failed (ignoring, falling back to polling):", syncErr);
+        }
 
         const updatedUser = await refreshUser(true) as any;
 
-        // If plan is still the same and it wasn't free to begin with, 
-        // or if we just want to be sure, retry after a delay.
+        // If plan is still the same, retry after a delay.
         if (updatedUser?.plan === oldPlan && retries > 0) {
-          console.log(`[Dashboard] Plan still ${oldPlan}, retrying in 3s...`);
-          setTimeout(() => attemptRefresh(retries - 1), 3000);
+          console.log(`[Dashboard] Plan still ${oldPlan}, retrying in 2.5s...`);
+          setSyncStatus(`Finalizing setup (Step ${9 - retries}/8)...`);
+          setTimeout(() => attemptRefresh(retries - 1), 2500);
         } else {
           console.log("[Dashboard] Plan update confirmed:", updatedUser?.plan);
+          setSyncStatus("Welcome to your new plan!");
+
           // Invalidate all queries to refresh spending stats and tool lists
           queryClient.invalidateQueries();
-          // Auto-refresh page after 2 seconds to show updated UI
+
+          // Auto-refresh page after 1.5 seconds to show updated UI
           setTimeout(() => {
             window.location.reload();
-          }, 2000);
+          }, 1500);
         }
       };
 
+      if (checkoutType === "upgrade_success") {
+        setSyncStatus("Upgrade complete. Syncing your new features...");
+      }
+
       attemptRefresh();
 
-      // Clear the overlay after 4 seconds
+      // Clear the overlay after 10 seconds safety timeout
       const timer = setTimeout(() => {
         setPaymentSuccess(false);
-      }, 4000);
+      }, 10000);
 
       return () => clearTimeout(timer);
     }
@@ -175,9 +197,7 @@ export function Dashboard() {
           </h2>
           <p className="text-muted-foreground">
             {paymentSuccess
-              ? (new URLSearchParams(window.location.search).get("checkout") === "upgrade_success"
-                ? "Your plan has been updated successfully."
-                : "Your plan has been upgraded. Refreshing your dashboard in a moment...")
+              ? syncStatus
               : "Please complete the payment in the popup window. Your dashboard will be ready momentarily."}
           </p>
           {paymentSuccess && (

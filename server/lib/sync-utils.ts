@@ -22,11 +22,16 @@ export async function syncUserSubscription(userId: string, email: string) {
 
             // Map Polar IDs to plans (re-using mapping logic)
             // We use both VITE_ and standard env vars to be resilient
+            // Now including Product IDs for robust resolution
             const POLAR_ID_TO_PLAN: Record<string, string> = {
                 [process.env.POLAR_PRICE_ID_PRO_MONTHLY || process.env.VITE_POLAR_PRICE_ID_PRO || ""]: "pro",
                 [process.env.POLAR_PRICE_ID_PRO_YEARLY || process.env.VITE_POLAR_PRICE_ID_PRO_YEARLY || ""]: "pro",
                 [process.env.POLAR_PRICE_ID_ENTERPRISE_MONTHLY || process.env.VITE_POLAR_PRICE_ID_ENTERPRISE || ""]: "enterprise",
                 [process.env.POLAR_PRICE_ID_ENTERPRISE_YEARLY || process.env.VITE_POLAR_PRICE_ID_ENTERPRISE_YEARLY || ""]: "enterprise",
+
+                // Add support for Product IDs directly if available in env
+                [process.env.POLAR_PRODUCT_ID_PRO || ""]: "pro",
+                [process.env.POLAR_PRODUCT_ID_ENTERPRISE || ""]: "enterprise"
             };
 
             const subData = activeSub as any;
