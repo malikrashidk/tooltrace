@@ -129,6 +129,7 @@ export function IntegrationsHub() {
       ],
       status: "active",
       webhook: getWebhookUrl("custom"),
+      setupHelp: "Paste this URL into Zapier, Make, or Pabbly as your 'Webhook URL'. It includes your API key for authentication."
     },
   ];
 
@@ -224,9 +225,16 @@ export function IntegrationsHub() {
                         </Button>
                       </div>
                     </div>
-                    <Button className="w-full">
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Set Up Integration
+                    <div>
+                      <p className="text-xs text-muted-foreground bg-primary/5 p-2 rounded-md border border-primary/10">
+                        {integration.setupHelp}
+                      </p>
+                    </div>
+                    <Button className="w-full" asChild>
+                      <a href="https://app.tooltrace.io/docs/api" target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Set Up Guide
+                      </a>
                     </Button>
                   </CardContent>
                 </Card>
@@ -323,9 +331,11 @@ export function IntegrationsHub() {
             <CardDescription>Full documentation for custom integrations</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button variant="outline">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              View Documentation
+            <Button variant="outline" asChild>
+              <a href="/api/v1/docs" target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                View API Documentation
+              </a>
             </Button>
           </CardContent>
         </Card>

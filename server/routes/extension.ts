@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { authMiddleware } from "../middleware";
-import { apiKeyAuthMiddleware } from "./integration";
+import { flexibleAuthMiddleware } from "./integration";
 import path from "path";
 import fs from "fs";
 import archiver from "archiver";
@@ -45,15 +45,8 @@ router.get("/download", async (req, res) => {
 });
 
 // Usage Tracking Endpoint (Extension)
-// Accepts either API Key (apiKeyAuthMiddleware) or Session Token (authMiddleware)
-router.post("/usage", async (req, res, next) => {
-  // Try API Key first
-  if (req.headers.authorization?.startsWith('Bearer tt_')) {
-    return apiKeyAuthMiddleware(req, res, next);
-  }
-  // Try Session Token (authMiddleware)
-  return authMiddleware(req, res, next);
-}, async (req: any, res: any) => {
+// Accepts either API Key or Session Token
+router.post("/usage", flexibleAuthMiddleware, async (req: any, res: any) => {
   try {
     const { toolId, durationSeconds } = req.body;
 

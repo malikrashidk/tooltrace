@@ -3,6 +3,8 @@ import { storage } from "../storage";
 import { authMiddleware, auditLog } from "../middleware";
 import crypto from "crypto";
 import { hashPassword, verifyPassword } from "../auth";
+import path from "path";
+import fs from "fs";
 
 const router = Router();
 
@@ -32,12 +34,22 @@ const paidPlanMiddleware = async (req: any, res: any, next: any) => {
 // Middleware to verify API key for external access AND check paid plan
 const apiKeyAuthMiddleware = async (req: any, res: any, next: any) => {
   try {
+    let authValue = "";
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: "Missing or invalid API key" });
+
+    // 1. Try Authorization Header (Bearer token)
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      authValue = authHeader.substring(7);
+    }
+    // 2. Try Query Parameter (fallback for simpler integrations)
+    else if (req.query.apiKey) {
+      authValue = req.query.apiKey as string;
     }
 
-    const authValue = authHeader.substring(7);
+    if (!authValue) {
+      return res.status(401).json({ error: "Missing or invalid API key. Provide via Bearer token or ?apiKey= query param." });
+    }
+
     const [key, providedSecret] = authValue.includes('.') ? authValue.split('.') : [authValue, null];
 
     const apiKey = await storage.getApiKeyByKey(key);
@@ -53,23 +65,42 @@ const apiKeyAuthMiddleware = async (req: any, res: any, next: any) => {
         return res.status(401).json({ error: "Invalid API secret" });
       }
     } else if (apiKey.secret.includes(':')) {
-      // If the stored secret is hashed but no secret was provided in the header
-      return res.status(401).json({ error: "API secret missing in token" });
+      // If the stored secret is hashed but no secret was provided
+      return res.status(401).json({ error: "API secret missing in token. Format should be key.secret" });
     }
 
     // Verify user still has a paid plan (API access requires Enterprise)
     const user = await storage.getUser(apiKey.userId);
-    if (!user || user.plan !== "enterprise") {
+    const plan = (user?.plan || "").toString().toLowerCase().trim();
+    if (!user || (plan !== "enterprise" && !user.isAdmin)) {
       return res.status(403).json({ error: "API access requires an active Enterprise subscription" });
     }
 
-    // Store user ID from API key for route handlers
+    // Store user info and key info for route handlers
     req.userId = apiKey.userId;
+    req.user = user;
     req.apiKeyId = apiKey.id;
     next();
   } catch (error) {
+    console.error("[API Auth] Middleware error:", error);
     res.status(500).json({ error: "API authentication failed" });
   }
+};
+
+/**
+ * Middleware that handles both session AND API key authentication.
+ * Useful for endpoints used by both the dashboard and external integrations.
+ */
+const flexibleAuthMiddleware = async (req: any, res: any, next: any) => {
+  const authHeader = req.headers.authorization;
+
+  // 1. If it looks like an API key (starts with 'tt_'), use apiKeyAuthMiddleware
+  if (authHeader?.startsWith('Bearer tt_') || req.query.apiKey) {
+    return apiKeyAuthMiddleware(req, res, next);
+  }
+
+  // 2. Otherwise try standard session auth (JWT)
+  return authMiddleware(req, res, next);
 };
 
 router.get("/api-keys", authMiddleware, paidPlanMiddleware, async (req, res) => {
@@ -202,13 +233,7 @@ router.get("/v1/renewals", apiKeyAuthMiddleware, async (req, res) => {
 });
 
 // External API: Get spending analytics
-router.get("/v1/analytics/spending", async (req: Request, res: Response, next: NextFunction) => {
-  // Try session auth first, fall back to API key
-  if (req.headers.authorization?.startsWith('Bearer ')) {
-    return authMiddleware(req as any, res as any, next);
-  }
-  return apiKeyAuthMiddleware(req, res, next);
-}, async (req: Request, res: Response) => {
+router.get("/v1/analytics/spending", flexibleAuthMiddleware, async (req: Request, res: Response) => {
   try {
     const tools = await storage.getUserTools(req.userId!);
 
@@ -388,15 +413,21 @@ router.get("/v1/webhooks/renewal-triggers", apiKeyAuthMiddleware, async (req, re
   }
 });
 
-// Webhook: Test endpoint to verify API key
-router.get("/v1/test", apiKeyAuthMiddleware, async (req, res) => {
-  res.json({
-    success: true,
-    message: "API key is valid",
-    userId: req.userId,
-    timestamp: new Date().toISOString()
-  });
+// Webhook: Get API Documentation
+router.get("/v1/docs", async (req, res) => {
+  try {
+    const docsPath = path.join(process.cwd(), "DOCS_API.md");
+    if (fs.existsSync(docsPath)) {
+      const docs = fs.readFileSync(docsPath, "utf-8");
+      res.setHeader("Content-Type", "text/markdown");
+      res.send(docs);
+    } else {
+      res.status(404).json({ error: "Documentation not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Failed to load documentation" });
+  }
 });
 
-export { apiKeyAuthMiddleware };
+export { apiKeyAuthMiddleware, flexibleAuthMiddleware };
 export default router;
