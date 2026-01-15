@@ -159,6 +159,17 @@ export async function updateSubscription(subscriptionId: string, newProductId: s
     }
 }
 
+// Helper to get customer portal URL
+export function getPolarCustomerPortalUrl(): string {
+    const POLAR_ORGANIZATION_ID = process.env.VITE_POLAR_ORGANIZATION_ID || process.env.POLAR_ORGANIZATION_ID;
+    const baseUrl = POLAR_ENV === 'sandbox'
+        ? 'https://sandbox.polar.sh'
+        : 'https://polar.sh';
+
+    if (!POLAR_ORGANIZATION_ID) return baseUrl;
+    return `${baseUrl}/customer-portal/${POLAR_ORGANIZATION_ID}`;
+}
+
 // Log initialization status
 if (polarClient) {
     console.log(`[Polar] Client initialized successfully (${POLAR_ENV} mode)`);

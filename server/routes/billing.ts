@@ -348,24 +348,29 @@ router.post("/checkout", authMiddleware, async (req, res) => {
     if (!isFree && polarSubscriptionId) {
       console.log(`[Checkout] User ${user.email} has active paid sub ${polarSubscriptionId}. Executing direct API update.`);
       try {
-        // Robust ID Resolution: Is this a PRICE ID or PRODUCT ID?
-        // Polar SDK checkout create takes a list of Product or Price IDs.
-        // But the subscription update API specifically needs a PRODUCT ID.
         let targetProductId: string | undefined = undefined;
 
-        // If the ID looks like a Product ID already, use it
-        if (productPriceId.startsWith('prod_')) {
-          targetProductId = productPriceId;
-        } else {
-          // It's a Price ID, we need to find the parent Product ID
+        // 1. Direct environment check (Fastest)
+        const PLAN_TO_PRODUCT_ID: Record<string, string> = {
+          pro: process.env.POLAR_PRODUCT_ID_PRO || "",
+          enterprise: process.env.POLAR_PRODUCT_ID_ENTERPRISE || ""
+        };
+
+        const targetPlan = POLAR_ID_TO_PLAN[productPriceId];
+        if (targetPlan && PLAN_TO_PRODUCT_ID[targetPlan]) {
+          targetProductId = PLAN_TO_PRODUCT_ID[targetPlan];
+          console.log(`[Checkout] Resolved target plan ${targetPlan} to Product ID ${targetProductId} via env`);
+        }
+
+        // 2. SDK lookup (Fallback)
+        if (!targetProductId) {
           try {
             const productsResponse = await polarClient.products.list({});
-            // Handle async iterator
             for await (const page of productsResponse) {
               const products = (page as any).items || [];
               for (const product of products) {
                 if (product.prices?.some((p: any) => p.id === productPriceId)) {
-                  console.log(`[Checkout] Resolved Price ID ${productPriceId} to Product ID ${product.id}`);
+                  console.log(`[Checkout] Resolved Price ID ${productPriceId} to Product ID ${product.id} via SDK`);
                   targetProductId = product.id;
                   break;
                 }
@@ -389,27 +394,38 @@ router.post("/checkout", authMiddleware, async (req, res) => {
           const successUrl = `${process.env.VITE_APP_URL || 'https://app.tooltrace.io'}/dashboard?checkout=upgrade_success`;
           return res.json({ url: successUrl });
         } else {
-          console.warn(`[Checkout] Could not resolve ${productPriceId} to a Product ID. Falling back to standard checkout.`);
-          // If we can't resolve it, the fallback below (standard checkout) will handle it
-          // although it might show the "active subscription" error if Polar thinks it's a conflict.
+          console.warn(`[Checkout] Could not resolve ${productPriceId} to a Product ID.`);
+          // CRITICAL: For paid users, if we can't resolve the ID, redirect to Customer Portal
+          // NEVER fall back to a standard checkout which will conflict.
+          const { getPolarCustomerPortalUrl } = await import("../lib/polar");
+          return res.json({ url: getPolarCustomerPortalUrl() });
         }
 
       } catch (err: any) {
-        console.error("[Checkout] Instant update failed. Falling back to standard checkout.", err);
-        // Fall back to standard checkout flow instead of erroring
+        console.error("[Checkout] Instant update failed. Redirecting to Customer Portal for safety.", err);
+        // Fall back to Customer Portal instead of a new checkout
+        const { getPolarCustomerPortalUrl } = await import("../lib/polar");
+        return res.json({ url: getPolarCustomerPortalUrl() });
       }
     }
 
+    // --- SAFETY NET: NEVER send a paid user to a fresh checkout if they have no sub ID locally ---
+    // If the code reached here it means isFree is true OR (!isFree but polarSubscriptionId was somehow undefined)
+    // If they aren't free, something is wrong with their sub record, Portal is the only safe place.
+    if (!isFree) {
+      console.warn(`[Checkout] Paid user ${user.email} reached standard checkout path (Sub ID missing). Forcing Portal redirect.`);
+      const { getPolarCustomerPortalUrl } = await import("../lib/polar");
+      return res.json({ url: getPolarCustomerPortalUrl() });
+    }
+
+    // --- DEFAULT: STANDARD CHECKOUT SESSION (ONLY FOR NEW/FREE USERS) ---
     const checkout = await polarClient.checkouts.create({
       products: [productPriceId],
       successUrl: `${process.env.VITE_APP_URL || 'https://app.tooltrace.io'}/dashboard?checkout=success`,
       customerEmail: user.email,
       // Polar: Only pass subscriptionId for upgrades FROM a free plan
-      // Passing it for paid-to-paid causes "Only free subscriptions can be upgraded" error
       subscriptionId: isFree ? (polarSubscriptionId || undefined) : undefined,
-      // Link to our internal user ID
       externalCustomerId: user.id,
-      // Pass metadata so we can identify the user in the webhook
       metadata: {
         userId: user.id
       }
