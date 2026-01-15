@@ -350,16 +350,24 @@ router.post("/checkout", authMiddleware, async (req, res) => {
       try {
         let targetProductId: string | undefined = undefined;
 
-        // 1. Direct environment check (Fastest)
-        const PLAN_TO_PRODUCT_ID: Record<string, string> = {
-          pro: process.env.POLAR_PRODUCT_ID_PRO || "",
-          enterprise: process.env.POLAR_PRODUCT_ID_ENTERPRISE || ""
-        };
+        // 0. Identity Resolution: If the ID provided is already a Product ID, use it directly
+        if (productPriceId.startsWith('prod_')) {
+          console.log(`[Checkout] Identity Resolution: ${productPriceId} is already a Product ID.`);
+          targetProductId = productPriceId;
+        }
 
-        const targetPlan = POLAR_ID_TO_PLAN[productPriceId];
-        if (targetPlan && PLAN_TO_PRODUCT_ID[targetPlan]) {
-          targetProductId = PLAN_TO_PRODUCT_ID[targetPlan];
-          console.log(`[Checkout] Resolved target plan ${targetPlan} to Product ID ${targetProductId} via env`);
+        // 1. Direct environment check (Fastest)
+        if (!targetProductId) {
+          const PLAN_TO_PRODUCT_ID: Record<string, string> = {
+            pro: process.env.POLAR_PRODUCT_ID_PRO || "",
+            enterprise: process.env.POLAR_PRODUCT_ID_ENTERPRISE || ""
+          };
+
+          const targetPlan = POLAR_ID_TO_PLAN[productPriceId];
+          if (targetPlan && PLAN_TO_PRODUCT_ID[targetPlan]) {
+            targetProductId = PLAN_TO_PRODUCT_ID[targetPlan];
+            console.log(`[Checkout] Resolved target plan ${targetPlan} to Product ID ${targetProductId} via env`);
+          }
         }
 
         // 2. SDK lookup (Fallback)
