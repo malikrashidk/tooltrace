@@ -45,22 +45,21 @@ export function EmailVerificationBanner() {
   };
 
   return (
-    <div className="bg-amber-100 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-900 px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-      <div className="flex items-start gap-3">
-        <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5 sm:mt-0" />
-        <div className="text-sm text-amber-800 dark:text-amber-200 break-words">
-          A verification email is sent to (<strong className="break-all">{user.email}</strong>). Please verify your email address.
+    <div className="bg-primary/5 backdrop-blur-sm border-b border-primary/10 px-4 py-2 flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-top duration-500">
+      <div className="flex items-center gap-2">
+        <Mail className="h-4 w-4 text-primary animate-pulse" />
+        <div className="text-xs font-medium text-foreground/80">
+          Check your inbox (<span className="text-primary">{user.email}</span>) to verify your account and unlock all features.
         </div>
       </div>
       <Button
-        variant="outline"
+        variant="ghost"
         size="sm"
         onClick={handleResend}
         disabled={isLoading}
-        className="w-full sm:w-auto shrink-0 border-amber-300 hover:bg-amber-200 text-amber-900 dark:border-amber-700 dark:hover:bg-amber-900 dark:text-amber-100"
+        className="h-auto p-0 text-xs font-semibold text-primary hover:no-underline hover:text-primary/80 underline underline-offset-4"
       >
-        <Mail className="h-3 w-3 mr-2" />
-        {isLoading ? "Sending..." : "Resend Email"}
+        {isLoading ? "Sending..." : "Resend Link"}
       </Button>
     </div>
   );

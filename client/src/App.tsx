@@ -10,6 +10,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { CurrencyProvider } from "@/context/CurrencyContext";
+import { VerificationProvider } from "@/context/VerificationContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CurrencySelector } from "@/components/CurrencySelector";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -60,6 +61,7 @@ function AuthenticatedApp() {
           <EmailVerificationBanner />
           <main className="flex-1 overflow-y-auto bg-background">
             <Switch>
+              <Route path="/docs/api" component={ApiDocsPage} />
               <Route path="/" component={Dashboard} />
               <Route path="/dashboard" component={Dashboard} />
               <Route path="/tools" component={ToolsPage} />
@@ -78,7 +80,6 @@ function AuthenticatedApp() {
               <Route path="/help" component={HelpPage} />
               <Route path="/settings" component={SettingsPage} />
               <Route path="/smart-scan" component={SmartScanPage} />
-              <Route path="/docs/api" component={ApiDocsPage} />
               <Route path="/team/accept" component={AcceptInvitePage} />
               {/* Redirect auth routes to dashboard if already logged in */}
               <Route path="/login"><Redirect to="/" /></Route>
@@ -216,10 +217,12 @@ function App() {
       <ThemeProvider>
         <AuthProvider>
           <CurrencyProvider>
-            <TooltipProvider>
-              <AppContent />
-              <Toaster />
-            </TooltipProvider>
+            <VerificationProvider>
+              <TooltipProvider>
+                <AppContent />
+                <Toaster />
+              </TooltipProvider>
+            </VerificationProvider>
           </CurrencyProvider>
         </AuthProvider>
       </ThemeProvider>
