@@ -81,7 +81,7 @@ router.post("/webhooks/polar", async (req, res) => {
       // 1. Try userId in metadata
       let userId = data.metadata?.userId as string;
       if (userId) {
-        console.log(`[Polar Webhook] Found userId in metadata: ${userId}`);
+        console.log(`[Polar Webhook] Attempting lookup by userId in metadata: ${userId}`);
         const user = await storage.getUser(userId);
         if (user) return user;
       }
@@ -89,7 +89,7 @@ router.post("/webhooks/polar", async (req, res) => {
       // 2. Try customer external_id (which we set to our userId)
       const externalId = data.customer?.external_id || data.customer_external_id;
       if (externalId && typeof externalId === 'string') {
-        console.log(`[Polar Webhook] Found externalId: ${externalId}`);
+        console.log(`[Polar Webhook] Attempting lookup by externalId: ${externalId}`);
         const user = await storage.getUser(externalId);
         if (user) return user;
       }
@@ -97,7 +97,7 @@ router.post("/webhooks/polar", async (req, res) => {
       // 3. Try lookup by polarCustomerId
       const polarCustomerId = data.customer_id;
       if (polarCustomerId) {
-        console.log(`[Polar Webhook] Looking up by polarCustomerId: ${polarCustomerId}`);
+        console.log(`[Polar Webhook] Attempting lookup by polarCustomerId: ${polarCustomerId}`);
         const user = await storage.getUserByPolarCustomerId(polarCustomerId);
         if (user) return user;
       }
@@ -105,7 +105,7 @@ router.post("/webhooks/polar", async (req, res) => {
       // 4. Try email from customer object as last resort
       const email = data.customer?.email || data.customer_email;
       if (email) {
-        console.log(`[Polar Webhook] Looking up by email: ${email}`);
+        console.log(`[Polar Webhook] Attempting lookup by email: ${email}`);
         const user = await storage.getUserByEmail(email);
         if (user) return user;
       }
@@ -312,14 +312,10 @@ router.post("/checkout", authMiddleware, async (req, res) => {
     if (!isFree && polarSubscriptionId) {
       console.log(`[Checkout] User ${user.email} has active paid sub ${polarSubscriptionId}. Executing direct API update.`);
       try {
-        // Robust ID Resolution: Check if input is a PRICE ID or PRODUCT ID
-        // The user might be passing a Price ID (env var name) or Product ID.
-        // We iterate products to see if we find this Price ID inside one.
-        let targetProductId = productPriceId;
-
+        // Correctly resolve the Price ID to a Product ID as required by the updateSubscription function
+        let targetProductId: string | undefined = undefined;
         try {
           const productsResponse = await polarClient.products.list({});
-          // Handle async iterator yielding PAGES
           for await (const page of productsResponse) {
             const products = (page as any).items || [];
             for (const product of products) {
@@ -332,7 +328,7 @@ router.post("/checkout", authMiddleware, async (req, res) => {
             if (targetProductId) break;
           }
         } catch (lookupErr) {
-          console.warn('[Checkout] Product lookup skipped/failed, using ID as-is:', lookupErr);
+          console.warn('[Checkout] Product lookup failed, falling back to standard checkout.', lookupErr);
         }
 
         if (targetProductId) {
@@ -344,14 +340,12 @@ router.post("/checkout", authMiddleware, async (req, res) => {
           // Use specific success code for Upgrades so frontend can show "Plan Updated" instead of "Payment Successful"
           const successUrl = `${process.env.VITE_APP_URL || 'https://app.tooltrace.io'}/dashboard?checkout=upgrade_success`;
           return res.json({ url: successUrl });
+        } else {
+            console.log(`[Checkout] Could not find a matching Product ID for Price ID ${productPriceId}. Falling back to standard checkout.`);
         }
 
       } catch (err: any) {
-        console.error("[Checkout] Update attempted but failed:", err);
-        return res.status(500).json({
-          error: "Upgrade failed",
-          message: "Could not update your subscription automatically. Please contact support."
-        });
+        console.error("[Checkout] Instant update failed. Falling back to standard checkout.", err);
       }
     }
 
