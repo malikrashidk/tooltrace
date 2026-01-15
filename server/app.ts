@@ -24,13 +24,17 @@ export function log(message: string, source = "express") {
 
 export const app = express();
 
+// Enable trust proxy for Apache/Nginx reverse proxy compatibility
+// This allows req.secure and req.protocol to work correctly
+app.set("trust proxy", 1);
+
 // Enforce HTTPS in production
 if (process.env.NODE_ENV === "production") {
   app.use((req, res, next) => {
-    // Check x-forwarded-proto which is set by reverse proxies like Nginx/Caddy
-    if (req.headers["x-forwarded-proto"] !== "https") {
+    // Check if the request is secure (handles trust proxy headers)
+    if (!req.secure && req.get("x-forwarded-proto") !== "https") {
       log(`Redirecting to HTTPS: ${req.headers.host}${req.url}`);
-      return res.redirect(`https://${req.headers.host}${req.url}`);
+      return res.redirect(`https://${req.get("host")}${req.url}`);
     }
     next();
   });
