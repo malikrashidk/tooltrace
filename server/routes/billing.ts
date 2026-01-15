@@ -351,22 +351,26 @@ router.post("/checkout", authMiddleware, async (req, res) => {
         let targetProductId: string | undefined = undefined;
 
         // 1. Direct environment check (Fastest)
-        const PLAN_TO_PRODUCT_ID: Record<string, string> = {
-          pro: process.env.POLAR_PRODUCT_ID_PRO || process.env.VITE_POLAR_PRICE_ID_PRO || "",
-          enterprise: process.env.POLAR_PRODUCT_ID_ENTERPRISE || process.env.VITE_POLAR_PRICE_ID_ENTERPRISE || ""
-        };
+        // We only use this if we are CERTAIN we have a Product ID from the environment variables.
+        const PRO_PRODUCT_ID = process.env.POLAR_PRODUCT_ID_PRO;
+        const ENT_PRODUCT_ID = process.env.POLAR_PRODUCT_ID_ENTERPRISE;
 
         const targetPlan = POLAR_ID_TO_PLAN[productPriceId];
 
-        // If 'productPriceId' is already present in our mapping, it means it's a valid ID for that plan.
-        // The user confirmed their "Price IDs" are actually Product IDs, so we can use it directly.
-        if (targetPlan) {
+        // Check if the provided ID matches an explicit Product ID from env
+        if (productPriceId === PRO_PRODUCT_ID || productPriceId === ENT_PRODUCT_ID) {
           targetProductId = productPriceId;
-          console.log(`[Checkout] Using provided ID ${productPriceId} as target Product ID for plan ${targetPlan}`);
-        } else if (targetPlan && PLAN_TO_PRODUCT_ID[targetPlan]) {
-          targetProductId = PLAN_TO_PRODUCT_ID[targetPlan];
-          console.log(`[Checkout] Resolved target plan ${targetPlan} to Product ID ${targetProductId} via env`);
+          console.log(`[Checkout] Provided ID ${productPriceId} matches known Product ID.`);
         }
+        // Otherwise, if we know the plan, try to find the Product ID from env
+        else if (targetPlan === 'pro' && PRO_PRODUCT_ID) {
+          targetProductId = PRO_PRODUCT_ID;
+          console.log(`[Checkout] Resolved plan 'pro' to Product ID ${PRO_PRODUCT_ID} via env`);
+        } else if (targetPlan === 'enterprise' && ENT_PRODUCT_ID) {
+          targetProductId = ENT_PRODUCT_ID;
+          console.log(`[Checkout] Resolved plan 'enterprise' to Product ID ${ENT_PRODUCT_ID} via env`);
+        }
+        // If not found in env, we fall through to SDK lookup to determine if it's a Product ID or Price ID.
 
         // 2. SDK lookup (Fallback - only if still not resolved)
         if (!targetProductId) {
