@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Copy, Check, ExternalLink, Zap, MessageSquare, Code2, Globe, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -231,10 +232,10 @@ export function IntegrationsHub() {
                       </p>
                     </div>
                     <Button className="w-full" asChild>
-                      <a href="https://app.tooltrace.io/docs/api" target="_blank" rel="noopener noreferrer">
+                      <Link href="/docs/api">
                         <ExternalLink className="h-4 w-4 mr-2" />
                         Set Up Guide
-                      </a>
+                      </Link>
                     </Button>
                   </CardContent>
                 </Card>
@@ -332,10 +333,10 @@ export function IntegrationsHub() {
           </CardHeader>
           <CardContent>
             <Button variant="outline" asChild>
-              <a href="/api/v1/docs" target="_blank" rel="noopener noreferrer">
+              <Link href="/docs/api">
                 <ExternalLink className="h-4 w-4 mr-2" />
                 View API Documentation
-              </a>
+              </Link>
             </Button>
           </CardContent>
         </Card>

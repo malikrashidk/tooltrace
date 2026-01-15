@@ -34,6 +34,7 @@ import { ReceiptStoragePage } from "@/pages/ReceiptStoragePage";
 import { AdvancedToolsManagement } from "@/pages/AdvancedToolsManagement";
 import { IntegrationsHub } from "@/pages/IntegrationsHub";
 import { HelpPage } from "@/pages/HelpPage";
+import { ApiDocsPage } from "@/pages/ApiDocsPage";
 import { AcceptInvitePage } from "@/pages/AcceptInvitePage";
 import SmartScanPage from "@/pages/SmartScanPage";
 import NotFound from "@/pages/not-found";
@@ -77,6 +78,7 @@ function AuthenticatedApp() {
               <Route path="/help" component={HelpPage} />
               <Route path="/settings" component={SettingsPage} />
               <Route path="/smart-scan" component={SmartScanPage} />
+              <Route path="/docs/api" component={ApiDocsPage} />
               <Route path="/team/accept" component={AcceptInvitePage} />
               {/* Redirect auth routes to dashboard if already logged in */}
               <Route path="/login"><Redirect to="/" /></Route>
