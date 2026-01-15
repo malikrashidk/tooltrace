@@ -147,7 +147,9 @@ export async function updateSubscription(subscriptionId: string, newProductId: s
             id: subscriptionId,
             subscriptionUpdate: {
                 productId: newProductId,
-                prorationBehavior: 'prorate'
+                // 'invoice' triggers immediate charge for the difference (SaaS standard)
+                // 'prorate' adds it to the next invoice
+                prorationBehavior: 'invoice'
             }
         });
 
@@ -161,13 +163,20 @@ export async function updateSubscription(subscriptionId: string, newProductId: s
 
 // Helper to get customer portal URL
 export function getPolarCustomerPortalUrl(): string {
-    const POLAR_ORGANIZATION_ID = process.env.VITE_POLAR_ORGANIZATION_ID || process.env.POLAR_ORGANIZATION_ID;
+    const POLAR_ORGANIZATION_SLUG = process.env.VITE_POLAR_ORGANIZATION_SLUG || process.env.POLAR_ORGANIZATION_SLUG;
     const baseUrl = POLAR_ENV === 'sandbox'
         ? 'https://sandbox.polar.sh'
         : 'https://polar.sh';
 
-    if (!POLAR_ORGANIZATION_ID) return baseUrl;
-    return `${baseUrl}/customer-portal/${POLAR_ORGANIZATION_ID}`;
+    if (!POLAR_ORGANIZATION_SLUG) {
+        // Fallback to ID-based if slug is missing, but slug is preferred for Polar.sh
+        const POLAR_ORGANIZATION_ID = process.env.VITE_POLAR_ORGANIZATION_ID || process.env.POLAR_ORGANIZATION_ID;
+        if (!POLAR_ORGANIZATION_ID) return baseUrl;
+        return `${baseUrl}/customer-portal/${POLAR_ORGANIZATION_ID}`;
+    }
+
+    // Correct SaaS Portal URL: https://polar.sh/org-slug/portal
+    return `${baseUrl}/${POLAR_ORGANIZATION_SLUG}/portal`;
 }
 
 // Log initialization status

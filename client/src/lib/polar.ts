@@ -79,11 +79,18 @@ export async function openPolarCheckout({
  * Get customer portal URL for managing subscriptions
  */
 export function getPolarCustomerPortalUrl(): string {
+    const POLAR_ORGANIZATION_SLUG = import.meta.env.VITE_POLAR_ORGANIZATION_SLUG;
     const baseUrl = POLAR_ENV === 'sandbox'
         ? 'https://sandbox.polar.sh'
         : 'https://polar.sh';
 
-    return `${baseUrl}/customer-portal/${POLAR_ORGANIZATION_ID}`;
+    if (!POLAR_ORGANIZATION_SLUG) {
+        // Fallback to ID-based if slug is missing
+        if (!POLAR_ORGANIZATION_ID) return baseUrl;
+        return `${baseUrl}/customer-portal/${POLAR_ORGANIZATION_ID}`;
+    }
+
+    return `${baseUrl}/${POLAR_ORGANIZATION_SLUG}/portal`;
 }
 
 // Export configuration for use in other modules
