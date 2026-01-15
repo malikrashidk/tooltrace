@@ -13,7 +13,7 @@ const helpSections = [
     topics: [
       {
         title: "Dashboard Overview",
-        description: "Understand your SaaS Hub dashboard at a glance",
+        description: "Understand your Tooltrace dashboard at a glance",
         details: [
           "The dashboard shows your total spending, tool count, and upcoming renewals",
           "View quick insights about your subscriptions and usage patterns",
@@ -27,7 +27,7 @@ const helpSections = [
           "Click 'Tools' in the sidebar",
           "Click the 'Add Tool' button",
           "Enter tool details: name, cost, renewal date, and usage frequency",
-          "Click 'Save' to add it to your hub",
+          "Click 'Save' to add it to Tooltrace",
           "Or use the browser extension for one-click detection!",
         ],
       },
@@ -35,7 +35,7 @@ const helpSections = [
         title: "Browser Extension",
         description: "Auto-detect and add tools instantly",
         details: [
-          "Install the SaaS Hub browser extension from Chrome Web Store",
+          "Install the Tooltrace browser extension from Chrome Web Store",
           "Visit your SaaS tools (Figma, GitHub, Slack, etc.)",
           "Click the extension icon to see detected tools",
           "Select tools and click 'Add Selected' to import them",
@@ -147,7 +147,7 @@ const helpSections = [
         details: [
           "We never collect or sell your personal data",
           "Your credentials are stored only in your browser (client-side)",
-          "SaaS Hub is self-hostable for maximum privacy",
+          "Tooltrace is self-hostable for maximum privacy",
           "Open-source code available for security audits",
         ],
       },
@@ -194,7 +194,7 @@ const helpSections = [
       },
       {
         title: "API Access",
-        description: "Automate SaaS Hub with API",
+        description: "Automate Tooltrace with API",
         details: [
           "Generate API keys in 'Settings'",
           "Use REST API to programmatically manage tools",
@@ -239,7 +239,7 @@ export function HelpPage() {
         <div className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold mb-3">Help & Documentation</h1>
           <p className="text-lg text-muted-foreground">
-            Learn how to make the most of SaaS Hub with our comprehensive guides
+            Learn how to make the most of Tooltrace with our comprehensive guides
           </p>
         </div>
 
@@ -269,7 +269,7 @@ export function HelpPage() {
                 Share Your Feedback
               </CardTitle>
               <CardDescription>
-                Help us improve SaaS Hub with your suggestions and feedback
+                Help us improve Tooltrace with your suggestions and feedback
               </CardDescription>
             </CardHeader>
             <CardContent>

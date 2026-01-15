@@ -176,7 +176,7 @@ export function AppSidebar() {
           </div>
           {state === "expanded" && (
             <div className="flex flex-col min-w-0">
-              <span className="font-semibold text-sm truncate">Tool Trace</span>
+              <span className="font-semibold text-sm truncate">Tooltrace</span>
               <span className="text-xs text-muted-foreground truncate">Manage your tools and subscriptions</span>
             </div>
           )}

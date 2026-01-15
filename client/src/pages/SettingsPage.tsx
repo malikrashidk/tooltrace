@@ -375,7 +375,7 @@ export function SettingsPage() {
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
                 Install our browser extension to automatically detect SaaS tools as you browse the web.
-                It makes adding tools to Tool Trace quick and effortless.
+                It makes adding tools to Tooltrace quick and effortless.
               </p>
               <div className="flex flex-col gap-3">
                 {/*

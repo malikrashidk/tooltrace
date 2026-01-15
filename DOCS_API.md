@@ -1,6 +1,6 @@
-# SaaS Hub API Documentation
+# Tooltrace API Documentation
 
-Welcome to the SaaS Hub API. Our API allows you to programmatically manage your SaaS tools, track renewals, and integrate with automation platforms like Zapier, Make, and Pabbly.
+Welcome to the Tooltrace API. Our API allows you to programmatically manage your SaaS tools, track renewals, and integrate with automation platforms like Zapier, Make, and Pabbly.
 
 ## Authentication
 
@@ -43,7 +43,7 @@ Get a list of all your managed SaaS tools.
   ```
 
 ### 2. Create a Tool
-Add a new SaaS tool to your hub.
+Add a new SaaS tool to your Tooltrace account.
 - **URL**: `/tools`
 - **Method**: `POST`
 - **Body**:

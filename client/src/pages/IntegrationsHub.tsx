@@ -29,7 +29,7 @@ export function IntegrationsHub() {
       <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
         <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 sm:p-6 md:p-8">
           <h1 className="text-2xl sm:text-3xl font-bold">Integrations Hub</h1>
-          <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-1">Connect SaaS Hub to your favorite tools</p>
+          <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-1">Connect Tooltrace to your favorite tools</p>
         </div>
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16 md:py-20 px-4">
@@ -151,7 +151,7 @@ export function IntegrationsHub() {
     <div className="space-y-6 md:space-y-8 p-3 sm:p-4 md:p-6">
       <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 sm:p-6 md:p-8">
         <h1 className="text-2xl sm:text-3xl font-bold">Integrations Hub</h1>
-        <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-1">Connect SaaS Hub to your favorite tools and automate your workflow</p>
+        <p className="text-xs sm:text-sm md:text-base text-muted-foreground mt-1">Connect Tooltrace to your favorite tools and automate your workflow</p>
       </div>
 
       {!primaryApiKey && (
@@ -257,7 +257,7 @@ export function IntegrationsHub() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Our browser extension automatically detects SaaS tools you're using and allows you to add them to your SaaS Hub with one click.
+                  Our browser extension automatically detects SaaS tools you're using and allows you to add them to Tooltrace with one click.
                 </p>
                 <ol className="text-sm space-y-2 list-decimal list-inside text-muted-foreground">
                   <li>Download the extension zip file</li>
@@ -319,7 +319,7 @@ export function IntegrationsHub() {
                 <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">3</div>
                 <div>
                   <p className="font-medium">Click to Add</p>
-                  <p className="text-muted-foreground text-xs">Select tools and add them to your SaaS Hub instantly</p>
+                  <p className="text-muted-foreground text-xs">Select tools and add them to Tooltrace instantly</p>
                 </div>
               </div>
             </CardContent>
