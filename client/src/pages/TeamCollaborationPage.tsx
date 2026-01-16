@@ -47,7 +47,7 @@ export function TeamCollaborationPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<string>("member");
 
-  const { data: teamData, isLoading: teamLoading } = useQuery<{ members: TeamMember[] }>({
+  const { data: teamData } = useQuery<{ members: TeamMember[] }>({
     queryKey: ['/api/team/members'],
     enabled: isPremium,
   });
