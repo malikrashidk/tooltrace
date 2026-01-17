@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Tool } from "@/lib/analytics";
+import { fromCents } from "../../../shared/money";
 
 interface RenewalsWidgetProps {
   renewals: Tool[];
@@ -96,7 +97,7 @@ export function RenewalsWidget({
                   </div>
                   <div className="text-right flex flex-col items-end gap-1">
                     <span className="text-sm font-mono font-medium">
-                      {formatCurrency(Number(tool.billingAmount) || 0)}
+                      {formatCurrency(fromCents(tool.billingAmount))}
                     </span>
                     <Badge className={`text-xs ${getUrgencyStyle(daysUntil)}`}>
                       {daysUntil === 0 ? (

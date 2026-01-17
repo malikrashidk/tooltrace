@@ -11,6 +11,7 @@ import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { getLogoUrl } from "@/lib/utils";
+import { fromCents } from "../../../shared/money";
 import { useToast } from "@/hooks/use-toast";
 import {
   Select,
@@ -389,7 +390,7 @@ export function AdvancedToolsManagement() {
                     </td>
                     <td className="p-3">
                       {tool.isPaid ? (
-                        <span className="font-medium">{formatAmount(tool.billingAmount)}/{tool.billingCycle === "yearly" ? "yr" : "mo"}</span>
+                        <span className="font-medium">{formatAmount(fromCents(tool.billingAmount))}/{tool.billingCycle === "yearly" ? "yr" : "mo"}</span>
                       ) : (
                         <span className="text-muted-foreground">Free</span>
                       )}

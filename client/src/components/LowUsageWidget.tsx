@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Tool } from "@/lib/analytics";
+import { fromCents } from "../../../shared/money";
 
 interface LowUsageWidgetProps {
   tools: Tool[];
@@ -29,7 +30,7 @@ export function LowUsageWidget({ tools, onViewAll, onReviewTool }: LowUsageWidge
   };
 
   const totalWasted = tools.reduce((sum, tool) => {
-    const amt = Number(tool.billingAmount || 0);
+    const amt = fromCents(tool.billingAmount);
     if (!amt) return sum;
     return sum + (tool.billingCycle === "yearly" ? amt / 12 : amt);
   }, 0);
@@ -86,7 +87,7 @@ export function LowUsageWidget({ tools, onViewAll, onReviewTool }: LowUsageWidge
                   </div>
                   <div className="text-right">
                     <span className="text-sm font-mono font-medium">
-                      {formatCurrency(Number(tool.billingAmount) || 0)}
+                      {formatCurrency(fromCents(tool.billingAmount))}
                     </span>
                     <p className="text-xs text-muted-foreground">
                       /{tool.billingCycle === "yearly" ? "yr" : "mo"}

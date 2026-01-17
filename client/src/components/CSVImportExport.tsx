@@ -13,6 +13,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import type { Tool } from "@/lib/analytics";
+import { fromCents, toCents } from "../../../shared/money";
 
 interface CSVImportExportProps {
   tools: Tool[];
@@ -53,7 +54,7 @@ export function CSVImportExport({ tools, onImport }: CSVImportExportProps) {
       tool.categories.join(";"),
       tool.tags.join(";"),
       tool.usageFrequency,
-      tool.billingAmount?.toString() || "",
+      fromCents(tool.billingAmount || 0).toString(),
       tool.billingCycle || "",
       tool.nextRenewalDate || "",
       tool.paymentMethod || "",
@@ -135,7 +136,7 @@ export function CSVImportExport({ tools, onImport }: CSVImportExportProps) {
             tool[header] = value ? value.split(";").map((s) => s.trim()) : [];
             break;
           case "billingAmount":
-            tool[header] = value ? parseFloat(value) : undefined;
+            tool[header] = value ? toCents(parseFloat(value)) : undefined;
             break;
           default:
             tool[header] = value || undefined;
@@ -164,7 +165,7 @@ export function CSVImportExport({ tools, onImport }: CSVImportExportProps) {
 
       for (let i = 0; i < parsedTools.length; i++) {
         setImportProgress(Math.round(((i + 1) / parsedTools.length) * 100));
-        
+
         try {
           await new Promise((resolve) => setTimeout(resolve, 100));
           success++;
@@ -243,11 +244,10 @@ export function CSVImportExport({ tools, onImport }: CSVImportExportProps) {
             {!importing && !importResult && (
               <>
                 <div
-                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                    dragActive
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
+                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragActive
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                    }`}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}

@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { fromCents } from "../../../shared/money";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { DollarSign, Package, TrendingUp, BarChart3 } from "lucide-react";
@@ -33,7 +34,7 @@ export function AnalyticsPage() {
 
     // Normalize monthly spend
     const monthlySpend = paid.reduce((sum, t) => {
-      const amount = Number(t.billingAmount || 0);
+      const amount = fromCents(t.billingAmount);
       let monthlyAmount = amount;
       if (t.billingCycle === 'yearly') {
         monthlyAmount = amount / 12;
@@ -50,7 +51,7 @@ export function AnalyticsPage() {
     // Calculate category spending
     const categorySpend: Record<string, number> = {};
     paid.forEach((tool) => {
-      const amount = Number(tool.billingAmount || 0);
+      const amount = fromCents(tool.billingAmount);
       let monthlyAmount = amount;
       if (tool.billingCycle === 'yearly') monthlyAmount = amount / 12;
       if (tool.billingCycle === 'one-time') monthlyAmount = 0; // Exclude one-time from monthly pie
@@ -74,7 +75,7 @@ export function AnalyticsPage() {
     // Top 5 most expensive tools (monthly normalized)
     const expensiveTools = [...paid]
       .map(t => {
-        let cost = Number(t.billingAmount || 0);
+        let cost = fromCents(t.billingAmount);
         if (t.billingCycle === 'yearly') cost = cost / 12;
         return {
           name: t.name,

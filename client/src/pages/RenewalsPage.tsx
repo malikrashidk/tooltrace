@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { fromCents } from "../../../shared/money";
 import { useQuery } from "@tanstack/react-query";
 import { Calendar, AlertCircle, DollarSign, ExternalLink, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,11 +14,11 @@ import { useCurrency } from "@/context/CurrencyContext";
 export function RenewalsPage() {
   const { toast } = useToast();
   const { formatAmount } = useCurrency();
-  
+
   const { data: toolsData, isLoading } = useQuery<{ tools: Tool[] }>({
     queryKey: ["/api/tools"],
   });
-  
+
   const tools = toolsData?.tools || [];
   const [selectedPeriod, setSelectedPeriod] = useState<"7" | "30" | "90">("30");
 
@@ -34,9 +35,9 @@ export function RenewalsPage() {
   const currentRenewals = renewalsMap[selectedPeriod];
 
   const totalAmount = currentRenewals.reduce((sum, tool) => {
-    return sum + Number(tool.billingAmount || 0);
+    return sum + fromCents(tool.billingAmount);
   }, 0);
-  
+
   if (isLoading) {
     return (
       <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
@@ -75,7 +76,7 @@ export function RenewalsPage() {
 
   const groupByMonth = (renewals: typeof currentRenewals) => {
     const groups: Record<string, typeof currentRenewals> = {};
-    
+
     renewals.forEach((tool) => {
       const date = new Date(tool.nextRenewalDate!);
       const key = date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -108,7 +109,7 @@ export function RenewalsPage() {
                 <p className="text-sm text-muted-foreground">Next 7 Days</p>
                 <p className="text-xl sm:text-2xl font-semibold">{renewals7.length}</p>
                 <p className="text-sm font-mono text-muted-foreground">
-                  {formatAmount(renewals7.reduce((s, t) => s + Number(t.billingAmount || 0), 0))}
+                  {formatAmount(renewals7.reduce((s, t) => s + fromCents(t.billingAmount), 0))}
                 </p>
               </div>
             </div>
@@ -125,7 +126,7 @@ export function RenewalsPage() {
                 <p className="text-sm text-muted-foreground">Next 30 Days</p>
                 <p className="text-xl sm:text-2xl font-semibold">{renewals30.length}</p>
                 <p className="text-sm font-mono text-muted-foreground">
-                  {formatAmount(renewals30.reduce((s, t) => s + Number(t.billingAmount || 0), 0))}
+                  {formatAmount(renewals30.reduce((s, t) => s + fromCents(t.billingAmount), 0))}
                 </p>
               </div>
             </div>
@@ -199,13 +200,13 @@ export function RenewalsPage() {
                               })}
                             </p>
                           </div>
-                                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                                      <div className="text-right">
-                                        <p className="font-mono font-medium">{formatAmount(Number(tool.billingAmount) || 0)}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                          {tool.billingCycle === "yearly" ? "Yearly" : "Monthly"}
-                                        </p>
-                                      </div>
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                            <div className="text-right">
+                              <p className="font-mono font-medium">{formatAmount(fromCents(tool.billingAmount))}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {tool.billingCycle === "yearly" ? "Yearly" : "Monthly"}
+                              </p>
+                            </div>
                             <Badge className={`text-xs w-fit ${getUrgencyStyle(daysUntil)}`}>
                               {daysUntil === 0 ? (
                                 <>
