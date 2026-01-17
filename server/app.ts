@@ -155,6 +155,32 @@ app.use((req, res, next) => {
 export default async function runApp(
   setup: (app: Express, server: Server) => Promise<void>,
 ) {
+  // Add WebSocket upgrade handling
+  // This needs to happen before serving static files
+  await registerStatic(app, server);
+
+  // Health check endpoint for uptime monitoring
+  app.get("/api/health", async (req, res) => {
+    try {
+      // Check database connection
+      const dbHealthy = await storage.getUser("health-check").then(() => true).catch(() => false);
+
+      res.status(200).json({
+        status: "healthy",
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        database: dbHealthy ? "connected" : "disconnected",
+        environment: process.env.NODE_ENV || "development"
+      });
+    } catch (error) {
+      res.status(503).json({
+        status: "unhealthy",
+        timestamp: new Date().toISOString(),
+        error: "Health check failed"
+      });
+    }
+  });
+
   // Auto-initialize admin user on startup
   await initializeAdmin();
 
