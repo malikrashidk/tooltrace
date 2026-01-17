@@ -159,17 +159,22 @@ export default async function runApp(
   // This needs to happen before serving static files
   await registerStatic(app, server);
 
+  // Auto-initialize admin user on startup
+  await initializeAdmin();
+
+  // Start background jobs
+  startBackgroundJobs().catch(e => log(`Failed to start background jobs: ${e.message}`, "error"));
+
+  const server = await registerRoutes(app);
+
   // Health check endpoint for uptime monitoring
   app.get("/api/health", async (req, res) => {
     try {
-      // Check database connection
-      const dbHealthy = await storage.getUser("health-check").then(() => true).catch(() => false);
-
+      // Simple health check - just confirm server is responding
       res.status(200).json({
         status: "healthy",
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        database: dbHealthy ? "connected" : "disconnected",
         environment: process.env.NODE_ENV || "development"
       });
     } catch (error) {
@@ -180,14 +185,6 @@ export default async function runApp(
       });
     }
   });
-
-  // Auto-initialize admin user on startup
-  await initializeAdmin();
-
-  // Start background jobs
-  startBackgroundJobs().catch(e => log(`Failed to start background jobs: ${e.message}`, "error"));
-
-  const server = await registerRoutes(app);
 
   // Sentry error handler - MUST be after routes but before other error middleware
   if (process.env.NODE_ENV === "production") {
