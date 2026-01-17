@@ -27,7 +27,11 @@ router.get("/tools", authMiddleware, async (req, res) => {
 
         if (nextDate.getTime() !== renewalDate.getTime()) {
           console.log(`[Renewal] Rolling over ${tool.name} from ${renewalDate.toLocaleDateString()} to ${nextDate.toLocaleDateString()} `);
-          const updated = await storage.updateTool(tool.id, { nextRenewalDate: nextDate });
+          const updated = await storage.updateTool(tool.id, {
+            nextRenewalDate: nextDate,
+            notified3Days: false,
+            notifiedRenewalDay: false
+          });
           return updated || tool;
         }
       }
@@ -157,6 +161,12 @@ router.patch("/tools/:id", authMiddleware, emailVerificationMiddleware, async (r
     // Convert billingAmount to cents if provided
     if (updates.billingAmount !== undefined && updates.billingAmount !== null) {
       updates.billingAmount = String(toCents(updates.billingAmount));
+    }
+
+    // Reset notification flags if nextRenewalDate is manually updated
+    if (updates.nextRenewalDate !== undefined) {
+      updates.notified3Days = false;
+      updates.notifiedRenewalDay = false;
     }
 
     // Explicitly ensure no sensitive fields leaked into updates

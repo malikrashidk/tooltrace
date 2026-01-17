@@ -164,7 +164,9 @@ export class MemStorage implements IStorage {
             secureNote: (tool as any).secureNote || null,
             isPinned: (tool as any).isPinned || false,
             lastUsedAt: null,
-            totalUsageTime: "0"
+            totalUsageTime: "0",
+            notified3Days: false,
+            notifiedRenewalDay: false
         } as Tool;
         this.tools.set(id, fullTool);
         return fullTool;
@@ -430,6 +432,10 @@ export class MemStorage implements IStorage {
             if (tool.isPaid && tool.nextRenewalDate) {
                 const renewal = new Date(tool.nextRenewalDate);
                 if (renewal <= futureDate && renewal > thresholdDate) {
+                    // Check if already notified for this period
+                    if (days === 3 && tool.notified3Days) continue;
+                    if (days === 0 && tool.notifiedRenewalDay) continue;
+
                     const user = this.users.get(tool.userId);
                     if (user) results.push({ tool, user });
                 }

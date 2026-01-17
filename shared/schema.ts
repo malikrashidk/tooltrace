@@ -75,6 +75,9 @@ export const tools = pgTable(
     isPinned: boolean("is_pinned").notNull().default(false),
     lastUsedAt: timestamp("last_used_at"),
     totalUsageTime: numeric("total_usage_time", { precision: 10, scale: 0 }).default("0"), // in minutes
+    // Notification flags
+    notified3Days: boolean("notified_3_days").notNull().default(false),
+    notifiedRenewalDay: boolean("notified_renewal_day").notNull().default(false),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

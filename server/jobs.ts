@@ -43,14 +43,14 @@ async function processToolExpirationNotifications() {
     log("Checking for tool expiration notifications...", "jobs");
     try {
         // Notify for tools expiring in 3 days and 1 day
-        for (const days of [1, 3]) {
+        for (const days of [0, 3]) {
             const toolUsers = await storage.getToolsByExpiration(days);
             for (const { tool, user } of toolUsers) {
                 log(`Sending expiration notification for tool ${tool.name} to user ${user.email} (${days} days left)`, "jobs");
 
                 await sendEmail({
                     to: user.email,
-                    subject: `${tool.name} is expiring in ${days} day${days > 1 ? 's' : ''}`,
+                    subject: days === 0 ? `${tool.name} is expiring today` : `${tool.name} is expiring in ${days} days`,
                     html: `
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
               <h2 style="color: #1a202c;">Tool Expiration Reminder</h2>
@@ -67,6 +67,13 @@ async function processToolExpirationNotifications() {
             </div>
           `
                 });
+
+                // Mark as notified
+                if (days === 3) {
+                    await storage.updateTool(tool.id, { notified3Days: true });
+                } else if (days === 0) {
+                    await storage.updateTool(tool.id, { notifiedRenewalDay: true });
+                }
             }
         }
     } catch (error) {
