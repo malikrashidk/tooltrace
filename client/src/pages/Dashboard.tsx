@@ -54,7 +54,13 @@ export function Dashboard() {
 
         try {
           // 1. Trigger sync on backend (idempotent)
-          await fetch("/api/billing/sync", { method: "POST" });
+          const token = localStorage.getItem("token");
+          await fetch("/api/billing/sync", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${token}`
+            }
+          });
 
           // 2. Fetch fresh user profile
           const updatedUser = await refreshUser(true) as any;
