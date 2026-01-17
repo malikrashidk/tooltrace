@@ -163,6 +163,12 @@ export default async function runApp(
 
   const server = await registerRoutes(app);
 
+  // Sentry error handler - MUST be after routes but before other error middleware
+  if (process.env.NODE_ENV === "production") {
+    const Sentry = await import("@sentry/node");
+    Sentry.setupExpressErrorHandler(app);
+  }
+
   // Final error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     // Handle "entity too large" errors specifically (happens at body parser level)

@@ -1,3 +1,5 @@
+// CRITICAL: Sentry must be imported FIRST, before everything else
+import "./instrument.js"; // .js extension required for ESM
 import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
@@ -27,7 +29,7 @@ export async function serveStatic(app: Express, _server: Server) {
 (async () => {
   // Validate environment variables first
   validateEnvironmentVariables();
-  
+
   await runApp(serveStatic);
 })();
 
