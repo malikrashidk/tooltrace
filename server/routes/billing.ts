@@ -27,6 +27,7 @@ console.log(`[Billing] Polar ID Mapping Initialized with ${Object.keys(currentMa
  * - subscription.canceled: Subscription canceled
  */
 router.post("/webhooks/polar", async (req, res) => {
+  console.log(`[Polar Webhook] Request received: ${req.method} ${req.url}`);
   try {
     // For signature verification, we MUST use the exact raw body string/buffer
     // We captured this in server/app.ts as req.rawBody
