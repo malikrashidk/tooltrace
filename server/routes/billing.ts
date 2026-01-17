@@ -351,11 +351,6 @@ router.post("/checkout", authMiddleware, async (req, res) => {
         let targetProductId: string | undefined = undefined;
 
         // 1. Direct environment check (Fastest)
-        const PLAN_TO_PRODUCT_ID: Record<string, string> = {
-          pro: process.env.POLAR_PRODUCT_ID_PRO || process.env.VITE_POLAR_PRICE_ID_PRO || "",
-          enterprise: process.env.POLAR_PRODUCT_ID_ENTERPRISE || process.env.VITE_POLAR_PRICE_ID_ENTERPRISE || ""
-        };
-
         const targetPlan = POLAR_ID_TO_PLAN[productPriceId];
 
         // If 'productPriceId' is already present in our mapping, it means it's a valid ID for that plan.
@@ -363,9 +358,6 @@ router.post("/checkout", authMiddleware, async (req, res) => {
         if (targetPlan) {
           targetProductId = productPriceId;
           console.log(`[Checkout] Using provided ID ${productPriceId} as target Product ID for plan ${targetPlan}`);
-        } else if (targetPlan && PLAN_TO_PRODUCT_ID[targetPlan]) {
-          targetProductId = PLAN_TO_PRODUCT_ID[targetPlan];
-          console.log(`[Checkout] Resolved target plan ${targetPlan} to Product ID ${targetProductId} via env`);
         }
 
         // 2. SDK lookup (Fallback - only if still not resolved)
