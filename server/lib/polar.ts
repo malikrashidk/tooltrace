@@ -101,18 +101,43 @@ export async function verifyPolarWebhook(
 export async function listSubscriptionsByEmail(email: string) {
     if (!polarClient) return [];
     try {
-        // 1. Find customer by email
-        const customers = await polarClient.customers.list({ email });
-        if (customers.result.items.length === 0) return [];
+        let customerId: string | null = null;
+        console.log(`[Polar] Searching for customer with email: ${email}`);
 
-        const customerId = customers.result.items[0].id;
+        // 1. Find customer by email (using iterator)
+        const customersResponse = await polarClient.customers.list({ email });
+        for await (const page of customersResponse) {
+            // SDK v0.42+ uses result.items or just items depending on version
+            const items = (page as any).items || (page as any).result?.items || [];
+            const customer = items.find((c: any) => c.email.toLowerCase() === email.toLowerCase());
+            if (customer) {
+                customerId = customer.id;
+                console.log(`[Polar] Found customer ID: ${customerId}`);
+                break;
+            }
+        }
 
-        // 2. Find active subscriptions for this customer
+        if (!customerId) {
+            console.log(`[Polar] No customer found for email: ${email}`);
+            return [];
+        }
+
+        // 2. Find active subscriptions for this customer (using iterator)
+        const subscriptions: any[] = [];
         const result = await polarClient.subscriptions.list({
             customerId,
             active: true
         });
-        return result.result.items;
+
+        for await (const page of result) {
+            const items = (page as any).items || (page as any).result?.items || [];
+            if (items) {
+                subscriptions.push(...items);
+            }
+        }
+
+        console.log(`[Polar] Found ${subscriptions.length} active subscriptions for customer ${customerId}`);
+        return subscriptions;
     } catch (error) {
         console.error('[Polar] Error listing subscriptions by email:', error);
         return [];

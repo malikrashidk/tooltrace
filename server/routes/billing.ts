@@ -112,7 +112,25 @@ router.post("/webhooks/polar", async (req, res) => {
           description: `Polar Order ${order.id}`,
         });
 
-        console.log(`[Polar Webhook] Order logged for user ${user.id}`);
+        // Proactively update plan from order if possible (important for 100% discounts)
+        const plan = resolvePlanFromIds(order.product_price_id, order.product_id);
+        if (plan && plan !== "free") {
+          console.log(`[Polar Webhook] Order ${order.id} resolved to plan: ${plan}. Updating user...`);
+
+          // Use a generic subscription update since we might not have a full sub object yet
+          await storage.updateUserSubscription(
+            user.id,
+            { plan: plan as any },
+            {
+              plan: plan as any,
+              status: "active",
+              toolsLimit: PLAN_LIMITS[plan] || "10",
+              // For orders, we might not have a renewal date yet, but sync will fill it later
+            }
+          );
+        }
+
+        console.log(`[Polar Webhook] Order logged and plan updated (if applicable) for user ${user.id}`);
         break;
       }
 
