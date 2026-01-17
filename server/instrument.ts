@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/node";
 
 Sentry.init({
-    dsn: "https://fa1cb59263bc0ac319f6cc788f8de785@o4510725760942080.ingest.de.sentry.io/4510725767299152",
+    dsn: process.env.SENTRY_DSN,
 
     // Environment
     environment: process.env.NODE_ENV || "development",
