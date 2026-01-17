@@ -54,51 +54,20 @@ export default function SmartScanPage() {
     const queryClient = useQueryClient();
     const { user } = useAuth();
 
+    const [addToolOpen, setAddToolOpen] = useState(false);
+    const [selectedSite, setSelectedSite] = useState<DetectedSite | null>(null);
+
     // Check if user has access to Smart Tracker
     const userPlan = (user as any)?.plan || 'free';
     const hasAccess = userPlan === 'pro' || userPlan === 'enterprise';
-
-    // Paywall for free users
-    if (!hasAccess) {
-        return (
-            <div className="container mx-auto p-4 md:p-8 max-w-6xl h-screen flex flex-col items-center justify-center">
-                <Card className="w-full max-w-md">
-                    <CardHeader className="text-center">
-                        <CardTitle>Smart Tracker</CardTitle>
-                        <CardDescription>Available on Pro and Enterprise plans</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground">
-                            Smart Tracker uses your browsing activity to discover which SaaS tools and subscriptions you're actively using, so you can start tracking them in ToolTrace.
-                        </p>
-                        <div className="space-y-2">
-                            <p className="text-sm font-semibold">Unlock Smart Tracker:</p>
-                            <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                                <li>Discover all your subscriptions automatically</li>
-                                <li>Track browsing activity across your web usage</li>
-                                <li>Get suggestions to add tools to your dashboard</li>
-                            </ul>
-                        </div>
-                        <Button 
-                            className="w-full" 
-                            onClick={() => window.location.href = '/pricing'}
-                        >
-                            Upgrade to Pro
-                        </Button>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
-    const [addToolOpen, setAddToolOpen] = useState(false);
-    const [selectedSite, setSelectedSite] = useState<DetectedSite | null>(null);
 
     const { data, isLoading } = useQuery<{ sites: DetectedSite[] }>({
         queryKey: ["/api/activity/smart-scan"],
         queryFn: async () => {
              const res = await apiRequest("GET", "/api/activity/smart-scan");
              return await res.json();
-        }
+        },
+        enabled: hasAccess
     });
 
     const updateStatusMutation = useMutation({
@@ -150,6 +119,39 @@ export default function SmartScanPage() {
     const handleSaveTool = (tool: any) => {
         addToolMutation.mutate(tool);
     };
+
+    // Paywall for free users
+    if (!hasAccess) {
+        return (
+            <div className="container mx-auto p-4 md:p-8 max-w-6xl h-screen flex flex-col items-center justify-center">
+                <Card className="w-full max-w-md">
+                    <CardHeader className="text-center">
+                        <CardTitle>Smart Tracker</CardTitle>
+                        <CardDescription>Available on Pro and Enterprise plans</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                            Smart Tracker uses your browsing activity to discover which SaaS tools and subscriptions you're actively using, so you can start tracking them in ToolTrace.
+                        </p>
+                        <div className="space-y-2">
+                            <p className="text-sm font-semibold">Unlock Smart Tracker:</p>
+                            <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                                <li>Discover all your subscriptions automatically</li>
+                                <li>Track browsing activity across your web usage</li>
+                                <li>Get suggestions to add tools to your dashboard</li>
+                            </ul>
+                        </div>
+                        <Button
+                            className="w-full"
+                            onClick={() => window.location.href = '/pricing'}
+                        >
+                            Upgrade to Pro
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
     // Filter logic
     const sites = data?.sites || [];
