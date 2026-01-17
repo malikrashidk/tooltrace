@@ -160,6 +160,7 @@ export function ToolsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tools"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/analytics/spending"] });
       toast({
         title: "Success",
         description: "Tool added successfully",
@@ -180,6 +181,7 @@ export function ToolsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tools"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/analytics/spending"] });
       toast({
         title: "Success",
         description: "Tool updated successfully",
@@ -200,6 +202,7 @@ export function ToolsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tools"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/analytics/spending"] });
       toast({
         title: "Success",
         description: "Tool deleted successfully",

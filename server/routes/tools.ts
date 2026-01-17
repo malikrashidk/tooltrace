@@ -38,9 +38,9 @@ router.get("/tools", authMiddleware, async (req, res) => {
       return tool;
     }));
 
-    // Sort tools by creation date and mark those above the limit as locked
+    // Sort tools by creation date (newest first)
     const sortedTools = [...updatedTools].sort((a, b) =>
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
     const enrichedTools = sortedTools.map((tool, index) => ({
