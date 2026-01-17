@@ -37,60 +37,77 @@ export function Dashboard() {
       hasHandledSuccess.current = true;
       setPaymentSuccess(true);
 
+      const isUpgrade = checkoutType === "upgrade_success";
+      setSyncStatus(isUpgrade ? "Upgrading your plan..." : "Finalizing account setup...");
+
       // Clean up URL immediately to prevent loops on re-mount
       window.history.replaceState({}, "", window.location.pathname);
 
-      // Handle refresh with a retry loop to account for webhook latency
-      const attemptRefresh = async (retries = 8) => {
-        const oldPlan = (user as any)?.plan;
+      // Robust Polling Mechanism: Poll every 2s for up to 60s
+      const POLL_INTERVAL = 2000;
+      const MAX_ATTEMPTS = 30; // 60 seconds total
+      let attempts = 0;
+
+      const pollForPlanUpdate = async () => {
+        const currentUser = user as any;
+        const currentPlan = currentUser?.plan;
 
         try {
-          setSyncStatus("Syncing your account status...");
-          // Proactively ask the server to check Polar for updates
-          const syncResponse = await fetch("/api/billing/sync", { method: "POST" });
-          const syncData = await syncResponse.json();
-          console.log("[Dashboard] Proactive sync result:", syncData);
+          // 1. Trigger sync on backend (idempotent)
+          await fetch("/api/billing/sync", { method: "POST" });
 
-          if (syncData.success) {
-            setSyncStatus("Account synced! Updating dashboard...");
+          // 2. Fetch fresh user profile
+          const updatedUser = await refreshUser(true) as any;
+
+          attempts++;
+
+          // Check if plan changed or if we just want to ensure sync happened (for non-upgrades)
+          // For upgrades, we strictly wait for plan change.
+          // For initial checkout, we also wait for plan change from 'free' if possible.
+
+          const hasPlanChanged = updatedUser?.plan !== currentPlan;
+          const isPaidPlan = updatedUser?.plan === 'pro' || updatedUser?.plan === 'enterprise';
+
+          console.log(`[Dashboard] Polling attempt ${attempts}/${MAX_ATTEMPTS}: Plan=${updatedUser?.plan} (Was=${currentPlan})`);
+
+          if (hasPlanChanged || (attempts > 1 && isPaidPlan)) {
+            // Success!
+            setSyncStatus("Plan updated successfully!");
+            // Wait a moment for user to see success message
+            setTimeout(() => {
+              queryClient.invalidateQueries();
+              window.location.reload();
+            }, 1500);
+            return;
           }
-        } catch (syncErr) {
-          console.warn("[Dashboard] Proactive sync failed (ignoring, falling back to polling):", syncErr);
-        }
 
-        const updatedUser = await refreshUser(true) as any;
+          if (attempts >= MAX_ATTEMPTS) {
+            // Timeout - connection might be slow, but let user into dashboard anyway
+            console.warn("[Dashboard] Polling timed out. Plan might verify in background.");
+            setSyncStatus("Taking longer than expected...");
+            setTimeout(() => {
+              setPaymentSuccess(false);
+              queryClient.invalidateQueries();
+            }, 2000);
+            return;
+          }
 
-        // If plan is still the same, retry after a delay.
-        if (updatedUser?.plan === oldPlan && retries > 0) {
-          console.log(`[Dashboard] Plan still ${oldPlan}, retrying in 2.5s...`);
-          setSyncStatus(`Finalizing setup (Step ${9 - retries}/8)...`);
-          setTimeout(() => attemptRefresh(retries - 1), 2500);
-        } else {
-          console.log("[Dashboard] Plan update confirmed:", updatedUser?.plan);
-          setSyncStatus("Welcome to your new plan!");
+          // Continue polling
+          setTimeout(pollForPlanUpdate, POLL_INTERVAL);
 
-          // Invalidate all queries to refresh spending stats and tool lists
-          queryClient.invalidateQueries();
-
-          // Auto-refresh page after 1.5 seconds to show updated UI
-          setTimeout(() => {
-            window.location.reload();
-          }, 1500);
+        } catch (error) {
+          console.error("[Dashboard] Polling error:", error);
+          // Retry anyway unless max attempts reached
+          if (attempts < MAX_ATTEMPTS) {
+            setTimeout(pollForPlanUpdate, POLL_INTERVAL);
+          } else {
+            setPaymentSuccess(false);
+          }
         }
       };
 
-      if (checkoutType === "upgrade_success") {
-        setSyncStatus("Upgrade complete. Syncing your new features...");
-      }
-
-      attemptRefresh();
-
-      // Clear the overlay after 10 seconds safety timeout
-      const timer = setTimeout(() => {
-        setPaymentSuccess(false);
-      }, 10000);
-
-      return () => clearTimeout(timer);
+      // Start polling
+      pollForPlanUpdate();
     }
   }, [refreshUser, queryClient, user]);
 
