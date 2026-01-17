@@ -161,6 +161,11 @@ export default async function runApp(
   // Start background jobs
   startBackgroundJobs().catch(e => log(`Failed to start background jobs: ${e.message}`, "error"));
 
+  // Sentry test endpoint (remove after testing)
+  app.get("/api/debug-sentry", (req, res) => {
+    throw new Error("🎯 Sentry test error - if you see this in Sentry, everything works!");
+  });
+
   const server = await registerRoutes(app);
 
   // Sentry error handler - MUST be after routes but before other error middleware
