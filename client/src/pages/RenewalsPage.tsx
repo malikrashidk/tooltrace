@@ -143,7 +143,7 @@ export function RenewalsPage() {
                 <p className="text-sm text-muted-foreground">Next 90 Days</p>
                 <p className="text-xl sm:text-2xl font-semibold">{renewals90.length}</p>
                 <p className="text-sm font-mono text-muted-foreground">
-                  {formatAmount(renewals90.reduce((s, t) => s + Number(t.billingAmount || 0), 0))}
+                  {formatAmount(renewals90.reduce((s, t) => s + fromCents(t.billingAmount), 0))}
                 </p>
               </div>
             </div>

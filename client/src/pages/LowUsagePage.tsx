@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { useCurrency } from "@/context/CurrencyContext";
 import { type Tool } from "@/lib/analytics";
+import { fromCents } from "../../../shared/money";
 
 export function LowUsagePage() {
   const { formatAmount } = useCurrency();
@@ -14,13 +15,13 @@ export function LowUsagePage() {
   });
 
   const tools = toolsData?.tools || [];
-  
+
   const paidTools = tools.filter(t => t.isPaid);
   const rarelyUsedPaid = paidTools.filter(t => t.usageFrequency === "rarely");
   const weeklyUsedPaid = paidTools.filter(t => t.usageFrequency === "weekly");
-  
+
   const potentialMonthlySavings = rarelyUsedPaid.reduce((sum, t) => {
-    const amount = parseFloat(t.billingAmount || "0");
+    const amount = fromCents(t.billingAmount);
     if (t.billingCycle === "yearly") {
       return sum + amount / 12;
     }
@@ -28,7 +29,7 @@ export function LowUsagePage() {
   }, 0);
 
   const weeklyPotentialSavings = weeklyUsedPaid.reduce((sum, t) => {
-    const amount = parseFloat(t.billingAmount || "0");
+    const amount = fromCents(t.billingAmount);
     if (t.billingCycle === "yearly") {
       return sum + amount / 12;
     }
@@ -36,7 +37,7 @@ export function LowUsagePage() {
   }, 0);
 
   const totalMonthlySpend = paidTools.reduce((sum, t) => {
-    const amount = parseFloat(t.billingAmount || "0");
+    const amount = fromCents(t.billingAmount);
     if (t.billingCycle === "yearly") {
       return sum + amount / 12;
     }
@@ -121,10 +122,10 @@ export function LowUsagePage() {
           <CardContent>
             <div className="space-y-4">
               {rarelyUsedPaid.map((tool) => {
-                const monthlyAmount = tool.billingCycle === "yearly" 
-                  ? parseFloat(tool.billingAmount || "0") / 12 
-                  : parseFloat(tool.billingAmount || "0");
-                
+                const monthlyAmount = tool.billingCycle === "yearly"
+                  ? fromCents(tool.billingAmount) / 12
+                  : fromCents(tool.billingAmount);
+
                 return (
                   <div key={tool.id} className="flex items-center justify-between p-4 bg-orange-50 dark:bg-orange-900/10 rounded-lg" data-testid={`tool-rarely-used-${tool.id}`}>
                     <div className="flex items-center gap-3">
@@ -170,10 +171,10 @@ export function LowUsagePage() {
           <CardContent>
             <div className="space-y-3">
               {weeklyUsedPaid.map((tool) => {
-                const monthlyAmount = tool.billingCycle === "yearly" 
-                  ? parseFloat(tool.billingAmount || "0") / 12 
-                  : parseFloat(tool.billingAmount || "0");
-                
+                const monthlyAmount = tool.billingCycle === "yearly"
+                  ? fromCents(tool.billingAmount) / 12
+                  : fromCents(tool.billingAmount);
+
                 return (
                   <div key={tool.id} className="flex items-center justify-between p-3 border rounded-lg" data-testid={`tool-weekly-${tool.id}`}>
                     <div className="flex items-center gap-3">
@@ -212,16 +213,16 @@ export function LowUsagePage() {
                 <span>Daily use tools</span>
                 <span className="text-green-600 dark:text-green-400">
                   {formatAmount(paidTools.filter(t => t.usageFrequency === "daily").reduce((sum, t) => {
-                    const amount = parseFloat(t.billingAmount || "0");
+                    const amount = fromCents(t.billingAmount);
                     return sum + (t.billingCycle === "yearly" ? amount / 12 : amount);
                   }, 0))}/mo
                 </span>
               </div>
-              <Progress 
+              <Progress
                 value={totalMonthlySpend > 0 ? (paidTools.filter(t => t.usageFrequency === "daily").reduce((sum, t) => {
-                  const amount = parseFloat(t.billingAmount || "0");
+                  const amount = fromCents(t.billingAmount);
                   return sum + (t.billingCycle === "yearly" ? amount / 12 : amount);
-                }, 0) / totalMonthlySpend) * 100 : 0} 
+                }, 0) / totalMonthlySpend) * 100 : 0}
                 className="h-2"
               />
             </div>
@@ -230,8 +231,8 @@ export function LowUsagePage() {
                 <span>Weekly use tools</span>
                 <span className="text-yellow-600 dark:text-yellow-400">{formatAmount(weeklyPotentialSavings)}/mo</span>
               </div>
-              <Progress 
-                value={totalMonthlySpend > 0 ? (weeklyPotentialSavings / totalMonthlySpend) * 100 : 0} 
+              <Progress
+                value={totalMonthlySpend > 0 ? (weeklyPotentialSavings / totalMonthlySpend) * 100 : 0}
                 className="h-2"
               />
             </div>
@@ -240,8 +241,8 @@ export function LowUsagePage() {
                 <span>Rarely use tools</span>
                 <span className="text-orange-600 dark:text-orange-400">{formatAmount(potentialMonthlySavings)}/mo</span>
               </div>
-              <Progress 
-                value={totalMonthlySpend > 0 ? (potentialMonthlySavings / totalMonthlySpend) * 100 : 0} 
+              <Progress
+                value={totalMonthlySpend > 0 ? (potentialMonthlySavings / totalMonthlySpend) * 100 : 0}
                 className="h-2"
               />
             </div>
