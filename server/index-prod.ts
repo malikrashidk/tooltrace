@@ -1,5 +1,5 @@
 // CRITICAL: Sentry must be imported FIRST, before everything else
-import "./instrument.js"; // .js extension required for ESM
+// Note: Sentry is now loaded via --import ./dist/instrument.js flag in start script
 import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
