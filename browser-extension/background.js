@@ -1,8 +1,8 @@
 // background.js
 
 let API_BASE = 'https://app.tooltrace.io/api';
-const DOMAIN_PRIMARY = 'app.tooltrace.io';
-const BATCH_INTERVAL = 60000; // 60 seconds
+const DOMAIN_PRIMARY = 'tooltrace.io'; // Primary domain for cookies
+const BATCH_INTERVAL = 60000;
 const BATCH_LIMIT = 20;
 
 let authToken = null;
@@ -117,7 +117,7 @@ class ActivityTracker {
                 },
                 body: JSON.stringify({ events: eventsToSend })
             });
-            console.log(`[Activity] Flushed ${eventsToSend.length} events`);
+            // console.log(`[Activity] Flushed ${eventsToSend.length} events`);
         } catch (e) {
             console.error('[Activity] Failed to flush events', e);
             // Put them back? Na, drop to prevent issues.
@@ -145,13 +145,22 @@ function syncToken() {
 
 // Initial sync
 syncToken();
+
+// Update API_BASE based on detected environment (local vs production)
+chrome.tabs.query({ url: "*://localhost*" }, (tabs) => {
+    if (tabs.length > 0) {
+        API_BASE = 'http://localhost:5000/api';
+        console.log('[Background] Using Local API:', API_BASE);
+    }
+});
+
 const tracker = new ActivityTracker();
 
 // --- API Wrapper with Auth Failure Handling ---
 async function apiFetch(url, options = {}) {
     const res = await fetch(url, options);
     if (res.status === 401) {
-        console.log('[Background] Token expired or invalid (401), logging out extension.');
+        // console.log('[Background] Token expired or invalid (401), logging out extension.');
         authToken = null;
         chrome.storage.local.remove('authToken');
     }
@@ -249,7 +258,7 @@ async function handleAddTools(tools, sendResponse) {
                 })
             });
             if (res.ok) successCount++;
-        } catch (e) {}
+        } catch (e) { }
     }
     sendResponse({ success: successCount > 0 });
 }
@@ -318,24 +327,53 @@ async function handleAutofill(toolId, sendResponse) {
         });
         const data = await res.json();
         if (data.credentials) {
-             chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
                 const tab = tabs[0];
                 if (tab) {
                     chrome.scripting.executeScript({
                         target: { tabId: tab.id },
                         func: (user, pass) => {
-                            const userInputs = document.querySelectorAll('input[type="email"], input[type="text"][name*="user"], input[name*="login"], input[id*="username"]');
-                            const passInputs = document.querySelectorAll('input[type="password"]');
-                            if (userInputs.length > 0) {
-                                userInputs[0].value = user;
-                                userInputs[0].dispatchEvent(new Event('input', { bubbles: true }));
+                            const userSelectors = [
+                                'input[type="email"]',
+                                'input[type="text"][name*="user" i]',
+                                'input[type="text"][name*="login" i]',
+                                'input[type="text"][name*="email" i]',
+                                'input[id*="username" i]',
+                                'input[id*="login" i]',
+                                'input[id*="email" i]',
+                                'input[autocomplete="username"]',
+                                'input[autocomplete="email"]'
+                            ];
+                            const passSelectors = [
+                                'input[type="password"]',
+                                'input[name*="pass" i]',
+                                'input[id*="password" i]',
+                                'input[autocomplete="current-password"]'
+                            ];
+
+                            const findElement = (selectors) => {
+                                for (const selector of selectors) {
+                                    const el = document.querySelector(selector);
+                                    if (el) return el;
+                                }
+                                return null;
+                            };
+
+                            const userInput = findElement(userSelectors);
+                            const passInput = findElement(passSelectors);
+
+                            if (userInput) {
+                                userInput.value = user;
+                                userInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                userInput.dispatchEvent(new Event('change', { bubbles: true }));
                             }
-                            if (passInputs.length > 0) {
-                                passInputs[0].value = pass;
-                                passInputs[0].dispatchEvent(new Event('input', { bubbles: true }));
+                            if (passInput) {
+                                passInput.value = pass;
+                                passInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                passInput.dispatchEvent(new Event('change', { bubbles: true }));
                             }
                         },
-                        args: [data.credentials.username, data.credentials.password]
+                        args: [data.credentials.username || data.credentials.email, data.credentials.password]
                     });
                 }
             });

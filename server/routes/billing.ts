@@ -326,13 +326,31 @@ router.post("/checkout", authMiddleware, async (req, res) => {
   try {
     const user = req.user as any;
 
+    console.log(`[Checkout] ========== CHECKOUT REQUEST FOR ${user.email} ==========`);
+    console.log(`[Checkout] Current State:`, {
+      userId: user.id,
+      currentPlan: user.plan,
+      polarSubId: user.polarSubscriptionId,
+      requestedProductId: productPriceId
+    });
+
     // --- PROACTIVE SYNC: Use centralized helper ---
     let polarSubscriptionId = user.polarSubscriptionId;
 
     if (!polarSubscriptionId) {
+      console.log(`[Checkout] No local subscription ID found, attempting sync...`);
       const syncResult = await syncUserSubscription(user.id, user.email);
       if (syncResult) {
+        console.log(`[Checkout] Sync found subscription: ${syncResult.subscriptionId} with plan: ${syncResult.plan}`);
         polarSubscriptionId = syncResult.subscriptionId;
+        // Re-fetch user to get updated plan
+        const updatedUser = await storage.getUser(user.id);
+        if (updatedUser) {
+          user.plan = updatedUser.plan;
+          console.log(`[Checkout] User plan updated to: ${user.plan}`);
+        }
+      } else {
+        console.log(`[Checkout] Sync returned no subscription`);
       }
     }
 

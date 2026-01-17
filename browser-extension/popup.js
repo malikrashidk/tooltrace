@@ -1,22 +1,61 @@
 const KNOWN_SAAS_TOOLS = {
+  // Design & Creative
   'figma.com': { name: 'Figma', category: 'Design', icon: '🎨' },
+  'canva.com': { name: 'Canva', category: 'Design', icon: '🎨' },
+  'adobe.com': { name: 'Adobe Creative Cloud', category: 'Design', icon: '🎨' },
+  'dribbble.com': { name: 'Dribbble', category: 'Design', icon: '🏀' },
+  'sketch.com': { name: 'Sketch', category: 'Design', icon: '💎' },
+  'framer.com': { name: 'Framer', category: 'Design', icon: '📐' },
+
+  // Development & DevOps
   'github.com': { name: 'GitHub', category: 'Development', icon: '💻' },
-  'chat.openai.com': { name: 'ChatGPT', category: 'AI', icon: '🤖' },
-  'aws.amazon.com': { name: 'AWS', category: 'Cloud', icon: '☁️' },
+  'gitlab.com': { name: 'GitLab', category: 'Development', icon: '🦊' },
+  'bitbucket.org': { name: 'Bitbucket', category: 'Development', icon: '📥' },
+  'stackoverflow.com': { name: 'Stack Overflow', category: 'Development', icon: '📚' },
+  'vercel.com': { name: 'Vercel', category: 'Development', icon: '🚀' },
+  'netlify.com': { name: 'Netlify', category: 'Development', icon: '🌐' },
+  'digitalocean.com': { name: 'DigitalOcean', category: 'Infrastructure', icon: '💧' },
+  'heroku.com': { name: 'Heroku', category: 'Infrastructure', icon: '🟣' },
+  'aws.amazon.com': { name: 'AWS', category: 'Infrastructure', icon: '☁️' },
+  'console.cloud.google.com': { name: 'Google Cloud', category: 'Infrastructure', icon: '☁️' },
+  'azure.microsoft.com': { name: 'Azure', category: 'Infrastructure', icon: '☁️' },
+  'docker.com': { name: 'Docker', category: 'Development', icon: '🐳' },
+  'jira.atlassian.net': { name: 'Jira', category: 'Development', icon: '🎫' },
+
+  // Productivity & Collaboration
   'notion.so': { name: 'Notion', category: 'Productivity', icon: '📝' },
   'slack.com': { name: 'Slack', category: 'Communication', icon: '💬' },
   'zoom.us': { name: 'Zoom', category: 'Communication', icon: '📹' },
   'monday.com': { name: 'Monday.com', category: 'Productivity', icon: '📅' },
   'asana.com': { name: 'Asana', category: 'Productivity', icon: '✅' },
   'trello.com': { name: 'Trello', category: 'Productivity', icon: '📋' },
-  'jira.atlassian.net': { name: 'Jira', category: 'Development', icon: '🎫' },
-  'canva.com': { name: 'Canva', category: 'Design', icon: '🎨' },
-  'stripe.com': { name: 'Stripe', category: 'Finance', icon: '💳' },
-  'mailchimp.com': { name: 'Mailchimp', category: 'Marketing', icon: '📧' },
+  'clickup.com': { name: 'ClickUp', category: 'Productivity', icon: '🆙' },
+  'linear.app': { name: 'Linear', category: 'Productivity', icon: '📉' },
+  'miro.com': { name: 'Miro', category: 'Productivity', icon: '🖼️' },
+  'loom.com': { name: 'Loom', category: 'Communication', icon: '📹' },
+  'calendly.com': { name: 'Calendly', category: 'Productivity', icon: '📅' },
+
+  // AI & Machine Learning
+  'chat.openai.com': { name: 'ChatGPT', category: 'AI', icon: '🤖' },
+  'anthropic.com': { name: 'Claude', category: 'AI', icon: '🧠' },
+  'midjourney.com': { name: 'Midjourney', category: 'AI', icon: '🎨' },
+  'perplexitiy.ai': { name: 'Perplexity', category: 'AI', icon: '🔍' },
+
+  // Marketing & Sales
   'hubspot.com': { name: 'HubSpot', category: 'Marketing', icon: '📈' },
-  'vercel.com': { name: 'Vercel', category: 'Development', icon: '🚀' },
-  'netlify.com': { name: 'Netlify', category: 'Cloud', icon: '🌐' },
-  'dopely.com': { name: 'Dopely', category: 'Design', icon: '🎨' },
+  'mailchimp.com': { name: 'Mailchimp', category: 'Marketing', icon: '📧' },
+  'salesforce.com': { name: 'Salesforce', category: 'Sales', icon: '☁️' },
+  'intercom.com': { name: 'Intercom', category: 'Marketing', icon: '💬' },
+  'buffer.com': { name: 'Buffer', category: 'Marketing', icon: '📝' },
+  'hootsuite.com': { name: 'Hootsuite', category: 'Marketing', icon: '🦉' },
+
+  // Finance & Operations
+  'stripe.com': { name: 'Stripe', category: 'Finance', icon: '💳' },
+  'paypal.com': { name: 'PayPal', category: 'Finance', icon: '💳' },
+  'quickbooks.com': { name: 'QuickBooks', category: 'Finance', icon: '💼' },
+  'xero.com': { name: 'Xero', category: 'Finance', icon: '💼' },
+  'gusto.com': { name: 'Gusto', category: 'HR', icon: '👥' },
+  'bamboohr.com': { name: 'BambooHR', category: 'HR', icon: '🎋' },
 };
 
 let detectedTools = [];

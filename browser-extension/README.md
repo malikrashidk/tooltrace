@@ -1,4 +1,4 @@
-# Tool Trace Browser Extension
+# Tooltrace Browser Extension
 
 Auto-detect SaaS tools, synchronize authentication, and instantly fill credentials across the web.
 
@@ -6,7 +6,7 @@ Auto-detect SaaS tools, synchronize authentication, and instantly fill credentia
 
 - ⚡️ **Direct Add**: Select and add multiple tools with one click. No redirects or platform switching required.
 - ⚡️ **Credential Autofill**: Detects if you have a saved tool matching the current site and offers a "Fill Login" button to instantly populate credentials.
-- 🔑 **Auth Synchronization**: Stays seamlessly in sync with your Tool Trace account. Log in once on the web app, and the extension is ready to go.
+- 🔑 **Auth Synchronization**: Stays seamlessly in sync with your Tooltrace account. Log in once on the web app, and the extension is ready to go.
 - 🔍 **Auto-Detection**: Scans open tabs for known SaaS tools like Figma, GitHub, ChatGPT, and Notion.
 - 🛡️ **Privacy & Security**: Securely reveals credentials only when requested and never stores passwords locally in plain text.
 
@@ -23,7 +23,7 @@ Auto-detect SaaS tools, synchronize authentication, and instantly fill credentia
 ## How to Use
 
 ### 1. Synchronize (One-Time)
-Simply log in to your Tool Trace dashboard at `http://localhost:5000`. The extension will automatically detect your session and show "Connected".
+Simply log in to your Tooltrace dashboard at `http://localhost:5000`. The extension will automatically detect your session and show "Connected".
 
 ### 2. Auto-Detect / Add Tools
 - Browse as usual. When you visit a supported SaaS site, open the extension.
@@ -32,7 +32,7 @@ Simply log in to your Tool Trace dashboard at `http://localhost:5000`. The exten
 
 ### 3. Credential Autofill
 - Visit a login page (e.g., `github.com/login`).
-- If you have saved credentials for that site in Tool Trace, a **"✅ Tool Found"** banner will appear in the popup.
+- If you have saved credentials for that site in Tooltrace, a **"✅ Tool Found"** banner will appear in the popup.
 - Click **"⚡️ Fill Login"** to instantly inject your username and password.
 
 ---
@@ -72,8 +72,14 @@ KNOWN_SAAS_TOOLS = {
 - Verify that the `Website URL` in your Tool Trace dashboard exactly matches the domain of the site you are visiting.
 
 ## License
-MIT License - Tool Trace Team
+MIT License - Tooltrace Team
+
+## Release Process
+To create a new release package:
+1. Update version in `manifest.json`.
+2. Tag a new version: `git tag v1.0.x`.
+3. Push tags: `git push origin --tags`.
+The GitHub Action will automatically create a ZIP file in the Releases section.
 
 ## Support
-
-For issues or feature requests, please visit: [GitHub Issues](https://github.com/yourusername/saazhub-extension/issues)
+For issues or feature requests, please visit the main [Tooltrace Hub](https://app.tooltrace.io).

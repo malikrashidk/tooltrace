@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Tooltrace - Manage Your Accounts and Subscriptions",
-  "version": "1.0.0",
-  "description": "Auto-detect SaaS tools you're using and add them to your Tooltrace Hub",
+  "name": "Tooltrace - Smarter SaaS Management",
+  "version": "1.0.1",
+  "description": "Automatically track your SaaS usage, manage credentials, and discover tools you're paying for.",
   "permissions": [
     "activeTab",
     "scripting",
