@@ -155,10 +155,6 @@ app.use((req, res, next) => {
 export default async function runApp(
   setup: (app: Express, server: Server) => Promise<void>,
 ) {
-  // Add WebSocket upgrade handling
-  // This needs to happen before serving static files
-  await registerStatic(app, server);
-
   // Auto-initialize admin user on startup
   await initializeAdmin();
 
