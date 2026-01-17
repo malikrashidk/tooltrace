@@ -60,12 +60,16 @@ export function UserManagementPage() {
   });
   const [formData, setFormData] = useState({ email: "", password: "", name: "", plan: "free" });
 
+  const [page, setPage] = useState(1);
+  const USERS_PER_PAGE = 50;
+
   // Fetch users
   const { data: usersResponse, isLoading } = useQuery({
-    queryKey: ["/api/admin/users"],
+    queryKey: ["/api/admin/users", page],
     queryFn: async () => {
       const token = localStorage.getItem("token");
-      const res = await fetch("/api/admin/users", {
+      const offset = (page - 1) * USERS_PER_PAGE;
+      const res = await fetch(`/api/admin/users?limit=${USERS_PER_PAGE}&offset=${offset}`, {
         headers: { "Authorization": `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch users");
@@ -74,6 +78,8 @@ export function UserManagementPage() {
   });
 
   const users = usersResponse?.users || [];
+  const totalUsers = usersResponse?.pagination?.total || 0;
+  const totalPages = Math.ceil(totalUsers / USERS_PER_PAGE);
 
   // Create user mutation
   const createUserMutation = useMutation({
@@ -164,7 +170,7 @@ export function UserManagementPage() {
     },
   });
 
-  const handleAddUser = async () => {
+  const handleCreateUser = async () => {
     if (!formData.email || !formData.password || !formData.name) {
       toast({
         title: "Error",
@@ -212,8 +218,33 @@ export function UserManagementPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All Users</CardTitle>
-          <CardDescription>Total: {users.length} users</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>All Users</CardTitle>
+              <CardDescription>Total: {totalUsers} users</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1 || isLoading}
+              >
+                Previous
+              </Button>
+              <span className="text-sm font-medium">
+                Page {page} of {totalPages || 1}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages || isLoading}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -221,7 +252,7 @@ export function UserManagementPage() {
               <Loader2 className="h-6 w-6 animate-spin" />
             </div>
           ) : users.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">No users yet</div>
+            <div className="text-center py-8 text-muted-foreground">No users found</div>
           ) : (
             <>
               {/* Mobile card view */}
@@ -385,7 +416,7 @@ export function UserManagementPage() {
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddUser} disabled={createUserMutation.isPending} data-testid="button-create-user">
+            <Button onClick={handleCreateUser} disabled={createUserMutation.isPending} data-testid="button-create-user">
               {createUserMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Create User
             </Button>
