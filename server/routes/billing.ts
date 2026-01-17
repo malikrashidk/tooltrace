@@ -5,45 +5,13 @@ import { toCents } from "../../shared/money";
 import { authMiddleware } from "../middleware";
 import { syncUserSubscription } from "../lib/sync-utils";
 
+import { resolvePlanFromIds, PLAN_LIMITS, getPolarIdToPlanMap } from "../lib/polar-constants";
+
 const router = Router();
 
-// Map Polar product or price IDs to internal plan names
-// We use both VITE_ and standard env vars to be resilient
-const POLAR_ID_TO_PLAN: Record<string, string> = {
-  [process.env.POLAR_PRICE_ID_PRO_MONTHLY || process.env.VITE_POLAR_PRICE_ID_PRO || ""]: "pro",
-  [process.env.POLAR_PRICE_ID_PRO_YEARLY || process.env.VITE_POLAR_PRICE_ID_PRO_YEARLY || ""]: "pro",
-  [process.env.POLAR_PRICE_ID_ENTERPRISE_MONTHLY || process.env.VITE_POLAR_PRICE_ID_ENTERPRISE || ""]: "enterprise",
-  [process.env.POLAR_PRICE_ID_ENTERPRISE_YEARLY || process.env.VITE_POLAR_PRICE_ID_ENTERPRISE_YEARLY || ""]: "enterprise",
-
-  // Product IDs for direct updates and robust sync
-  [process.env.POLAR_PRODUCT_ID_PRO || ""]: "pro",
-  [process.env.POLAR_PRODUCT_ID_ENTERPRISE || ""]: "enterprise"
-};
-
-// Aliases for compatibility if needed
-const PLAN_ALIASES: Record<string, string> = {
-  pro: "pro",
-  enterprise: "enterprise",
-  standard: "pro",
-  premium: "enterprise"
-};
-
-// Remove empty keys
-Object.keys(POLAR_ID_TO_PLAN).forEach(key => {
-  if (key === "" || key === "undefined") delete POLAR_ID_TO_PLAN[key];
-});
-
-if (process.env.NODE_ENV !== "production") {
-  console.log("[Billing] Polar ID Mapping Initialized:", JSON.stringify(POLAR_ID_TO_PLAN, null, 2));
-} else {
-  console.log("[Billing] Polar ID Mapping Initialized");
-}
-
-const PLAN_LIMITS: Record<string, string> = {
-  free: "10",
-  pro: "999999", // Unlimited
-  enterprise: "999999",
-};
+// Log Polar ID mapping information (count only for security/clarity in production)
+const currentMap = getPolarIdToPlanMap();
+console.log(`[Billing] Polar ID Mapping Initialized with ${Object.keys(currentMap).length} active IDs`);
 
 /**
  * Polar Webhook Handler
@@ -161,15 +129,24 @@ router.post("/webhooks/polar", async (req, res) => {
         // Determine plan from product ID OR price ID
         const priceId = subscription.price_id;
         const productId = subscription.product_id;
-        const plan = POLAR_ID_TO_PLAN[priceId] || POLAR_ID_TO_PLAN[productId] || "free";
+        const plan = resolvePlanFromIds(priceId, productId);
         const status = subscription.status; // 'active', 'canceled', 'incomplete', etc.
 
-        console.log(`[Polar Webhook] Subscription for user ${user.id}`);
-        console.log(`[Polar Webhook] Price ID: ${priceId}, Product ID: ${productId} -> Plan: ${plan}`);
-        console.log(`[Polar Webhook] Status: ${status}`);
+        console.log(`[Polar Webhook] Subscription Event Data:`, {
+          priceId,
+          productId,
+          resolvedPlan: plan,
+          status,
+          userId: user.id,
+          mappingKeys: Object.keys(getPolarIdToPlanMap())
+        });
 
         // Update user and subscription
         const isActive = status === "active" || status === "trialing";
+
+        if (!isActive) {
+          console.warn(`[Polar Webhook] Subscription for ${user.email} is NOT active (Status: ${status}). Plan update skipped.`);
+        }
 
         await storage.updateUserSubscription(
           user.id,
@@ -356,7 +333,7 @@ router.post("/checkout", authMiddleware, async (req, res) => {
           enterprise: process.env.POLAR_PRODUCT_ID_ENTERPRISE || process.env.VITE_POLAR_PRICE_ID_ENTERPRISE || ""
         };
 
-        const targetPlan = POLAR_ID_TO_PLAN[productPriceId];
+        const targetPlan = resolvePlanFromIds(productPriceId);
 
         // If 'productPriceId' is already present in our mapping, it means it's a valid ID for that plan.
         // The user confirmed their "Price IDs" are actually Product IDs, so we can use it directly.
