@@ -356,6 +356,15 @@ export function HelpPage() {
           ))}
         </Tabs>
       </div>
+
+      {/* Legal Footer */}
+      <footer className="mt-12 pt-8 border-t border-border text-center text-sm text-muted-foreground">
+        <div className="flex flex-wrap justify-center gap-6">
+          <a href="https://tooltrace.io/privacy-policy" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Privacy Policy</a>
+          <a href="https://tooltrace.io/terms-and-conditions" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Terms and Conditions</a>
+          <a href="https://tooltrace.io/refund-policy" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Refund Policy</a>
+        </div>
+      </footer>
     </div>
   );
 }

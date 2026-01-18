@@ -25,10 +25,10 @@ import {
     TableRow
 } from "@/components/ui/table";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AddToolDialog } from "@/components/AddToolDialog";
 import { ToolLogo } from "@/components/ToolLogo";
@@ -69,7 +69,7 @@ export default function SmartScanPage() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <p className="text-sm text-muted-foreground">
-                            Smart Tracker uses your browsing activity to discover which SaaS tools and subscriptions you're actively using, so you can start tracking them in ToolTrace.
+                            Automatically discover subscriptions from your browsing activity.
                         </p>
                         <div className="space-y-2">
                             <p className="text-sm font-semibold">Unlock Smart Tracker:</p>
@@ -79,15 +79,15 @@ export default function SmartScanPage() {
                                 <li>Get suggestions to add tools to your dashboard</li>
                             </ul>
                         </div>
-                        <Button 
-                            className="w-full" 
+                        <Button
+                            className="w-full"
                             onClick={() => window.location.href = '/pricing'}
                         >
                             Upgrade to Pro
                         </Button>
                     </CardContent>
                 </Card>
-            </div>
+            </div >
         );
     }
     const [addToolOpen, setAddToolOpen] = useState(false);
@@ -96,8 +96,8 @@ export default function SmartScanPage() {
     const { data, isLoading } = useQuery<{ sites: DetectedSite[] }>({
         queryKey: ["/api/activity/smart-scan"],
         queryFn: async () => {
-             const res = await apiRequest("GET", "/api/activity/smart-scan");
-             return await res.json();
+            const res = await apiRequest("GET", "/api/activity/smart-scan");
+            return await res.json();
         }
     });
 
@@ -112,10 +112,10 @@ export default function SmartScanPage() {
 
     const markAddedMutation = useMutation({
         mutationFn: async ({ id, toolId }: { id: string, toolId: string }) => {
-             await apiRequest("PATCH", `/api/activity/smart-scan/${id}/mark-added`, { toolId });
+            await apiRequest("PATCH", `/api/activity/smart-scan/${id}/mark-added`, { toolId });
         },
         onSuccess: () => {
-             queryClient.invalidateQueries({ queryKey: ["/api/activity/smart-scan"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/activity/smart-scan"] });
         }
     });
 
@@ -139,11 +139,11 @@ export default function SmartScanPage() {
             toast({ title: "Tool added", description: "The tool has been added to your dashboard." });
         },
         onError: (error: any) => {
-             toast({
-                 title: "Error adding tool",
-                 description: error.message || "Something went wrong.",
-                 variant: "destructive"
-             });
+            toast({
+                title: "Error adding tool",
+                description: error.message || "Something went wrong.",
+                variant: "destructive"
+            });
         }
     });
 
@@ -255,7 +255,7 @@ export default function SmartScanPage() {
                                         <TableCell>
                                             <Badge variant={
                                                 site.confidenceLevel === 'confirmed' ? 'default' :
-                                                site.confidenceLevel === 'likely' ? 'secondary' : 'outline'
+                                                    site.confidenceLevel === 'likely' ? 'secondary' : 'outline'
                                             }>
                                                 {site.confidenceLevel}
                                             </Badge>
