@@ -68,7 +68,7 @@ export function mapTool(row: any): Tool | undefined {
         isPinned: row.is_pinned,
         lastUsedAt: row.last_used_at,
         totalUsageTime: row.total_usage_time,
-        notified3Days: row.notified_3_days,
+        notified3Days: row.notified3_days,
         notifiedRenewalDay: row.notified_renewal_day,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
