@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { polarClient, verifyPolarWebhook, listSubscriptionsByEmail } from "../lib/polar";
+import { polarClient, verifyPolarWebhook } from "../lib/polar";
 import { storage } from "../storage";
 import { toCents } from "../../shared/money";
 import { authMiddleware } from "../middleware";
@@ -52,7 +52,7 @@ router.post("/webhooks/polar", async (req, res) => {
      */
     const findUserFromPolarEvent = async (data: any) => {
       // 1. Try userId in metadata
-      let userId = data.metadata?.userId as string;
+      const userId = data.metadata?.userId as string;
       if (userId) {
         console.log(`[Polar Webhook] Attempting lookup by userId in metadata: ${userId}`);
         const user = await storage.getUser(userId);
@@ -377,9 +377,6 @@ router.post("/checkout", authMiddleware, async (req, res) => {
         if (targetPlan) {
           targetProductId = productPriceId;
           console.log(`[Checkout] Using provided ID ${productPriceId} as target Product ID for plan ${targetPlan}`);
-        } else if (targetPlan && PLAN_TO_PRODUCT_ID[targetPlan]) {
-          targetProductId = PLAN_TO_PRODUCT_ID[targetPlan];
-          console.log(`[Checkout] Resolved target plan ${targetPlan} to Product ID ${targetProductId} via env`);
         }
 
         // 2. SDK lookup (Fallback - only if still not resolved)
