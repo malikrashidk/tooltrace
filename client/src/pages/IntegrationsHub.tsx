@@ -253,7 +253,7 @@ export function IntegrationsHub() {
                   <span>Chrome & Chromium</span>
                   <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Available</Badge>
                 </CardTitle>
-                <CardDescription>Auto-detect and add SaaS tools while browsing</CardDescription>
+                <CardDescription>Tooltrace – SaaS Account & Subscription Tracker</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">

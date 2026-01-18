@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Tooltrace - Smarter SaaS Management",
+  "name": "Tooltrace – SaaS Account & Subscription Tracker",
   "version": "1.0.1",
   "description": "Automatically track your SaaS usage, manage credentials, and discover tools you're paying for.",
   "permissions": [

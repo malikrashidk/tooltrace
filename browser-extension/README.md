@@ -1,4 +1,4 @@
-# Tooltrace Browser Extension
+# Tooltrace – SaaS Account & Subscription Tracker
 
 Auto-detect SaaS tools, synchronize authentication, and instantly fill credentials across the web.
 

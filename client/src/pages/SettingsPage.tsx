@@ -368,9 +368,9 @@ export function SettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Zap className="h-5 w-5" />
-                Browser Extension
+                Tooltrace Extension
               </CardTitle>
-              <CardDescription>Auto-detect and add SaaS tools while browsing</CardDescription>
+              <CardDescription>SaaS Account & Subscription Tracker</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
