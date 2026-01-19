@@ -36,8 +36,8 @@ export function ReceiptStoragePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { formatAmount } = useCurrency();
-  const isPaidPlan = user?.plan === "pro" || user?.plan === "enterprise";
-  
+  // No plan restriction for receipt storage as per pricing
+
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [receiptToDelete, setReceiptToDelete] = useState<Receipt | null>(null);
@@ -49,12 +49,10 @@ export function ReceiptStoragePage() {
 
   const { data: receiptsData, isLoading: receiptsLoading } = useQuery<{ receipts: Receipt[] }>({
     queryKey: ['/api/receipts'],
-    enabled: isPaidPlan,
   });
 
   const { data: toolsData } = useQuery<{ tools: Tool[] }>({
     queryKey: ['/api/tools'],
-    enabled: isPaidPlan,
   });
 
   const uploadMutation = useMutation({
@@ -171,37 +169,6 @@ export function ReceiptStoragePage() {
     return formatAmount(amount);
   };
 
-  if (!isPaidPlan) {
-    return (
-      <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold">Invoice & Receipt Storage</h1>
-          <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Upload and organize invoices and receipts for your subscriptions</p>
-        </div>
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16 px-4">
-            <div className="text-center space-y-4 max-w-md">
-              <div className="mx-auto w-20 h-20 bg-muted rounded-full flex items-center justify-center">
-                <Lock className="h-10 w-10 text-muted-foreground" />
-              </div>
-              <h2 className="text-xl sm:text-2xl font-semibold">Upgrade for Receipt Storage</h2>
-              <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
-                Store and organize invoices and receipts with Pro and Enterprise plans.
-              </p>
-              <Button 
-                onClick={() => setLocation("/pricing")}
-                className="mt-4 w-full sm:w-auto"
-                data-testid="button-upgrade"
-              >
-                View Pricing Plans
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   const receipts = receiptsData?.receipts || [];
   const tools = toolsData?.tools || [];
 
@@ -212,7 +179,7 @@ export function ReceiptStoragePage() {
           <h1 className="text-2xl sm:text-3xl font-semibold">Invoice & Receipt Storage</h1>
           <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Upload and organize invoices and receipts for your subscriptions</p>
         </div>
-        <Button 
+        <Button
           onClick={() => setUploadDialogOpen(true)}
           className="w-full sm:w-auto"
           data-testid="button-upload-receipt"
@@ -236,7 +203,7 @@ export function ReceiptStoragePage() {
             <p className="text-muted-foreground text-center mb-6">
               Upload your first receipt to start organizing your subscription invoices
             </p>
-            <Button 
+            <Button
               onClick={() => setUploadDialogOpen(true)}
               data-testid="button-upload-first-receipt"
             >
@@ -307,7 +274,7 @@ export function ReceiptStoragePage() {
               Upload a receipt or invoice file (PDF, PNG, JPG, JPEG - max 2MB)
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="file">File</Label>

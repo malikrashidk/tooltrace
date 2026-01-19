@@ -79,7 +79,6 @@ export function AppSidebar() {
       title: "Analytics",
       url: "/analytics",
       icon: BarChart3,
-      requiredPlan: "pro",
     },
     {
       title: "Notes",
@@ -101,7 +100,6 @@ export function AppSidebar() {
       title: "Receipts & Invoices",
       url: "/receipts",
       icon: FileText,
-      requiredPlan: "pro",
     },
   ];
 

@@ -114,37 +114,6 @@ export function AnalyticsPage() {
 
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"];
 
-  if (!isPaidPlan) {
-    return (
-      <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold">Analytics</h1>
-          <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Insights into your spending and tool usage</p>
-        </div>
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16 px-4">
-            <div className="text-center space-y-4 max-w-md">
-              <div className="mx-auto w-20 h-20 bg-muted rounded-full flex items-center justify-center">
-                <Lock className="h-10 w-10 text-muted-foreground" />
-              </div>
-              <h2 className="text-xl sm:text-2xl font-semibold">Unlock Analytics</h2>
-              <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
-                Detailed spending analytics and usage trends are available on Pro and Enterprise plans.
-              </p>
-              <Button
-                onClick={() => setLocation("/pricing")}
-                className="mt-4 w-full sm:w-auto"
-                data-testid="button-upgrade"
-              >
-                View Pricing Plans
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   if (isLoading) {
     return (
       <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
