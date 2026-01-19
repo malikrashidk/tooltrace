@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Tooltrace – SaaS Account & Subscription Tracker",
   "version": "1.0.2",
-  "description": "Automatically track your SaaS usage, manage credentials, and discover tools you're paying for.",
+  "description": "Identify SaaS tools you use as you browse and organize them in your Tooltrace dashboard.",
   "permissions": [
     "activeTab",
     "scripting",
