@@ -63,6 +63,26 @@ export function AppSidebar() {
       icon: Package,
     },
     {
+      title: "Analytics",
+      url: "/analytics",
+      icon: BarChart3,
+    },
+    {
+      title: "Renewals",
+      url: "/renewals",
+      icon: Calendar,
+    },
+    {
+      title: "Receipts & Invoices",
+      url: "/receipts",
+      icon: FileText,
+    },
+    {
+      title: "Notes",
+      url: "/notes",
+      icon: StickyNote,
+    },
+    {
       title: "Smart Tracker",
       url: "/smart-scan",
       icon: Sparkles,
@@ -76,30 +96,10 @@ export function AppSidebar() {
       requiredPlan: "pro",
     },
     {
-      title: "Analytics",
-      url: "/analytics",
-      icon: BarChart3,
-    },
-    {
-      title: "Notes",
-      url: "/notes",
-      icon: StickyNote,
-    },
-    {
-      title: "Renewals",
-      url: "/renewals",
-      icon: Calendar,
-    },
-    {
       title: "Low Usage",
       url: "/low-usage",
       icon: AlertTriangle,
       requiredPlan: "pro",
-    },
-    {
-      title: "Receipts & Invoices",
-      url: "/receipts",
-      icon: FileText,
     },
   ];
 
