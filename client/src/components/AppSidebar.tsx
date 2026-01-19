@@ -50,7 +50,6 @@ import { useAuth } from "@/context/AuthContext";
 export function AppSidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
-  const isPaidPlan = user?.plan === "pro" || user?.plan === "enterprise";
 
   const mainNavItems = [
     {
@@ -68,16 +67,19 @@ export function AppSidebar() {
       url: "/smart-scan",
       icon: Sparkles,
       badge: "BETA",
+      requiredPlan: "pro",
     },
     {
       title: "Advanced Management",
       url: "/tools-advanced",
       icon: Sliders,
+      requiredPlan: "pro",
     },
     {
       title: "Analytics",
       url: "/analytics",
       icon: BarChart3,
+      requiredPlan: "pro",
     },
     {
       title: "Notes",
@@ -93,11 +95,13 @@ export function AppSidebar() {
       title: "Low Usage",
       url: "/low-usage",
       icon: AlertTriangle,
+      requiredPlan: "pro",
     },
     {
       title: "Receipts & Invoices",
       url: "/receipts",
       icon: FileText,
+      requiredPlan: "pro",
     },
   ];
 
@@ -106,31 +110,29 @@ export function AppSidebar() {
       title: "Pricing",
       url: "/pricing",
       icon: CreditCard,
-      locked: false,
     },
     {
       title: "Integrations",
       url: "/integrations",
       icon: Zap,
-      locked: true,
+      requiredPlan: "enterprise",
     },
     {
       title: "Team Collaboration",
       url: "/team",
       icon: Users,
-      locked: true,
+      requiredPlan: "enterprise",
     },
     {
       title: "API Keys",
       url: "/api-keys",
       icon: Code2,
-      locked: true,
+      requiredPlan: "enterprise",
     },
     {
       title: "Settings",
       url: "/settings",
       icon: Settings,
-      locked: false,
     },
   ];
 
@@ -151,9 +153,10 @@ export function AppSidebar() {
     },
   ];
 
-  const getItemStatus = (item: typeof settingsNavItems[0]) => {
-    if (!item.locked) return "available";
-    if (isPaidPlan) return "available";
+  const getItemStatus = (item: any) => {
+    if (!item.requiredPlan) return "available";
+    if (user?.plan === "enterprise") return "available";
+    if (user?.plan === "pro" && item.requiredPlan === "pro") return "available";
     return "locked";
   };
   const { state, setOpenMobile } = useSidebar();
@@ -188,26 +191,35 @@ export function AppSidebar() {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNavItems.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location === item.url}
-                    tooltip={item.title}
-                    onClick={() => setOpenMobile(false)}
-                  >
-                    <Link href={item.url} data-testid={`nav-${item.title.toLowerCase().replace(" ", "-")}`} className="relative">
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                      {(item as any).badge && (
-                        <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                          {(item as any).badge}
-                        </span>
-                      )}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {mainNavItems.map((item) => {
+                const status = getItemStatus(item);
+                const isLocked = status === "locked";
+
+                return (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === item.url}
+                      tooltip={item.title}
+                      className={isLocked ? "opacity-50 hover:opacity-75" : ""}
+                      onClick={() => setOpenMobile(false)}
+                    >
+                      <Link href={item.url} data-testid={`nav-${item.title.toLowerCase().replace(" ", "-")}`} className="relative">
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                        {(item as any).badge && (
+                          <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                            {(item as any).badge}
+                          </span>
+                        )}
+                        {isLocked && (
+                          <Lock className="h-3 w-3 absolute right-2 text-amber-500" />
+                        )}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
