@@ -64,7 +64,7 @@ export function LowUsagePage() {
     <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
       <div>
         <h1 className="text-xl sm:text-2xl font-semibold">Low Usage Subscriptions</h1>
-        <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Identify tools you're paying for but rarely using</p>
+        <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Identify tools you&apos;re paying for but rarely using</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -117,7 +117,7 @@ export function LowUsagePage() {
               <AlertTriangle className="h-5 w-5 text-orange-500" />
               <CardTitle className="text-lg">Rarely Used Paid Tools</CardTitle>
             </div>
-            <CardDescription>These tools are marked as "rarely used" but you're still paying for them</CardDescription>
+            <CardDescription>These tools are marked as &quot;rarely used&quot; but you&apos;re still paying for them</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">

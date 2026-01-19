@@ -247,7 +247,7 @@ router.get("/tools/:id/reveal", authMiddleware, async (req, res) => {
       credentials: revealedCredentials,
       secureNote: revealedNote
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to reveal secrets" });
   }
 });
@@ -265,7 +265,7 @@ router.delete("/tools/:id", authMiddleware, emailVerificationMiddleware, async (
     }
 
     res.json({ message: "Tool deleted" });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to delete tool" });
   }
 });
@@ -275,7 +275,7 @@ router.get("/notes", authMiddleware, async (req, res) => {
   try {
     const notes = await storage.getUserNotes(req.userId!);
     res.json({ notes });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to fetch notes" });
   }
 });
@@ -340,7 +340,7 @@ router.delete("/notes/:id", authMiddleware, emailVerificationMiddleware, async (
     await storage.deleteNote(req.params.id);
     await auditLog(req.userId!, "delete", "note", req.params.id, { title: note.title }, req);
     res.json({ success: true });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to delete note" });
   }
 });
@@ -365,7 +365,7 @@ const paidPlanMiddleware = async (req: any, res: any, next: any) => {
       return res.status(403).json({ error: "Receipt storage is only available for Pro and Enterprise plans" });
     }
     next();
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to verify subscription" });
   }
 };
@@ -489,7 +489,7 @@ router.delete("/receipts/:id", authMiddleware, paidPlanMiddleware, async (req, r
     await storage.deleteReceipt(req.params.id);
     await auditLog(req.userId!, "delete", "receipt", req.params.id, { fileName: receipt.fileName }, req);
     res.json({ success: true });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to delete receipt" });
   }
 });

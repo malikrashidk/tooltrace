@@ -58,7 +58,78 @@ export default function SmartScanPage() {
     const userPlan = (user as any)?.plan || 'free';
     const hasAccess = userPlan === 'pro' || userPlan === 'enterprise';
 
-    // Paywall for free users
+    const [addToolOpen, setAddToolOpen] = useState(false);
+    const [selectedSite, setSelectedSite] = useState<DetectedSite | null>(null);
+
+    // Hooks must be called unconditionally
+    const { data, isLoading } = useQuery<{ sites: DetectedSite[] }>({
+        queryKey: ["/api/activity/smart-scan"],
+        queryFn: async () => {
+            // If no access, we still need to return something or handle it,
+            // but the UI will block access anyway.
+            // Ideally backend also blocks it.
+            if (!hasAccess) return { sites: [] };
+            const res = await apiRequest("GET", "/api/activity/smart-scan");
+            return await res.json();
+        },
+        enabled: hasAccess // Only fetch if has access
+    });
+
+    const updateStatusMutation = useMutation({
+        mutationFn: async ({ id, status }: { id: string, status: string }) => {
+            await apiRequest("PATCH", `/api/activity/smart-scan/${id}`, { status });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["/api/activity/smart-scan"] });
+        }
+    });
+
+    const markAddedMutation = useMutation({
+        mutationFn: async ({ id, toolId }: { id: string, toolId: string }) => {
+            await apiRequest("PATCH", `/api/activity/smart-scan/${id}/mark-added`, { toolId });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["/api/activity/smart-scan"] });
+        }
+    });
+
+    const addToolMutation = useMutation({
+        mutationFn: async (newTool: any) => {
+            const res = await apiRequest("POST", "/api/tools", newTool);
+            return await res.json();
+        },
+        onSuccess: (tool) => {
+            if (selectedSite) {
+                markAddedMutation.mutate({ id: selectedSite.id, toolId: tool.id });
+            }
+            queryClient.invalidateQueries({ queryKey: ["/api/tools"] });
+            setAddToolOpen(false);
+            setSelectedSite(null);
+            toast({ title: "Tool added", description: "The tool has been added to your dashboard." });
+        },
+        onError: (error: any) => {
+            toast({
+                title: "Error adding tool",
+                description: error.message || "Something went wrong.",
+                variant: "destructive"
+            });
+        }
+    });
+
+    const handleAddClick = (site: DetectedSite) => {
+        setSelectedSite(site);
+        setAddToolOpen(true);
+    };
+
+    const handleSaveTool = (tool: any) => {
+        addToolMutation.mutate(tool);
+    };
+
+    // Filter logic
+    const sites = data?.sites || [];
+    const activeSites = sites.filter(s => s.status !== 'ignored');
+
+    // Paywall for free users - RENDER AFTER HOOKS
     if (!hasAccess) {
         return (
             <div className="container mx-auto p-4 md:p-8 max-w-6xl h-screen flex flex-col items-center justify-center">
@@ -90,70 +161,6 @@ export default function SmartScanPage() {
             </div >
         );
     }
-    const [addToolOpen, setAddToolOpen] = useState(false);
-    const [selectedSite, setSelectedSite] = useState<DetectedSite | null>(null);
-
-    const { data, isLoading } = useQuery<{ sites: DetectedSite[] }>({
-        queryKey: ["/api/activity/smart-scan"],
-        queryFn: async () => {
-            const res = await apiRequest("GET", "/api/activity/smart-scan");
-            return await res.json();
-        }
-    });
-
-    const updateStatusMutation = useMutation({
-        mutationFn: async ({ id, status }: { id: string, status: string }) => {
-            await apiRequest("PATCH", `/api/activity/smart-scan/${id}`, { status });
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["/api/activity/smart-scan"] });
-        }
-    });
-
-    const markAddedMutation = useMutation({
-        mutationFn: async ({ id, toolId }: { id: string, toolId: string }) => {
-            await apiRequest("PATCH", `/api/activity/smart-scan/${id}/mark-added`, { toolId });
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["/api/activity/smart-scan"] });
-        }
-    });
-
-    const handleAddClick = (site: DetectedSite) => {
-        setSelectedSite(site);
-        setAddToolOpen(true);
-    };
-
-    const addToolMutation = useMutation({
-        mutationFn: async (newTool: any) => {
-            const res = await apiRequest("POST", "/api/tools", newTool);
-            return await res.json();
-        },
-        onSuccess: (tool) => {
-            if (selectedSite) {
-                markAddedMutation.mutate({ id: selectedSite.id, toolId: tool.id });
-            }
-            queryClient.invalidateQueries({ queryKey: ["/api/tools"] });
-            setAddToolOpen(false);
-            setSelectedSite(null);
-            toast({ title: "Tool added", description: "The tool has been added to your dashboard." });
-        },
-        onError: (error: any) => {
-            toast({
-                title: "Error adding tool",
-                description: error.message || "Something went wrong.",
-                variant: "destructive"
-            });
-        }
-    });
-
-    const handleSaveTool = (tool: any) => {
-        addToolMutation.mutate(tool);
-    };
-
-    // Filter logic
-    const sites = data?.sites || [];
-    const activeSites = sites.filter(s => s.status !== 'ignored');
 
     if (isLoading) {
         return (
