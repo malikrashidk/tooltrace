@@ -11,6 +11,7 @@ import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { FeaturePaywall } from "@/components/FeaturePaywall";
 import {
   Dialog,
   DialogContent,
@@ -42,7 +43,7 @@ export function TeamCollaborationPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const isPremium = user?.plan === "enterprise";
-  
+
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<string>("member");
@@ -101,32 +102,12 @@ export function TeamCollaborationPage() {
 
   if (!isPremium) {
     return (
-      <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold">Team Collaboration</h1>
-          <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Invite team members to collaborate on SaaS management</p>
-        </div>
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16 px-4">
-            <div className="text-center space-y-4 max-w-md">
-              <div className="mx-auto w-20 h-20 bg-muted rounded-full flex items-center justify-center">
-                <Lock className="h-10 w-10 text-muted-foreground" />
-              </div>
-              <h2 className="text-xl sm:text-2xl font-semibold">Unlock Team Collaboration</h2>
-              <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
-                Team collaboration is exclusively available on the Enterprise plan. Upgrade to invite team members and manage permissions.
-              </p>
-              <Button 
-                onClick={() => setLocation("/pricing")}
-                className="mt-4 w-full sm:w-auto"
-                data-testid="button-upgrade"
-              >
-                Upgrade to Enterprise
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <FeaturePaywall
+        title="Team Collaboration"
+        description="Invite your team members to collaborate on SaaS management. Multi-user roles, granular permissions, and shared dashboards are available on the Enterprise plan."
+        requiredPlan="enterprise"
+        icon={<Users className="h-8 w-8 text-primary animate-pulse" />}
+      />
     );
   }
 
@@ -181,7 +162,7 @@ export function TeamCollaborationPage() {
           <h1 className="text-2xl sm:text-3xl font-semibold">Team Collaboration</h1>
           <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Manage your team and permissions</p>
         </div>
-        <Button 
+        <Button
           onClick={() => setInviteDialogOpen(true)}
           className="w-full sm:w-auto"
           data-testid="button-invite-member"
@@ -234,8 +215,8 @@ export function TeamCollaborationPage() {
         <CardContent>
           <div className="space-y-4">
             {teamMembers.map((member) => (
-              <div 
-                key={member.id} 
+              <div
+                key={member.id}
                 className="flex items-center justify-between p-4 border rounded-lg"
                 data-testid={`team-member-${member.id}`}
               >
@@ -260,9 +241,9 @@ export function TeamCollaborationPage() {
                     {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
                   </Badge>
                   {member.role !== "owner" && (
-                    <Button 
-                      size="icon" 
-                      variant="ghost" 
+                    <Button
+                      size="icon"
+                      variant="ghost"
                       onClick={() => removeMutation.mutate(member.id)}
                       disabled={removeMutation.isPending}
                       data-testid={`button-remove-${member.id}`}
@@ -309,7 +290,7 @@ export function TeamCollaborationPage() {
               Send an invitation to collaborate on your SaaS management
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
@@ -346,8 +327,8 @@ export function TeamCollaborationPage() {
             <Button variant="outline" onClick={() => setInviteDialogOpen(false)} data-testid="button-cancel">
               Cancel
             </Button>
-            <Button 
-              onClick={handleInvite} 
+            <Button
+              onClick={handleInvite}
               disabled={inviteMutation.isPending}
               data-testid="button-send-invite"
             >

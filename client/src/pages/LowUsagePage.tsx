@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Clock, AlertTriangle, TrendingDown, DollarSign } from "lucide-react";
+import { Clock, AlertTriangle, TrendingDown, DollarSign, Lock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,7 +10,7 @@ import { fromCents } from "../../../shared/money";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
-import { Lock } from "lucide-react";
+import { FeaturePaywall } from "@/components/FeaturePaywall";
 
 export function LowUsagePage() {
   const { formatAmount } = useCurrency();
@@ -61,32 +61,12 @@ export function LowUsagePage() {
 
   if (!isPaidPlan) {
     return (
-      <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold">Low Usage Subscriptions</h1>
-          <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Identify tools you're paying for but rarely using</p>
-        </div>
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16 px-4">
-            <div className="text-center space-y-4 max-w-md">
-              <div className="mx-auto w-20 h-20 bg-muted rounded-full flex items-center justify-center">
-                <Lock className="h-10 w-10 text-muted-foreground" />
-              </div>
-              <h2 className="text-xl sm:text-2xl font-semibold">Unlock Usage Analysis</h2>
-              <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
-                Low usage alerts and detailed savings opportunities are available on Pro and Enterprise plans.
-              </p>
-              <Button
-                onClick={() => setLocation("/pricing")}
-                className="mt-4 w-full sm:w-auto"
-                data-testid="button-upgrade"
-              >
-                View Pricing Plans
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <FeaturePaywall
+        title="Low Usage Subscriptions"
+        description="Identify tools you're paying for but rarely using. Low usage alerts and detailed savings opportunities are available on Pro and Enterprise plans."
+        requiredPlan="pro"
+        icon={<AlertTriangle className="h-8 w-8 text-amber-500 animate-bounce" />}
+      />
     );
   }
 

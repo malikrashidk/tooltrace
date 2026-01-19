@@ -28,6 +28,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { FeaturePaywall } from "@/components/FeaturePaywall";
+import { Code2 } from "lucide-react";
 import type { ApiKey } from "@shared/schema";
 
 export function ApiKeysPage() {
@@ -35,7 +37,7 @@ export function ApiKeysPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const isPaidPlan = user?.plan === "enterprise";
-  
+
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [keyToDelete, setKeyToDelete] = useState<ApiKey | null>(null);
@@ -105,32 +107,12 @@ export function ApiKeysPage() {
 
   if (!isPaidPlan) {
     return (
-      <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold">API Keys</h1>
-          <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Manage API keys to integrate with external applications</p>
-        </div>
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16 px-4">
-            <div className="text-center space-y-4 max-w-md">
-              <div className="mx-auto w-20 h-20 bg-muted rounded-full flex items-center justify-center">
-                <Lock className="h-10 w-10 text-muted-foreground" />
-              </div>
-              <h2 className="text-xl sm:text-2xl font-semibold">Upgrade to Access API Keys</h2>
-              <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
-                API keys are available on the Enterprise plan. Upgrade to get programmatic access to your SaaS tools.
-              </p>
-              <Button 
-                onClick={() => setLocation("/pricing")}
-                className="mt-4 w-full sm:w-auto"
-                data-testid="button-upgrade"
-              >
-                View Pricing Plans
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <FeaturePaywall
+        title="API Keys & Integrations"
+        description="Generate API keys to build custom integrations with Tooltrace. Access to the REST API and developer tools is restricted to Enterprise plans."
+        requiredPlan="enterprise"
+        icon={<Code2 className="h-8 w-8 text-primary animate-pulse" />}
+      />
     );
   }
 
@@ -143,7 +125,7 @@ export function ApiKeysPage() {
           <h1 className="text-2xl sm:text-3xl font-semibold">API Keys</h1>
           <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Manage API keys for integrations with Zapier, Make, Pabbly, and more</p>
         </div>
-        <Button 
+        <Button
           onClick={() => setCreateDialogOpen(true)}
           disabled={apiKeys.length >= 5}
           className="w-full sm:w-auto"
@@ -161,7 +143,7 @@ export function ApiKeysPage() {
             <div className="text-sm">
               <p className="font-medium text-blue-800 dark:text-blue-200">Integration Guide</p>
               <p className="text-blue-700 dark:text-blue-300 mt-1">
-                Use API keys to connect with automation platforms like Pabbly, Make, or Zapier. 
+                Use API keys to connect with automation platforms like Pabbly, Make, or Zapier.
                 Your API base URL is: <code className="bg-blue-100 dark:bg-blue-900/30 px-1 rounded">{window.location.origin}/api/v1</code>
               </p>
             </div>
@@ -183,7 +165,7 @@ export function ApiKeysPage() {
             <p className="text-muted-foreground text-center mb-6">
               Create your first API key to start integrating with external services
             </p>
-            <Button 
+            <Button
               onClick={() => setCreateDialogOpen(true)}
               data-testid="button-create-first-api-key"
             >
@@ -305,13 +287,13 @@ export function ApiKeysPage() {
           <DialogHeader>
             <DialogTitle>{newlyCreatedKey ? "API Key Created" : "Create API Key"}</DialogTitle>
             <DialogDescription>
-              {newlyCreatedKey 
+              {newlyCreatedKey
                 ? "Save these credentials now. The secret will not be shown again."
                 : "Create a new API key for external integrations"
               }
             </DialogDescription>
           </DialogHeader>
-          
+
           {newlyCreatedKey ? (
             <div className="space-y-4">
               <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900/30 rounded-md">
@@ -322,7 +304,7 @@ export function ApiKeysPage() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="space-y-3">
                 <div>
                   <Label>API Key</Label>
@@ -338,14 +320,14 @@ export function ApiKeysPage() {
                     </Button>
                   </div>
                 </div>
-                
+
                 <div>
                   <Label>Secret</Label>
                   <div className="flex items-center gap-2 mt-1">
-                    <Input 
-                      value={showSecret ? newlyCreatedKey.secret : "[hidden]"} 
-                      readOnly 
-                      className="font-mono text-sm" 
+                    <Input
+                      value={showSecret ? newlyCreatedKey.secret : "[hidden]"}
+                      readOnly
+                      className="font-mono text-sm"
                       data-testid="input-new-secret"
                     />
                     <Button
@@ -393,8 +375,8 @@ export function ApiKeysPage() {
                 <Button variant="outline" onClick={handleCloseCreateDialog} data-testid="button-cancel">
                   Cancel
                 </Button>
-                <Button 
-                  onClick={handleCreate} 
+                <Button
+                  onClick={handleCreate}
                   disabled={createMutation.isPending}
                   data-testid="button-create"
                 >

@@ -35,6 +35,8 @@ import { ToolLogo } from "@/components/ToolLogo";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { FeaturePaywall } from "@/components/FeaturePaywall";
+import { Sparkles } from "lucide-react";
 
 interface DetectedSite {
     id: string;
@@ -61,33 +63,12 @@ export default function SmartScanPage() {
     // Paywall for free users
     if (!hasAccess) {
         return (
-            <div className="container mx-auto p-4 md:p-8 max-w-6xl h-screen flex flex-col items-center justify-center">
-                <Card className="w-full max-w-md">
-                    <CardHeader className="text-center">
-                        <CardTitle>Smart Tracker</CardTitle>
-                        <CardDescription>Available on Pro and Enterprise plans</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground">
-                            Automatically discover subscriptions from your browsing activity.
-                        </p>
-                        <div className="space-y-2">
-                            <p className="text-sm font-semibold">Unlock Smart Tracker:</p>
-                            <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                                <li>Discover all your subscriptions automatically</li>
-                                <li>Track browsing activity across your web usage</li>
-                                <li>Get suggestions to add tools to your dashboard</li>
-                            </ul>
-                        </div>
-                        <Button
-                            className="w-full"
-                            onClick={() => window.location.href = '/pricing'}
-                        >
-                            Upgrade to Pro
-                        </Button>
-                    </CardContent>
-                </Card>
-            </div >
+            <FeaturePaywall
+                title="Smart Tracker"
+                description="Automatically discover subscriptions from your browsing activity. Track browsing activity across your web usage and get suggestions to add tools to your dashboard."
+                requiredPlan="pro"
+                icon={<Sparkles className="h-8 w-8 text-primary animate-pulse" />}
+            />
         );
     }
     const [addToolOpen, setAddToolOpen] = useState(false);
