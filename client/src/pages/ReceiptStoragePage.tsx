@@ -1,5 +1,5 @@
 ﻿import { useState, useRef } from "react";
-import { FileText, Lock, Upload, Trash2, Download, Plus, X, Calendar, DollarSign, Link } from "lucide-react";
+import { FileText, Lock, Upload, Trash2, Download, Plus, Calendar, DollarSign, Link } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -392,7 +392,7 @@ export function ReceiptStoragePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Receipt</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{receiptToDelete?.fileName}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{receiptToDelete?.fileName}&quot;? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

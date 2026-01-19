@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Zap, Crown, Building, Loader2 } from "lucide-react";
+import { Check, Zap, Building, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -273,13 +273,13 @@ export function PricingPage() {
             <div>
               <h3 className="font-semibold text-lg mb-2">What happens to my data if I downgrade?</h3>
               <p className="text-muted-foreground text-sm">
-                Your data is preserved. If you exceed the tool limit for the free plan, you'll just need to upgrade to add more tools.
+                Your data is preserved. If you exceed the tool limit for the free plan, you&apos;ll just need to upgrade to add more tools.
               </p>
             </div>
             <div>
               <h3 className="font-semibold text-lg mb-2">Do you offer refunds?</h3>
               <p className="text-muted-foreground text-sm">
-                We offer a 14-day money-back guarantee if you're not satisfied with your Pro or Enterprise subscription.
+                We offer a 14-day money-back guarantee if you&apos;re not satisfied with your Pro or Enterprise subscription.
               </p>
             </div>
           </div>
