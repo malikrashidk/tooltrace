@@ -1,16 +1,18 @@
 {
   "manifest_version": 3,
   "name": "Tooltrace – SaaS Account & Subscription Tracker",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Automatically track your SaaS usage, manage credentials, and discover tools you're paying for.",
   "permissions": [
     "activeTab",
     "scripting",
     "storage",
-    "webNavigation",
     "cookies",
-    "contextMenus",
     "tabs"
+  ],
+  "host_permissions": [
+    "https://*.tooltrace.io/*",
+    "<all_urls>"
   ],
   "icons": {
     "16": "icons/icon16.png",
@@ -28,19 +30,5 @@
   },
   "background": {
     "service_worker": "background.js"
-  },
-  "content_scripts": [
-    {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "content.js"
-      ],
-      "run_at": "document_start"
-    }
-  ],
-  "host_permissions": [
-    "<all_urls>"
-  ]
+  }
 }
