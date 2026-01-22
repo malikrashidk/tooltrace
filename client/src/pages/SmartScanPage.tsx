@@ -56,21 +56,7 @@ export default function SmartScanPage() {
     const queryClient = useQueryClient();
     const { user } = useAuth();
 
-    // Check if user has access to Smart Tracker
-    const userPlan = (user as any)?.plan || 'free';
-    const hasAccess = userPlan === 'pro' || userPlan === 'enterprise';
-
-    // Paywall for free users
-    if (!hasAccess) {
-        return (
-            <FeaturePaywall
-                title="Smart Tracker"
-                description="Automatically discover subscriptions from your browsing activity. Track browsing activity across your web usage and get suggestions to add tools to your dashboard."
-                requiredPlan="pro"
-                icon={<Sparkles className="h-8 w-8 text-primary animate-pulse" />}
-            />
-        );
-    }
+    // Move hooks to top level, unconditional
     const [addToolOpen, setAddToolOpen] = useState(false);
     const [selectedSite, setSelectedSite] = useState<DetectedSite | null>(null);
 
@@ -100,11 +86,6 @@ export default function SmartScanPage() {
         }
     });
 
-    const handleAddClick = (site: DetectedSite) => {
-        setSelectedSite(site);
-        setAddToolOpen(true);
-    };
-
     const addToolMutation = useMutation({
         mutationFn: async (newTool: any) => {
             const res = await apiRequest("POST", "/api/tools", newTool);
@@ -127,6 +108,27 @@ export default function SmartScanPage() {
             });
         }
     });
+
+    // Check if user has access to Smart Tracker
+    const userPlan = (user as any)?.plan || 'free';
+    const hasAccess = userPlan === 'pro' || userPlan === 'enterprise';
+
+    // Paywall for free users
+    if (!hasAccess) {
+        return (
+            <FeaturePaywall
+                title="Smart Tracker"
+                description="Automatically discover subscriptions from your browsing activity. Track browsing activity across your web usage and get suggestions to add tools to your dashboard."
+                requiredPlan="pro"
+                icon={<Sparkles className="h-8 w-8 text-primary animate-pulse" />}
+            />
+        );
+    }
+
+    const handleAddClick = (site: DetectedSite) => {
+        setSelectedSite(site);
+        setAddToolOpen(true);
+    };
 
     const handleSaveTool = (tool: any) => {
         addToolMutation.mutate(tool);
