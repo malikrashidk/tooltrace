@@ -58,8 +58,8 @@ router.post("/register", async (req, res) => {
 
     try {
       await sendEmailVerificationEmail(user.email, verifyUrl);
-    } catch (e) {
-      console.log("Failed to send verification email:", e);
+    } catch (_e) {
+      console.log("Failed to send verification email:", _e);
     }
 
     // Proactive sync for users who bought on branding site before registering
@@ -80,8 +80,8 @@ router.post("/register", async (req, res) => {
       },
       token,
     });
-  } catch (error) {
-    console.error("Registration error:", error);
+  } catch (_error) {
+    console.error("Registration error:", _error);
     res.status(500).json({ error: "Registration failed" });
   }
 });
@@ -103,14 +103,14 @@ router.get("/verify-email", async (req, res) => {
     if (user) {
       try {
         await sendWelcomeEmail(user.email, user.name || undefined);
-      } catch (e) {
-        console.error("Failed to send welcome email:", e);
+      } catch (_e) {
+        console.error("Failed to send welcome email:", _e);
       }
     }
 
     return res.redirect("/?verified=true");
-  } catch (error) {
-    console.error("verify-email error:", error);
+  } catch (_error) {
+    console.error("verify-email error:", _error);
     return res.status(500).json({ error: "Server error" });
   }
 });
@@ -135,14 +135,14 @@ router.post("/resend-verification", async (req, res) => {
       console.log("[email-verify] sending to", user.email);
       await sendEmailVerificationEmail(user.email, verifyUrl);
       console.log("[email-verify] sent to", user.email);
-    } catch (e) {
-      console.error("[email-verify] failed for", user.email, e);
+    } catch (_e) {
+      console.error("[email-verify] failed for", user.email, _e);
     }
 
 
     return res.json({ ok: true });
-  } catch (error) {
-    console.error("resend-verification error:", error);
+  } catch (_error) {
+    console.error("resend-verification error:", _error);
     // Still return ok to avoid enumeration
     return res.json({ ok: true });
   }
@@ -225,8 +225,8 @@ router.post("/login", async (req, res) => {
       },
       token,
     });
-  } catch (error) {
-    console.error("Login error:", error);
+  } catch (_error) {
+    console.error("Login error:", _error);
     res.status(500).json({ error: "Login failed" });
   }
 });
@@ -269,8 +269,8 @@ router.post("/forgot-password", async (req, res) => {
 
     try {
       await sendPasswordResetEmail(email, resetUrl);
-    } catch (e) {
-      console.error("Failed to send password reset email:", e);
+    } catch (_e) {
+      console.error("Failed to send password reset email:", _e);
     }
 
     await auditLog(user.id, "password_reset_request", "user", user.id, {}, req);
@@ -280,8 +280,8 @@ router.post("/forgot-password", async (req, res) => {
       // For self-hosted demo purposes, include the reset URL in dev mode
       ...(process.env.NODE_ENV === "development" && { resetUrl })
     });
-  } catch (error) {
-    console.error("Forgot password error:", error);
+  } catch (_error) {
+    console.error("Forgot password error:", _error);
     res.status(500).json({ error: "Failed to process password reset request" });
   }
 });
@@ -320,8 +320,8 @@ router.post("/reset-password", async (req, res) => {
     await auditLog(user.id, "password_reset", "user", user.id, {}, req);
 
     res.json({ message: "Password has been reset successfully. You can now log in with your new password." });
-  } catch (error) {
-    console.error("Reset password error:", error);
+  } catch (_error) {
+    console.error("Reset password error:", _error);
     res.status(500).json({ error: "Failed to reset password" });
   }
 });
@@ -345,8 +345,8 @@ router.get("/verify-reset-token", async (req, res) => {
     }
 
     res.json({ valid: true, email: user.email });
-  } catch (error) {
-    console.error("Verify reset token error:", error);
+  } catch (_error) {
+    console.error("Verify reset token error:", _error);
     res.status(500).json({ valid: false, error: "Failed to verify token" });
   }
 });
@@ -417,8 +417,8 @@ router.post("/oauth/handoff", async (req, res) => {
       },
       token,
     });
-  } catch (error) {
-    console.error("[OAuth] Handoff failed:", error);
+  } catch (_error) {
+    console.error("[OAuth] Handoff failed:", _error);
     res.status(500).json({ error: "Handoff failed" });
   }
 });
@@ -444,8 +444,8 @@ router.post("/2fa/setup", authMiddleware, async (req, res) => {
       qrCode: setup.qrCode,
       manualCode: setup.manualCode,
     });
-  } catch (error) {
-    console.error("2FA setup error:", error);
+  } catch (_error) {
+    console.error("2FA setup error:", _error);
     res.status(500).json({ error: "Failed to setup 2FA" });
   }
 });
@@ -480,8 +480,8 @@ router.post("/2fa/verify", authMiddleware, async (req, res) => {
       backupCodes: codes,
       message: "2FA enabled successfully. Save your backup codes!",
     });
-  } catch (error) {
-    console.error("2FA verify error:", error);
+  } catch (_error) {
+    console.error("2FA verify error:", _error);
     res.status(500).json({ error: "Failed to verify 2FA" });
   }
 });
@@ -536,8 +536,8 @@ router.post("/2fa/disable", authMiddleware, async (req, res) => {
     await auditLog(user.id, "update", "2fa", user.id, { action: "disabled" }, req);
 
     res.json({ success: true, message: "2FA disabled successfully" });
-  } catch (error) {
-    console.error("2FA disable error:", error);
+  } catch (_error) {
+    console.error("2FA disable error:", _error);
     res.status(500).json({ error: "Failed to disable 2FA" });
   }
 });
@@ -554,7 +554,7 @@ router.get("/2fa/status", authMiddleware, async (req, res) => {
       hasBackupCodes: !!(user.twoFactorBackupCodes && user.twoFactorBackupCodes.length > 0),
       backupCodesRemaining: user.twoFactorBackupCodes?.length || 0,
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to get 2FA status" });
   }
 });
@@ -592,7 +592,7 @@ router.post("/2fa/regenerate-backup", authMiddleware, async (req, res) => {
       backupCodes: codes,
       message: "New backup codes generated. Save them securely!",
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to regenerate backup codes" });
   }
 });

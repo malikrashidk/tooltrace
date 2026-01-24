@@ -26,7 +26,7 @@ router.get("/profile", authMiddleware, async (req, res) => {
       },
       subscription,
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to fetch profile" });
   }
 });

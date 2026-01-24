@@ -24,7 +24,7 @@ const paidPlanMiddleware = async (req: any, res: any, next: any) => {
       return res.status(403).json({ error: "Team collaboration is exclusively available for the Enterprise plan" });
     }
     next();
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to verify subscription" });
   }
 };
@@ -199,8 +199,8 @@ router.post("/invite", authMiddleware, paidPlanMiddleware, async (req, res) => {
 
     try {
       await sendTeamInvitationEmail(email, inviteUrl, inviterName);
-    } catch (e) {
-      console.error("Failed to send team invitation email:", e);
+    } catch (_e) {
+      console.error("Failed to send team invitation email:", _e);
       // Continue anyway, the user can maybe retry or copy link if we return it (dev only?)
     }
 

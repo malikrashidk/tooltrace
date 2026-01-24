@@ -20,7 +20,6 @@ import type {
     DetectedSite,
     InsertDetectedSite,
     DetectedSiteDaily,
-    InsertDetectedSiteDaily,
 } from "../../shared/schema";
 import { IStorage } from "./types";
 

@@ -77,8 +77,8 @@ export function SignupPage({ onSwitchToLogin }: SignupPageProps) {
       await signup(data.email, data.password, data.name);
       // The signup function typically redirects or updates state.
       // If successful, the Dashboard will load and handle the pending_plan.
-    } catch (error) {
-      console.error("Signup failed:", error);
+    } catch (_error) {
+      console.error("Signup failed:", _error);
     } finally {
       setIsLoading(false);
     }

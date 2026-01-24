@@ -52,9 +52,9 @@ export async function setupVite(app: Express, server: Server) {
       );
       const page = await vite.transformIndexHtml(url, template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
-    } catch (e) {
-      vite.ssrFixStacktrace(e as Error);
-      next(e);
+    } catch (_e) {
+      vite.ssrFixStacktrace(_e as Error);
+      next(_e);
     }
   });
 }

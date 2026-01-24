@@ -64,8 +64,8 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
         const updatedUser = { ...user, currency: newCurrency.code };
         setUser(updatedUser);
         localStorage.setItem("user", JSON.stringify(updatedUser));
-      } catch (error) {
-        console.error("Failed to update currency preference:", error);
+      } catch (_error) {
+        console.error("Failed to update currency preference:", _error);
       }
     }
   };

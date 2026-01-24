@@ -68,8 +68,8 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     }
 
     next();
-  } catch (error) {
-    console.error(`[Auth] Error in authMiddleware for ${req.method} ${req.path}:`, error);
+  } catch (_error) {
+    console.error(`[Auth] Error in authMiddleware for ${req.method} ${req.path}:`, _error);
     res.status(401).json({ error: "Unauthorized" });
   }
 }
@@ -166,8 +166,8 @@ export async function auditLog(
       ipAddress: req?.ip || null,
       userAgent: req?.get("user-agent") || null,
     });
-  } catch (error) {
-    console.error("Failed to create audit log:", error);
+  } catch (_error) {
+    console.error("Failed to create audit log:", _error);
   }
 }
 

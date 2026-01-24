@@ -21,8 +21,8 @@ async function getOrCreateEncryptionKey(): Promise<CryptoKey> {
         "encrypt",
         "decrypt",
       ]);
-    } catch (error) {
-      console.error("Failed to import stored key, generating new one", error);
+    } catch (_error) {
+      console.error("Failed to import stored key, generating new one", _error);
     }
   }
 
@@ -60,8 +60,8 @@ export async function encryptCredential(data: string): Promise<string> {
     combined.set(new Uint8Array(ciphertext), iv.length);
 
     return btoa(String.fromCharCode.apply(null, Array.from(combined)));
-  } catch (error) {
-    console.error("Encryption failed:", error);
+  } catch (_error) {
+    console.error("Encryption failed:", _error);
     throw new Error("Failed to encrypt credential. Please try again.");
   }
 }
@@ -85,8 +85,8 @@ export async function decryptCredential(encrypted: string): Promise<string> {
 
     const decoder = new TextDecoder();
     return decoder.decode(plaintext);
-  } catch (error) {
-    console.error("Decryption failed:", error);
+  } catch (_error) {
+    console.error("Decryption failed:", _error);
     throw new Error("Failed to decrypt credential. The data may be corrupted.");
   }
 }

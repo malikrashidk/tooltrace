@@ -71,8 +71,8 @@ async function initializeAdmin() {
     }
     console.log("");
     console.log("⚠️  Please change the password after first login!");
-  } catch (error) {
-    console.error("❌ Failed to initialize admin user:", error);
+  } catch (_error) {
+    console.error("❌ Failed to initialize admin user:", _error);
     process.exit(1);
   }
 }

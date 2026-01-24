@@ -91,8 +91,8 @@ export async function verifyPolarWebhook(
         }
 
         return isValid;
-    } catch (error) {
-        console.error('[Polar] Webhook verification error:', error);
+    } catch (_error) {
+        console.error('[Polar] Webhook verification error:', _error);
         return false;
     }
 }
@@ -138,8 +138,8 @@ export async function listSubscriptionsByEmail(email: string) {
 
         console.log(`[Polar] Found ${subscriptions.length} active subscriptions for customer ${customerId}`);
         return subscriptions;
-    } catch (error) {
-        console.error('[Polar] Error listing subscriptions by email:', error);
+    } catch (_error) {
+        console.error('[Polar] Error listing subscriptions by email:', _error);
         return [];
     }
 }
@@ -153,9 +153,9 @@ export async function cancelSubscription(subscriptionId: string) {
         return await polarClient.subscriptions.revoke({
             id: subscriptionId
         });
-    } catch (error) {
+    } catch (_error) {
         // Log but don't throw to prevent webhook failure
-        console.error('[Polar] Error cancelling subscription:', error);
+        console.error('[Polar] Error cancelling subscription:', _error);
         return null;
     }
 }
@@ -180,9 +180,9 @@ export async function updateSubscription(subscriptionId: string, newProductId: s
 
         console.log('[Polar] Update result:', JSON.stringify(result, null, 2));
         return result;
-    } catch (error) {
-        console.error('[Polar] Error updating subscription:', error);
-        throw error;
+    } catch (_error) {
+        console.error('[Polar] Error updating subscription:', _error);
+        throw _error;
     }
 }
 

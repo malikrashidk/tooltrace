@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { storage } from "../storage";
-import { authMiddleware } from "../middleware";
 import { flexibleAuthMiddleware } from "./integration";
 import path from "path";
 import fs from "fs";
@@ -38,8 +37,8 @@ router.get("/download", async (req, res) => {
 
     // Finalize archive
     await archive.finalize();
-  } catch (error) {
-    console.error("Extension download error:", error);
+  } catch (_error) {
+    console.error("Extension download error:", _error);
     res.status(500).json({ error: "Failed to download extension" });
   }
 });
@@ -70,8 +69,8 @@ router.post("/usage", flexibleAuthMiddleware, async (req: any, res: any) => {
     }
 
     res.json({ success: true });
-  } catch (error) {
-    console.error("Usage tracking error:", error);
+  } catch (_error) {
+    console.error("Usage tracking error:", _error);
     res.status(500).json({ error: "Failed to track usage" });
   }
 });

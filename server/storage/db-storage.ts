@@ -19,12 +19,11 @@ import type {
     DetectedSite,
     InsertDetectedSite,
     DetectedSiteDaily,
-    InsertDetectedSiteDaily,
 } from "../../shared/schema";
-import { users, subscriptions, tools, auditLogs, payments, receipts } from "../../shared/schema";
+import { users, subscriptions, tools, auditLogs } from "../../shared/schema";
 import { IStorage } from "./types";
 import { db, sql as neonSql } from "../db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import {
     mapUser,
     mapTool,
@@ -58,8 +57,8 @@ export class DbStorage implements IStorage {
             const result = await neonSql`SELECT * FROM users WHERE email = ${email} LIMIT 1`;
             if (!result || !Array.isArray(result) || result.length === 0) return undefined;
             return mapUser(result[0]);
-        } catch (error) {
-            console.error("[DbStorage.getUserByEmail] Error:", email, error);
+        } catch (_error) {
+            console.error("[DbStorage.getUserByEmail] Error:", email, _error);
             return undefined;
         }
     }
@@ -84,8 +83,8 @@ export class DbStorage implements IStorage {
             const result = await neonSql`SELECT * FROM users WHERE reset_token = ${token} LIMIT 1`;
             if (!result || !Array.isArray(result) || result.length === 0) return undefined;
             return mapUser(result[0]);
-        } catch (error) {
-            console.error("[DbStorage.getUserByResetToken] Error:", error);
+        } catch (_error) {
+            console.error("[DbStorage.getUserByResetToken] Error:", _error);
             return undefined;
         }
     }
@@ -142,9 +141,9 @@ export class DbStorage implements IStorage {
 
             const result = await neonSql(query, values);
             return mapUser(result[0]);
-        } catch (error) {
-            console.error("[DbStorage.updateUser] Error:", error);
-            throw error;
+        } catch (_error) {
+            console.error("[DbStorage.updateUser] Error:", _error);
+            throw _error;
         }
     }
 
