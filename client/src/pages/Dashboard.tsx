@@ -101,8 +101,8 @@ export function Dashboard() {
           // Continue polling
           setTimeout(pollForPlanUpdate, POLL_INTERVAL);
 
-        } catch (error) {
-          console.error("[Dashboard] Polling error:", error);
+        } catch (_error) {
+          console.error("[Dashboard] Polling error:", _error);
           // Retry anyway unless max attempts reached
           if (attempts < MAX_ATTEMPTS) {
             setTimeout(pollForPlanUpdate, POLL_INTERVAL);

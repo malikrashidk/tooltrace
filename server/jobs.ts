@@ -15,8 +15,8 @@ export async function startBackgroundJobs() {
         try {
             await processSubscriptionDowngrades();
             await processToolExpirationNotifications();
-        } catch (error) {
-            console.error("[Jobs] Error in background jobs:", error);
+        } catch (_error) {
+            console.error("[Jobs] Error in background jobs:", _error);
         }
     }, 60 * 60 * 1000);
 
@@ -34,8 +34,8 @@ async function processSubscriptionDowngrades() {
             await storage.updateUser(sub.userId, { plan: "free" });
             await storage.updateSubscription(sub.id, { status: "expired" });
         }
-    } catch (error) {
-        console.error("[Jobs] Failed to process downgrades:", error);
+    } catch (_error) {
+        console.error("[Jobs] Failed to process downgrades:", _error);
     }
 }
 
@@ -76,7 +76,7 @@ async function processToolExpirationNotifications() {
                 }
             }
         }
-    } catch (error) {
-        console.error("[Jobs] Failed to process tool notifications:", error);
+    } catch (_error) {
+        console.error("[Jobs] Failed to process tool notifications:", _error);
     }
 }

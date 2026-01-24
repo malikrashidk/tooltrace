@@ -140,12 +140,12 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
       setShowForm(false);
       setDecryptedData({ username: formData.username, email: formData.email, password: formData.password, notes: formData.notes });
       toast({ description: "Credentials saved securely on server" });
-    } catch (error) {
+    } catch (_error) {
       toast({
         description: "Failed to save credentials. Please try again.",
         variant: "destructive",
       });
-      console.error("Save error:", error);
+      console.error("Save error:", _error);
     } finally {
       setIsLoading(false);
     }
@@ -167,7 +167,7 @@ export function CredentialsDialog({ tool, open, onOpenChange, onSave }: Credenti
       setDecryptedData(null);
       setFormData({ username: "", email: "", password: "", notes: "" });
       toast({ description: "Login info deleted securely" });
-    } catch (e) {
+    } catch (_e) {
       toast({ description: "Failed to delete login info", variant: "destructive" });
     } finally {
       setIsLoading(false);

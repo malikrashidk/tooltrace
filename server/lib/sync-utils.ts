@@ -81,8 +81,8 @@ export async function syncUserSubscription(userId: string, email: string) {
 
         console.log(`[Sync] No active subscriptions found for ${email}`);
         return null;
-    } catch (error) {
-        console.error(`[Sync] ========== ERROR syncing ${email}:`, error);
+    } catch (_error) {
+        console.error(`[Sync] ========== ERROR syncing ${email}:`, _error);
         return null;
     }
 }

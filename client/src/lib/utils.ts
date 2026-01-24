@@ -12,7 +12,7 @@ export function getDomainFromUrl(url: string): string | null {
     const fullUrl = url.startsWith('http') ? url : `https://${url}`;
     const urlObj = new URL(fullUrl);
     return urlObj.hostname;
-  } catch (e) {
+  } catch (_e) {
     return null;
   }
 }

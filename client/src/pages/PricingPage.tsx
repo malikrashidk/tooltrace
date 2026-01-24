@@ -120,8 +120,8 @@ export function PricingPage() {
         userId: user?.id,
         successUrl: `${window.location.origin}/dashboard?checkout=success`,
       });
-    } catch (e) {
-      console.error(e);
+    } catch (_e) {
+      console.error(_e);
     } finally {
       setIsProcessing(false);
       setUpgradeDialogOpen(false);

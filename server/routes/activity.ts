@@ -102,8 +102,8 @@ router.post("/events", async (req, res, next) => {
     }
 
     res.json({ success: true, processed: events.length });
-  } catch (error) {
-    console.error("Activity tracking error:", error);
+  } catch (_error) {
+    console.error("Activity tracking error:", _error);
     res.status(500).json({ error: "Failed to process activity events" });
   }
 });
@@ -138,8 +138,8 @@ router.get("/smart-scan", authMiddleware, async (req, res) => {
     // For now, return raw table data.
 
     res.json({ sites });
-  } catch (error) {
-    console.error("Smart Tracker fetch error:", error);
+  } catch (_error) {
+    console.error("Smart Tracker fetch error:", _error);
     res.status(500).json({ error: "Failed to fetch Smart Tracker results" });
   }
 });
@@ -189,8 +189,8 @@ router.patch("/smart-scan/:id", authMiddleware, async (req, res) => {
 
     const updated = await storage.updateDetectedSite(id, allowedUpdates);
     res.json({ site: updated });
-  } catch (error) {
-    console.error("Smart tracker update error:", error);
+  } catch (_error) {
+    console.error("Smart tracker update error:", _error);
     res.status(500).json({ error: "Failed to update smart tracker result" });
   }
 });
@@ -225,7 +225,7 @@ router.patch("/smart-scan/:id/mark-added", authMiddleware, async (req, res) => {
             toolId: toolId
         });
         res.json({ site: updated });
-    } catch (error) {
+    } catch (_error) {
         res.status(500).json({ error: "Failed to mark site as added" });
     }
 });

@@ -75,8 +75,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             }
             done(null, user);
-          } catch (error) {
-            done(error as Error, undefined);
+          } catch (_error) {
+            done(_error as Error, undefined);
           }
         }
       )

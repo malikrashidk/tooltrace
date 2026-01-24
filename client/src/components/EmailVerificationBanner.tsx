@@ -33,7 +33,7 @@ export function EmailVerificationBanner() {
       } else {
         throw new Error("Failed to send");
       }
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Could not send verification email. Please try again later.",

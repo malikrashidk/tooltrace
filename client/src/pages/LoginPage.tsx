@@ -97,8 +97,8 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
 
           console.log("[LoginPage] Auth success via handoff, navigating to:", dest);
           setLocation(dest);
-        } catch (e) {
-          console.error("[LoginPage] Failed to process handoff:", e);
+        } catch (_e) {
+          console.error("[LoginPage] Failed to process handoff:", _e);
           toast({
             title: "Authentication Failed",
             description: "Could not verify your social sign-in. Please try again.",
@@ -116,8 +116,8 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
           const returnTo = sanitizeReturnTo(urlParams.get("returnTo"));
           const dest = (returnTo === "/login" || returnTo.includes("/login?")) ? "/" : returnTo;
           setLocation(dest);
-        } catch (e) {
-          console.error("[LoginPage] Failed to process legacy token:", e);
+        } catch (_e) {
+          console.error("[LoginPage] Failed to process legacy token:", _e);
           setIsProcessingToken(false);
         }
       }
