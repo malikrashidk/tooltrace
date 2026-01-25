@@ -24,7 +24,6 @@ RUN npm ci --only=production
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/public ./public
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \

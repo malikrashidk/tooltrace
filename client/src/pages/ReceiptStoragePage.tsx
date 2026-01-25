@@ -1,5 +1,5 @@
 ﻿import { useState, useRef } from "react";
-import { FileText, Lock, Upload, Trash2, Download, Plus, X, Calendar, DollarSign, Link } from "lucide-react";
+import { Upload, FileText, Download, Trash2, Plus, Link, DollarSign, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,7 +32,7 @@ import {
 import type { Receipt, Tool } from "@shared/schema";
 
 export function ReceiptStoragePage() {
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { formatAmount } = useCurrency();

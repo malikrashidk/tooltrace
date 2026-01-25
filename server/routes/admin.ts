@@ -35,7 +35,7 @@ router.get("/users", authMiddleware, adminMiddleware, async (req, res) => {
         hasMore: offset + limit < total
       }
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to fetch users" });
   }
 });
@@ -73,7 +73,7 @@ router.post("/users", authMiddleware, adminMiddleware, async (req, res) => {
     await auditLog(req.userId!, "create", "user", user.id, { email, name, plan }, req);
 
     res.status(201).json({ user: { id: user.id, email: user.email, name: user.name, plan: user.plan } });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to create user" });
   }
 });
@@ -93,7 +93,7 @@ router.delete("/users/:id", authMiddleware, adminMiddleware, async (req, res) =>
     await auditLog(req.userId!, "delete", "user", req.params.id, {}, req);
 
     res.json({ message: "User deleted" });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to delete user" });
   }
 });
@@ -124,7 +124,7 @@ router.patch("/users/:id", authMiddleware, adminMiddleware, async (req, res) => 
     await auditLog(req.userId!, "update", "user", req.params.id, updates, req);
 
     res.json({ user: { id: updated?.id, email: updated?.email, name: updated?.name, plan: updated?.plan } });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to update user" });
   }
 });
@@ -133,7 +133,7 @@ router.get("/stats", authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const stats = await storage.getGlobalStats();
     res.json(stats);
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
@@ -144,7 +144,7 @@ router.get("/audit-logs", authMiddleware, adminMiddleware, async (req, res) => {
     const offset = parseInt(req.query.offset as string) || 0;
     const logs = await storage.getAuditLogs(limit, offset);
     res.json({ logs });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to fetch audit logs" });
   }
 });
@@ -165,7 +165,7 @@ router.post("/users/:id/suspend", authMiddleware, adminMiddleware, async (req, r
     await auditLog(req.userId!, suspended ? "suspend" : "unsuspend", "user", req.params.id, {}, req);
 
     res.json({ message: `User ${suspended ? 'suspended' : 'unsuspended'} successfully` });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to update user status" });
   }
 });

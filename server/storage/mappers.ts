@@ -7,7 +7,6 @@ import type {
     ApiKey,
     Note,
     AuditLog,
-    TeamMember,
     DetectedSite,
     DetectedSiteDaily,
 } from "../../shared/schema";

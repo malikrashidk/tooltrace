@@ -43,7 +43,7 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
   const [requires2FA, setRequires2FA] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState("");
   const [pendingCredentials, setPendingCredentials] = useState<{ email: string; password: string } | null>(null);
-  const { login, refreshUser } = useAuth();
+  const { login: _login, refreshUser } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 

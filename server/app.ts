@@ -173,7 +173,7 @@ export default async function runApp(
         uptime: process.uptime(),
         environment: process.env.NODE_ENV || "development"
       });
-    } catch (error) {
+    } catch (_error) {
       res.status(503).json({
         status: "unhealthy",
         timestamp: new Date().toISOString(),

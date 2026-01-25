@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response } from "express";
 import { storage } from "../storage";
 import { authMiddleware, auditLog } from "../middleware";
 import crypto from "crypto";
@@ -26,7 +26,7 @@ const paidPlanMiddleware = async (req: any, res: any, next: any) => {
       return res.status(403).json({ error: "API access is exclusively available for the Enterprise plan" });
     }
     next();
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to verify subscription" });
   }
 };
@@ -81,8 +81,8 @@ const apiKeyAuthMiddleware = async (req: any, res: any, next: any) => {
     req.user = user;
     req.apiKeyId = apiKey.id;
     next();
-  } catch (error) {
-    console.error("[API Auth] Middleware error:", error);
+  } catch (_error) {
+    console.error("[API Auth] Middleware error:", _error);
     res.status(500).json({ error: "API authentication failed" });
   }
 };
@@ -112,7 +112,7 @@ router.get("/api-keys", authMiddleware, paidPlanMiddleware, async (req, res) => 
       secret: "â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢", // Hide secret
     }));
     res.json({ apiKeys: safeApiKeys });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to fetch API keys" });
   }
 });
@@ -154,9 +154,9 @@ router.post("/api-keys", authMiddleware, paidPlanMiddleware, async (req, res) =>
       },
       message: "Save the key and secret now. The secret will not be shown again."
     });
-  } catch (error: any) {
-    console.error("API key creation error:", error);
-    res.status(400).json({ error: error.message || "Failed to create API key" });
+  } catch (_error: any) {
+    console.error("API key creation error:", _error);
+    res.status(400).json({ error: _error.message || "Failed to create API key" });
   }
 });
 
@@ -172,7 +172,7 @@ router.delete("/api-keys/:id", authMiddleware, paidPlanMiddleware, async (req, r
     await storage.deleteApiKey(req.params.id);
     await auditLog(req.userId!, "delete", "api_key", req.params.id, { name: apiKey.name }, req);
     res.json({ success: true });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to delete API key" });
   }
 });
@@ -191,7 +191,7 @@ router.get("/v1/tools", apiKeyAuthMiddleware, async (req, res) => {
       hasCredentials: !!t.credentials
     }));
     res.json({ tools: sanitizedTools, count: tools.length });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to fetch tools" });
   }
 });
@@ -204,9 +204,9 @@ router.get("/v1/tools/:id", apiKeyAuthMiddleware, async (req, res) => {
       return res.status(404).json({ error: "Tool not found" });
     }
     // Sanitize
-    const { credentials, ...sanitizedTool } = tool;
+    const { credentials: _credentials, ...sanitizedTool } = tool;
     res.json({ tool: sanitizedTool });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to fetch tool" });
   }
 });
@@ -227,7 +227,7 @@ router.get("/v1/renewals", apiKeyAuthMiddleware, async (req, res) => {
       .sort((a, b) => new Date(a.nextRenewalDate!).getTime() - new Date(b.nextRenewalDate!).getTime());
 
     res.json({ renewals: upcomingRenewals, count: upcomingRenewals.length });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to fetch renewals" });
   }
 });
@@ -281,7 +281,7 @@ router.get("/v1/analytics/spending", flexibleAuthMiddleware, async (req: Request
         percentageUsed
       }
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to fetch analytics" });
   }
 });
@@ -314,9 +314,9 @@ router.post("/v1/tools", apiKeyAuthMiddleware, async (req, res) => {
 
     await auditLog(req.userId!, "create", "tool", tool.id, { name: tool.name, source: "api" }, req);
     res.status(201).json({ tool, message: "Tool created successfully" });
-  } catch (error: any) {
-    console.error("API tool creation error:", error);
-    res.status(400).json({ error: error.message || "Failed to create tool" });
+  } catch (_error: any) {
+    console.error("API tool creation error:", _error);
+    res.status(400).json({ error: _error.message || "Failed to create tool" });
   }
 });
 
@@ -353,9 +353,9 @@ router.patch("/v1/tools/:id", apiKeyAuthMiddleware, async (req, res) => {
     await auditLog(req.userId!, "update", "tool", req.params.id, { source: "api", changes: Object.keys(updates) }, req);
 
     res.json({ tool: updatedTool, message: "Tool updated successfully" });
-  } catch (error: any) {
-    console.error("API tool update error:", error);
-    res.status(400).json({ error: error.message || "Failed to update tool" });
+  } catch (_error: any) {
+    console.error("API tool update error:", _error);
+    res.status(400).json({ error: _error.message || "Failed to update tool" });
   }
 });
 
@@ -373,9 +373,9 @@ router.delete("/v1/tools/:id", apiKeyAuthMiddleware, async (req, res) => {
     await auditLog(req.userId!, "delete", "tool", req.params.id, { name: existingTool.name, source: "api" }, req);
 
     res.json({ success: true, message: "Tool deleted successfully" });
-  } catch (error: any) {
-    console.error("API tool deletion error:", error);
-    res.status(400).json({ error: error.message || "Failed to delete tool" });
+  } catch (_error: any) {
+    console.error("API tool deletion error:", _error);
+    res.status(400).json({ error: _error.message || "Failed to delete tool" });
   }
 });
 
@@ -408,7 +408,7 @@ router.get("/v1/webhooks/renewal-triggers", apiKeyAuthMiddleware, async (req, re
       queryDays: days,
       generatedAt: new Date().toISOString()
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to fetch renewal triggers" });
   }
 });
@@ -424,7 +424,7 @@ router.get("/v1/docs", async (req, res) => {
     } else {
       res.status(404).json({ error: "Documentation not found" });
     }
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to load documentation" });
   }
 });

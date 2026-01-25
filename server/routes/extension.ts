@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { storage } from "../storage";
-import { authMiddleware } from "../middleware";
+// import { authMiddleware } from "../middleware";
 import { flexibleAuthMiddleware } from "./integration";
 import path from "path";
 import fs from "fs";

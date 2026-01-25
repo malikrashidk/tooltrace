@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, TrendingUp, DollarSign, AlertCircle, AlertTriangle } from "lucide-react";
+import { Package, TrendingUp, DollarSign, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useLocation } from "wouter";
@@ -164,7 +164,7 @@ export function Dashboard() {
     queryKey: ["/api/tools"],
   });
 
-  const { data: inboxStatus } = useQuery<{ connected: boolean }>({
+  const { data: _inboxStatus } = useQuery<{ connected: boolean }>({
     queryKey: ["/api/inbox/connection-status"],
   });
 

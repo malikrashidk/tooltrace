@@ -19,12 +19,11 @@ import type {
     DetectedSite,
     InsertDetectedSite,
     DetectedSiteDaily,
-    InsertDetectedSiteDaily,
 } from "../../shared/schema";
-import { users, subscriptions, tools, auditLogs, payments, receipts } from "../../shared/schema";
+import { users, subscriptions, tools, auditLogs } from "../../shared/schema";
 import { IStorage } from "./types";
 import { db, sql as neonSql } from "../db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import {
     mapUser,
     mapTool,

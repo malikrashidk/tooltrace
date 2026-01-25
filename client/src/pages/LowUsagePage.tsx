@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Clock, AlertTriangle, TrendingDown, DollarSign, Lock } from "lucide-react";
+import { Clock, AlertTriangle, TrendingDown, DollarSign } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,7 +15,7 @@ import { FeaturePaywall } from "@/components/FeaturePaywall";
 export function LowUsagePage() {
   const { formatAmount } = useCurrency();
   const { user } = useAuth();
-  const [, setLocation] = useLocation();
+  const [, _setLocation] = useLocation();
   const isPaidPlan = user?.plan === "pro" || user?.plan === "enterprise";
 
   const { data: toolsData, isLoading } = useQuery<{ tools: Tool[] }>({

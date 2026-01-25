@@ -116,7 +116,7 @@ export function IntegrationsHub() {
     },
   ];
 
-  const extensions = [
+  const _extensions = [
     {
       name: "Chrome Extension",
       description: "Auto-detect and save SaaS tools you're using",
