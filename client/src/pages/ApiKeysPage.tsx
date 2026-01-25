@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Key, Plus, Trash2, Copy, Check, Eye, EyeOff, Lock, AlertTriangle } from "lucide-react";
+import { Key, Plus, Trash2, Copy, Check, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,7 @@ import type { ApiKey } from "@shared/schema";
 
 export function ApiKeysPage() {
   const { user } = useAuth();
-  const [, setLocation] = useLocation();
+  const [, _setLocation] = useLocation();
   const { toast } = useToast();
   const isPaidPlan = user?.plan === "enterprise";
 

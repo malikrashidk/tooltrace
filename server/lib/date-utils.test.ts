@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { calculateNextRenewalDate } from "./date-utils";
-import { addMonths, addYears, addWeeks, subMonths, subWeeks } from "date-fns";
+import { addMonths, subMonths, subWeeks } from "date-fns";
 
 describe("calculateNextRenewalDate", () => {
     it("should return the same date if it is in the future", () => {

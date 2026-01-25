@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, ChevronUp, Book, Lightbulb, Video, Mail, Rocket, Settings, BarChart3, Lock, Users, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronUp, Lightbulb, Video, Mail, Rocket, Settings, BarChart3, Lock, Users, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
@@ -223,7 +223,7 @@ interface ExpandedTopics {
 export function HelpPage() {
   const [expandedTopics, setExpandedTopics] = useState<ExpandedTopics>({});
   const [openFeedback, setOpenFeedback] = useState(false);
-  const { toast } = useToast();
+  const { toast: _toast } = useToast();
 
   const toggleTopic = (topicKey: string) => {
     setExpandedTopics((prev) => ({

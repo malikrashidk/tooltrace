@@ -57,10 +57,10 @@ export function ApiDocsPage() {
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                                 components={{
-                                    h1: ({ node, ...props }) => <h1 className="text-3xl font-bold mb-6 pb-2 border-b" {...props} />,
-                                    h2: ({ node, ...props }) => <h2 className="text-2xl font-semibold mt-10 mb-4 flex items-center gap-2" {...props} />,
-                                    h3: ({ node, ...props }) => <h3 className="text-xl font-medium mt-8 mb-3" {...props} />,
-                                    code: ({ node, inline, ...props }: any) =>
+                                    h1: ({ node: _node, ...props }) => <h1 className="text-3xl font-bold mb-6 pb-2 border-b" {...props} />,
+                                    h2: ({ node: _node, ...props }) => <h2 className="text-2xl font-semibold mt-10 mb-4 flex items-center gap-2" {...props} />,
+                                    h3: ({ node: _node, ...props }) => <h3 className="text-xl font-medium mt-8 mb-3" {...props} />,
+                                    code: ({ node: _node, inline, ...props }: any) =>
                                         inline ? (
                                             <code className="bg-muted px-1.5 py-0.5 rounded text-primary font-mono text-sm" {...props} />
                                         ) : (
@@ -68,10 +68,10 @@ export function ApiDocsPage() {
                                                 <code className="block bg-muted p-4 rounded-lg font-mono text-sm overflow-x-auto border my-4" {...props} />
                                             </div>
                                         ),
-                                    pre: ({ node, ...props }) => <pre className="bg-transparent p-0 m-0" {...props} />,
-                                    ul: ({ node, ...props }) => <ul className="space-y-2 list-disc pl-6 my-4" {...props} />,
-                                    li: ({ node, ...props }) => <li className="text-muted-foreground" {...props} />,
-                                    p: ({ node, ...props }) => <p className="leading-relaxed text-muted-foreground my-4" {...props} />,
+                                    pre: ({ node: _node, ...props }) => <pre className="bg-transparent p-0 m-0" {...props} />,
+                                    ul: ({ node: _node, ...props }) => <ul className="space-y-2 list-disc pl-6 my-4" {...props} />,
+                                    li: ({ node: _node, ...props }) => <li className="text-muted-foreground" {...props} />,
+                                    p: ({ node: _node, ...props }) => <p className="leading-relaxed text-muted-foreground my-4" {...props} />,
                                 }}
                             >
                                 {docs || ""}
