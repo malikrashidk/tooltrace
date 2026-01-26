@@ -5,6 +5,7 @@ import { apiKeyAuthMiddleware } from "./integration";
 import { getDomain } from "tldts";
 import { z } from "zod";
 import { calculateSubscriptionProbability, calculateUsageIntensity } from "../../shared/known-tools";
+import { sendToUser } from "../lib/websocket";
 
 const router = Router();
 
@@ -109,7 +110,7 @@ router.post("/events", async (req, res, next) => {
 
         // Update stats
         const visitDuration = event.duration || 0;
-        await storage.updateDetectedSite(site.id, {
+        const updatedSite = await storage.updateDetectedSite(site.id, {
           lastSeenAt: new Date(),
           visitCount7d: site.visitCount7d + 1,
           visitCount30d: newVisitCount30d,
@@ -123,6 +124,26 @@ router.post("/events", async (req, res, next) => {
 
         // Update daily stats
         await storage.upsertDetectedSiteDaily(site.id, today, 1, visitDuration);
+
+        // Broadcast update to user
+        if (updatedSite) {
+          sendToUser(userId, {
+            type: "DETECTION_UPDATE",
+            payload: updatedSite
+          });
+
+          // If probability is high, send a special notification
+          if (subscriptionProbability >= 90 && (site.subscriptionProbability < 90 || !site.subscriptionProbability)) {
+            sendToUser(userId, {
+              type: "NOTIFICATION",
+              payload: {
+                title: "New Premium Detection!",
+                message: `We're 90%+ sure you have a subscription at ${domainKey}. Check it out in Smart Tracker.`,
+                domain: domainKey
+              }
+            });
+          }
+        }
       }
     }
 

@@ -14,9 +14,13 @@ import integrationRoutes from "./integration";
 import extensionRoutes from "./extension";
 import billingRoutes from "./billing";
 import activityRoutes from "./activity";
+import { setupWebSocket } from "../lib/websocket";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
+
+  // Initialize WebSockets
+  setupWebSocket(httpServer);
 
   // Apply rate limiting
   app.use("/api/auth", rateLimit(20, 60000, "auth")); // Stricter for auth

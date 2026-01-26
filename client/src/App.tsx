@@ -39,8 +39,12 @@ import { ApiDocsPage } from "@/pages/ApiDocsPage";
 import { AcceptInvitePage } from "@/pages/AcceptInvitePage";
 import SmartScanPage from "@/pages/SmartScanPage";
 import NotFound from "@/pages/not-found";
+import { useWebSocket } from "@/hooks/use-websocket";
 
 function AuthenticatedApp() {
+  // Initialize WebSocket connection for real-time updates
+  useWebSocket();
+
   const sidebarStyle = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
