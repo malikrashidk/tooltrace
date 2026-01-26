@@ -377,6 +377,11 @@ export const detectedSites = pgTable(
     billingAmount: numeric("billing_amount", { precision: 10, scale: 2 }),
     currency: text("currency").default("USD"),
     billingCycle: text("billing_cycle"), // monthly, yearly
+    // Payment signal fields
+    visitedBillingPage: boolean("visited_billing_page").default(false).notNull(),
+    billingPageUrl: text("billing_page_url"),
+    usageIntensity: text("usage_intensity").default("low"), // low, medium, high
+    subscriptionProbability: integer("subscription_probability").default(0).notNull(), // 0-100
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

@@ -9,7 +9,10 @@ import {
     EyeOff,
     AlertCircle,
     BarChart3,
-    Clock
+    Clock,
+    Flame,
+    Zap,
+    Eye
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -36,6 +39,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { FeaturePaywall } from "@/components/FeaturePaywall";
+import { ExtensionPromoBanner } from "@/components/ExtensionPromoBanner";
 import { Sparkles } from "lucide-react";
 
 interface DetectedSite {
@@ -49,6 +53,9 @@ interface DetectedSite {
     confidenceLevel: 'confirmed' | 'likely' | 'visited';
     status: 'new' | 'added' | 'ignored';
     toolId?: string;
+    subscriptionProbability?: number;
+    usageIntensity?: string;
+    visitedBillingPage?: boolean;
 }
 
 export default function SmartScanPage() {
@@ -144,14 +151,29 @@ export default function SmartScanPage() {
         );
     }
 
+    // Helper to get probability badge
+    const getProbabilityBadge = (probability: number) => {
+        if (probability >= 90) {
+            return { label: "Likely Paid", variant: "default" as const, icon: Flame, color: "text-green-600 dark:text-green-400" };
+        } else if (probability >= 50) {
+            return { label: "Active Account", variant: "secondary" as const, icon: Zap, color: "text-yellow-600 dark:text-yellow-400" };
+        } else {
+            return { label: "Visited Site", variant: "outline" as const, icon: Eye, color: "text-gray-600 dark:text-gray-400" };
+        }
+    };
+
     return (
         <div className="container mx-auto p-4 md:p-8 max-w-6xl space-y-8">
             <div className="flex flex-col gap-2">
                 <h1 className="text-3xl font-bold tracking-tight">Smart Tracker</h1>
                 <p className="text-muted-foreground">
-                    Discover accounts based on your browsing activity.
+                    Discover accounts based on your browsing activity. Install our extension to start tracking.
                 </p>
             </div>
+
+            {activeSites.length === 0 && (
+                <ExtensionPromoBanner variant="full" className="" />
+            )}
 
             <div className="grid gap-4 md:grid-cols-3">
                 <Card>
@@ -202,7 +224,7 @@ export default function SmartScanPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Site</TableHead>
-                                <TableHead>Confidence</TableHead>
+                                <TableHead>Probability</TableHead>
                                 <TableHead>Visits (30d)</TableHead>
                                 <TableHead>Last Seen</TableHead>
                                 <TableHead>Status</TableHead>
@@ -234,12 +256,22 @@ export default function SmartScanPage() {
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant={
-                                                site.confidenceLevel === 'confirmed' ? 'default' :
-                                                    site.confidenceLevel === 'likely' ? 'secondary' : 'outline'
-                                            }>
-                                                {site.confidenceLevel}
-                                            </Badge>
+                                            {(() => {
+                                                const probability = site.subscriptionProbability || 0;
+                                                const badge = getProbabilityBadge(probability);
+                                                const Icon = badge.icon;
+                                                return (
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge variant={badge.variant} className="gap-1.5">
+                                                            <Icon className={`h-3.5 w-3.5 ${badge.color}`} />
+                                                            {probability}%
+                                                        </Badge>
+                                                        <span className="text-xs text-muted-foreground hidden md:inline">
+                                                            {badge.label}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })()}
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-1">

@@ -241,17 +241,14 @@ export function IntegrationsHub() {
                 <p className="text-sm text-muted-foreground">
                   Our browser extension automatically detects SaaS tools you're using and allows you to add them to Tooltrace with one click.
                 </p>
-                <ol className="text-sm space-y-2 list-decimal list-inside text-muted-foreground">
-                  <li>Download the extension zip file</li>
-                  <li>Extract the zip file to a folder</li>
-                  <li>Go to <code className="bg-muted px-2 py-1 rounded text-xs">chrome://extensions</code></li>
-                  <li>Enable "Developer mode" (top right)</li>
-                  <li>Click "Load unpacked" and select the extracted folder</li>
-                  <li>Start using the extension!</li>
-                </ol>
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/30 rounded-md p-3">
+                  <p className="text-xs text-blue-800 dark:text-blue-200">
+                    Click the button below to install from the official Chrome Web Store.
+                  </p>
+                </div>
                 <Button className="w-full" asChild>
-                  <a href="/api/extension/download" download="tooltrace-extension.zip" data-testid="button-download-extension">
-                    Download Extension
+                  <a href="https://chrome.google.com/webstore/detail/dbenmpcifjohimjmkmdaheemldacfhhg" target="_blank" rel="noopener noreferrer" data-testid="button-install-extension">
+                    Install from Chrome Web Store
                   </a>
                 </Button>
               </CardContent>

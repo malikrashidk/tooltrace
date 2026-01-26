@@ -237,3 +237,81 @@ export const knownTools: KnownTool[] = [
   { name: "Strava", website: "strava.com", category: "Lifestyle", aliases: ["strava premium"] },
   { name: "Adobe Life", website: "adobe.com", category: "Lifestyle", aliases: ["adobe creative cloud lifestyle"] },
 ];
+
+/**
+ * Check if a domain is a known SaaS tool
+ * @param domain - Domain to check (e.g., "notion.so" or "notion.com")
+ * @returns true if domain is in known SaaS list
+ */
+export function isKnownSaaSTool(domain: string): boolean {
+  const normalizedDomain = domain.toLowerCase().trim();
+  return knownTools.some(tool =>
+    tool.website.includes(normalizedDomain) || normalizedDomain.includes(tool.website)
+  );
+}
+
+/**
+ * Calculate subscription probability score (0-100)
+ * @param visitCount30d - Number of visits in last 30 days
+ * @param visitedBillingPage - Whether user visited a billing page
+ * @param confidenceLevel - Confidence level: visited, likely, confirmed
+ * @param domainKey - Domain to check if it's a known SaaS tool
+ * @returns Probability score 0-100
+ */
+export function calculateSubscriptionProbability(
+  visitCount30d: number,
+  visitedBillingPage: boolean,
+  confidenceLevel: string,
+  domainKey: string
+): number {
+  let score = 0;
+
+  // Visit frequency scoring (40 points max)
+  if (visitCount30d > 30) {
+    score += 40;
+  } else if (visitCount30d > 20) {
+    score += 30;
+  } else if (visitCount30d > 10) {
+    score += 20;
+  } else if (visitCount30d > 5) {
+    score += 10;
+  }
+
+  // Billing page visited (30 points)
+  if (visitedBillingPage) {
+    score += 30;
+  }
+
+  // Confidence level (20 points max)
+  if (confidenceLevel === 'confirmed') {
+    score += 20;
+  } else if (confidenceLevel === 'likely') {
+    score += 15;
+  } else if (confidenceLevel === 'visited') {
+    score += 5;
+  }
+
+  // Known SaaS tool boost (10 points)
+  if (isKnownSaaSTool(domainKey)) {
+    score += 10;
+  }
+
+  // Cap at 100
+  return Math.min(score, 100);
+}
+
+/**
+ * Calculate usage intensity based on visit frequency
+ * @param visitCount30d - Number of visits in last 30 days
+ * @returns Usage intensity: low, medium, high
+ */
+export function calculateUsageIntensity(visitCount30d: number): string {
+  if (visitCount30d > 20) {
+    return 'high';
+  } else if (visitCount30d > 8) {
+    return 'medium';
+  } else {
+    return 'low';
+  }
+}
+

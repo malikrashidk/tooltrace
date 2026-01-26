@@ -35,11 +35,18 @@ class ActivityTracker {
         if (this.activeTab && this.activeTab.startTime) {
             const duration = (Date.now() - this.activeTab.startTime) / 1000;
             if (duration > 5) { // Only log meaningful visits > 5s
-                this.addEvent({
+                const event = {
                     domain: this.activeTab.url, // We'll send full URL, server normalizes to domain
                     duration: Math.round(duration),
                     timestamp: Date.now()
-                });
+                };
+
+                // Include payment signals if detected
+                if (this.activeTab.paymentSignals && this.activeTab.paymentSignals.visitedBillingPage) {
+                    event.paymentSignals = this.activeTab.paymentSignals;
+                }
+
+                this.addEvent(event);
             }
         }
         this.activeTab = null;
@@ -51,11 +58,39 @@ class ActivityTracker {
         // Ignore own domain to prevent feedback loop
         if (url.includes(DOMAIN_PRIMARY)) return;
 
+        // Detect payment signals
+        const paymentSignals = this.detectPaymentSignals(url);
+
         this.activeTab = {
             id: tabId,
             url: url,
-            startTime: Date.now()
+            startTime: Date.now(),
+            paymentSignals: paymentSignals
         };
+    }
+
+    detectPaymentSignals(url) {
+        const signals = {
+            visitedBillingPage: false,
+            billingPageUrl: null
+        };
+
+        // Check if URL contains billing/payment related keywords
+        const billingKeywords = [
+            '/billing', '/subscription', '/payment', '/upgrade',
+            '/pricing', '/plans', '/checkout', '/settings/billing',
+            '/account/billing', '/manage-subscription'
+        ];
+
+        const urlLower = url.toLowerCase();
+        const isBillingPage = billingKeywords.some(keyword => urlLower.includes(keyword));
+
+        if (isBillingPage) {
+            signals.visitedBillingPage = true;
+            signals.billingPageUrl = url;
+        }
+
+        return signals;
     }
 
     handleTabSwitch(activeInfo) {

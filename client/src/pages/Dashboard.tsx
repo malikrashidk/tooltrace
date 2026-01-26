@@ -14,6 +14,7 @@ import { openPolarCheckout } from "@/lib/polar";
 import { getPriceIdForPlan } from "@/lib/plans";
 import { Loader2 } from "lucide-react";
 import { fromCents } from "../../../shared/money";
+import { ExtensionPromoBanner } from "@/components/ExtensionPromoBanner";
 
 export function Dashboard() {
   const [, setLocation] = useLocation();
@@ -258,6 +259,8 @@ export function Dashboard() {
         <h1 className="text-2xl sm:text-3xl font-semibold">Dashboard</h1>
         <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Overview of your tools and subscriptions</p>
       </div>
+
+      <ExtensionPromoBanner variant="full" />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
         <Card>

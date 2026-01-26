@@ -4,6 +4,7 @@ import { authMiddleware } from "../middleware";
 import { apiKeyAuthMiddleware } from "./integration";
 import { getDomain } from "tldts";
 import { z } from "zod";
+import { calculateSubscriptionProbability, calculateUsageIntensity } from "../../shared/known-tools";
 
 const router = Router();
 
@@ -14,6 +15,10 @@ const activityEventSchema = z.object({
   hasSavedCredentials: z.boolean().optional(),
   authSignal: z.boolean().optional(),
   timestamp: z.number().optional(),
+  paymentSignals: z.object({
+    visitedBillingPage: z.boolean().optional(),
+    billingPageUrl: z.string().nullable().optional(),
+  }).optional(),
 });
 
 const batchActivitySchema = z.object({
@@ -81,19 +86,39 @@ router.post("/events", async (req, res, next) => {
         // Calculate confidence update
         let newConfidence = site.confidenceLevel;
         if (event.hasSavedCredentials) {
-            newConfidence = 'confirmed';
+          newConfidence = 'confirmed';
         } else if (event.authSignal && site.confidenceLevel === 'visited') {
-            newConfidence = 'likely';
+          newConfidence = 'likely';
         }
+
+        // Process payment signals
+        const visitedBillingPage = event.paymentSignals?.visitedBillingPage || site.visitedBillingPage;
+        const billingPageUrl = event.paymentSignals?.billingPageUrl || site.billingPageUrl;
+
+        // Calculate updated visit counts for probability calculation
+        const newVisitCount30d = site.visitCount30d + 1;
+
+        // Calculate subscription probability and usage intensity
+        const subscriptionProbability = calculateSubscriptionProbability(
+          newVisitCount30d,
+          visitedBillingPage || false,
+          newConfidence,
+          domainKey
+        );
+        const usageIntensity = calculateUsageIntensity(newVisitCount30d);
 
         // Update stats
         const visitDuration = event.duration || 0;
         await storage.updateDetectedSite(site.id, {
-            lastSeenAt: new Date(),
-            visitCount7d: site.visitCount7d + 1,
-            visitCount30d: site.visitCount30d + 1,
-            visitCount90d: site.visitCount90d + 1,
-            confidenceLevel: newConfidence
+          lastSeenAt: new Date(),
+          visitCount7d: site.visitCount7d + 1,
+          visitCount30d: newVisitCount30d,
+          visitCount90d: site.visitCount90d + 1,
+          confidenceLevel: newConfidence,
+          visitedBillingPage: visitedBillingPage || false,
+          billingPageUrl: billingPageUrl,
+          subscriptionProbability: subscriptionProbability,
+          usageIntensity: usageIntensity
         });
 
         // Update daily stats
@@ -118,12 +143,12 @@ router.get("/smart-scan", authMiddleware, async (req, res) => {
   try {
     const user = req.user as any;
     const userPlan = (user?.plan || 'free').toLowerCase();
-    
+
     // Only Pro and Enterprise have access to Smart Tracker
     if (userPlan !== 'pro' && userPlan !== 'enterprise') {
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: "FEATURE_LOCKED",
-        message: "Smart Tracker is available on Pro and Enterprise plans only." 
+        message: "Smart Tracker is available on Pro and Enterprise plans only."
       });
     }
 
@@ -151,12 +176,12 @@ router.patch("/smart-scan/:id", authMiddleware, async (req, res) => {
   try {
     const user = req.user as any;
     const userPlan = (user?.plan || 'free').toLowerCase();
-    
+
     // Only Pro and Enterprise have access to Smart Tracker
     if (userPlan !== 'pro' && userPlan !== 'enterprise') {
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: "FEATURE_LOCKED",
-        message: "Smart Tracker is available on Pro and Enterprise plans only." 
+        message: "Smart Tracker is available on Pro and Enterprise plans only."
       });
     }
 
@@ -199,35 +224,35 @@ router.patch("/smart-scan/:id", authMiddleware, async (req, res) => {
 // Called when a tool is created from this site
 // Requires Pro or Enterprise plan
 router.patch("/smart-scan/:id/mark-added", authMiddleware, async (req, res) => {
-    try {
-        const user = req.user as any;
-        const userPlan = (user?.plan || 'free').toLowerCase();
-        
-        // Only Pro and Enterprise have access to Smart Tracker
-        if (userPlan !== 'pro' && userPlan !== 'enterprise') {
-          return res.status(403).json({ 
-            error: "FEATURE_LOCKED",
-            message: "Smart Tracker is available on Pro and Enterprise plans only." 
-          });
-        }
+  try {
+    const user = req.user as any;
+    const userPlan = (user?.plan || 'free').toLowerCase();
 
-        const { id } = req.params;
-        const { toolId } = req.body;
-
-        if (!toolId) return res.status(400).json({ error: "Tool ID required" });
-
-        const sites = await storage.getDetectedSites(req.userId!);
-        const site = sites.find(s => s.id === id);
-        if (!site) return res.status(404).json({ error: "Site not found" });
-
-        const updated = await storage.updateDetectedSite(id, {
-            status: 'added',
-            toolId: toolId
-        });
-        res.json({ site: updated });
-    } catch (error) {
-        res.status(500).json({ error: "Failed to mark site as added" });
+    // Only Pro and Enterprise have access to Smart Tracker
+    if (userPlan !== 'pro' && userPlan !== 'enterprise') {
+      return res.status(403).json({
+        error: "FEATURE_LOCKED",
+        message: "Smart Tracker is available on Pro and Enterprise plans only."
+      });
     }
+
+    const { id } = req.params;
+    const { toolId } = req.body;
+
+    if (!toolId) return res.status(400).json({ error: "Tool ID required" });
+
+    const sites = await storage.getDetectedSites(req.userId!);
+    const site = sites.find(s => s.id === id);
+    if (!site) return res.status(404).json({ error: "Site not found" });
+
+    const updated = await storage.updateDetectedSite(id, {
+      status: 'added',
+      toolId: toolId
+    });
+    res.json({ site: updated });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to mark site as added" });
+  }
 });
 
 export default router;

@@ -310,14 +310,26 @@ export function ToolsPage() {
 
         {tools.length === 0 ? (
           <div className="flex items-center justify-center min-h-[500px]">
-            <div className="text-center space-y-6">
+            <div className="text-center space-y-6 max-w-md">
               <div className="mx-auto w-20 h-20 bg-muted rounded-full flex items-center justify-center">
                 <Package className="h-10 w-10 text-muted-foreground" />
               </div>
               <div className="space-y-2">
                 <h2 className="text-xl sm:text-2xl font-semibold">No tools yet</h2>
-                <p className="text-xs sm:text-sm md:text-base text-muted-foreground max-w-xs">
+                <p className="text-xs sm:text-sm md:text-base text-muted-foreground max-w-xs mx-auto">
                   Start by adding your first tool/website/app to begin tracking your subscriptions and much more.
+                </p>
+                <p className="text-xs text-muted-foreground pt-2">
+                  Or{" "}
+                  <a
+                    href="https://chrome.google.com/webstore/detail/dbenmpcifjohimjmkmdaheemldacfhhg"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline font-medium"
+                  >
+                    install our extension
+                  </a>
+                  {" "}to automatically discover subscriptions
                 </p>
               </div>
               {user?.emailVerifiedAt && (
