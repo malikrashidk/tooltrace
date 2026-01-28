@@ -23,6 +23,7 @@ router.get("/profile", authMiddleware, async (req, res) => {
         language: user.language || "en",
         emailVerifiedAt: user.emailVerifiedAt,
         budgetThreshold: user.budgetThreshold,
+        onboardingStatus: user.onboardingStatus,
       },
       subscription,
     });

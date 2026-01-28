@@ -40,6 +40,7 @@ export const users = pgTable(
     budgetThreshold: numeric("budget_threshold", { precision: 10, scale: 2 }),
     isSuspended: boolean("is_suspended").notNull().default(false),
     lastLoginAt: timestamp("last_login_at"),
+    onboardingStatus: jsonb("onboarding_status").notNull().default({}), // { 'step-id': true }
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

@@ -41,6 +41,7 @@ export function mapUser(row: any): User | undefined {
         budgetThreshold: row.budget_threshold,
         isSuspended: row.is_suspended,
         lastLoginAt: row.last_login_at,
+        onboardingStatus: row.onboarding_status || {},
         createdAt: row.created_at,
         updatedAt: row.updated_at,
     };

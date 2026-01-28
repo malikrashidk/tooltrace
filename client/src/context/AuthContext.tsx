@@ -13,6 +13,7 @@ interface User {
   language?: string;
   emailVerifiedAt?: string | null;
   budgetThreshold?: string | null;
+  onboardingStatus?: Record<string, boolean>;
 }
 
 interface AuthContextType {

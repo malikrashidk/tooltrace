@@ -605,6 +605,7 @@ router.patch("/profile", authMiddleware, async (req, res) => {
     if (req.body.currency !== undefined) updates.currency = req.body.currency;
     if (req.body.language !== undefined) updates.language = req.body.language;
     if (req.body.name !== undefined) updates.name = req.body.name;
+    if (req.body.onboardingStatus !== undefined) updates.onboardingStatus = req.body.onboardingStatus;
 
     // Handle budgetThreshold explicitly to ensure correct type for DB (numeric/string)
     if (req.body.budgetThreshold !== undefined) {
