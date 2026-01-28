@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+import { log } from "./app";
 import { extractTokenFromHeader, verifyToken } from "./auth";
 import { storage } from "./storage";
 import type { User } from "@shared/schema";
@@ -18,21 +19,20 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     const authHeader = req.headers.authorization || (req.headers as any).Authorization;
     const token = extractTokenFromHeader(authHeader);
     if (!token) {
-      console.log(`[Auth] No token provided for ${req.method} ${req.path}.`);
-      console.log(`[Auth] Headers:`, JSON.stringify(req.headers));
+      log(`[Auth] No token provided for ${req.method} ${req.path}.`);
       return res.status(401).json({ error: "No token provided" });
     }
 
     const decoded = verifyToken(token);
     if (!decoded) {
-      console.log(`[Auth] Invalid token for ${req.method} ${req.path}`);
+      log(`[Auth] Invalid token for ${req.method} ${req.path}`);
       return res.status(401).json({ error: "Invalid token" });
     }
 
     // Note: In development with in-memory storage, the user may not exist if server restarted.
     // We still set the userId from the decoded token so the request can proceed.
     const user = await storage.getUser(decoded.userId);
-    console.log(`[Auth] ${req.method} ${req.path} :: User lookup for ${decoded.userId}: ${user ? 'Success' : 'Failed'}`);
+    log(`[Auth] ${req.method} ${req.path} :: User lookup for ${decoded.userId}: ${user ? 'Success' : 'Failed'}`);
 
     req.userId = decoded.userId;
     if (user) {

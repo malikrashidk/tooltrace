@@ -192,7 +192,6 @@ function AppContent() {
     const cycle = params.get("cycle");
 
     if (plan) {
-      console.log("[App] Capturing plan intent:", { plan, cycle });
       sessionStorage.setItem("pending_plan", plan);
       if (cycle) {
         sessionStorage.setItem("pending_cycle", cycle);

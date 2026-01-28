@@ -7,11 +7,15 @@ import express, {
   NextFunction,
 } from "express";
 
+import helmet from "helmet";
 import { registerRoutes } from "./routes";
 import { initializeAdmin } from "./init-admin";
 import { startBackgroundJobs } from "./jobs";
 
 export function log(message: string, source = "express") {
+  // Only log if not a health check to keep logs clean
+  if (message.includes("/api/health")) return;
+
   const formattedTime = new Date().toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
@@ -40,33 +44,51 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-// Set up Content Security Policy
-app.use((_req, res, next) => {
-  // Remove potentially existing headers to prevent duplicates
-  res.removeHeader("Content-Security-Policy");
-  res.removeHeader("X-Powered-By");
-
-  res.setHeader(
-    "Content-Security-Policy",
-    [
-      "default-src 'self' https://app.tooltrace.io",
-      "base-uri 'self'",
-      "object-src 'none'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://polar.sh https://sandbox.polar.sh",
-      "script-src-elem 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://polar.sh https://sandbox.polar.sh",
-      "script-src-attr 'none'",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://app.tooltrace.io",
-      "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://app.tooltrace.io",
-      "font-src 'self' https://fonts.gstatic.com https://r2cdn.perplexity.ai data:",
-      "img-src 'self' data: https:",
-      "connect-src 'self' https://app.tooltrace.io https://accounts.google.com https://www.googleapis.com https://api.polar.sh https://sandbox-api.polar.sh",
-      "frame-ancestors 'self'",
-      "frame-src 'self' https://accounts.google.com https://polar.sh https://sandbox.polar.sh",
-      "upgrade-insecure-requests",
-    ].join("; ")
-  );
-  next();
-});
+// Use Helmet for security headers including Content Security Policy
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        "default-src": ["'self'"],
+        "base-uri": ["'self'"],
+        "font-src": ["'self'", "https:", "data:"],
+        "frame-ancestors": ["'self'"],
+        "img-src": ["'self'", "data:", "https:"],
+        "object-src": ["'none'"],
+        "script-src": [
+          "'self'",
+          "'unsafe-eval'",
+          "'unsafe-inline'",
+          "https://accounts.google.com",
+          "https://apis.google.com",
+          "https://polar.sh",
+          "https://sandbox.polar.sh",
+        ],
+        "script-src-attr": ["'none'"],
+        "style-src": ["'self'", "https:", "'unsafe-inline'"],
+        "connect-src": [
+          "'self'",
+          "https://app.tooltrace.io",
+          "https://accounts.google.com",
+          "https://www.googleapis.com",
+          "https://api.polar.sh",
+          "https://sandbox-api.polar.sh",
+        ],
+        "frame-src": [
+          "'self'",
+          "https://accounts.google.com",
+          "https://polar.sh",
+          "https://sandbox.polar.sh",
+        ],
+        "upgrade-insecure-requests": [],
+      },
+    },
+    // Prevent information leakage
+    hidePoweredBy: true,
+    // Ensure browsers only connect over HTTPS
+    hsts: process.env.NODE_ENV === "production",
+  })
+);
 
 declare module 'http' {
   interface IncomingMessage {
@@ -138,7 +160,14 @@ app.use((req, res, next) => {
         };
 
         const safeOutput = sanitizeForLog(capturedJsonResponse);
-        logLine += ` :: ${JSON.stringify(safeOutput)}`;
+        if (process.env.NODE_ENV === 'development') {
+          logLine += ` :: ${JSON.stringify(safeOutput)}`;
+        } else {
+          // In production, only log essential info if the request failed
+          if (res.statusCode >= 400) {
+            logLine += ` :: Error Result: ${JSON.stringify(safeOutput)}`;
+          }
+        }
       }
 
       if (logLine.length > 200) { // Increased limit for better debugging but still capped

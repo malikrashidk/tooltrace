@@ -378,26 +378,15 @@ export function SettingsPage() {
                 It makes adding tools to Tooltrace quick and effortless.
               </p>
               <div className="flex flex-col gap-3">
-                {/*
-                 TODO: When the extension is published to Chrome Web Store:
-                 1. Replace the download button with:
-                 <a href="CHROME_STORE_URL" target="_blank" rel="noopener noreferrer">
-                   <Button className="w-full sm:w-auto gap-2">
-                     <Chrome className="h-4 w-4" />
-                     Add to Chrome
-                   </Button>
-                 </a>
-                 2. Update the description text to reflect it's in the store.
-              */}
                 <a
-                  href="/api/extension/download"
+                  href="https://chrome.google.com/webstore/detail/dbenmpcifjohimjmkmdaheemldacfhhg"
                   target="_blank"
                   rel="noopener noreferrer"
                   data-testid="button-download-extension"
                 >
                   <Button className="w-full sm:w-auto gap-2">
                     <Download className="h-4 w-4" />
-                    Download Extension (Beta)
+                    Install from Chrome Web Store
                   </Button>
                 </a>
                 <a

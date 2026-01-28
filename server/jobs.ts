@@ -46,33 +46,38 @@ async function processToolExpirationNotifications() {
         for (const days of [0, 3]) {
             const toolUsers = await storage.getToolsByExpiration(days);
             for (const { tool, user } of toolUsers) {
-                log(`Sending expiration notification for tool ${tool.name} to user ${user.email} (${days} days left)`, "jobs");
-
-                await sendEmail({
-                    to: user.email,
-                    subject: days === 0 ? `${tool.name} is expiring today` : `${tool.name} is expiring in ${days} days`,
-                    html: `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-              <h2 style="color: #1a202c;">Tool Expiration Reminder</h2>
-              <p>Hi ${user.name || 'there'},</p>
-              <p>This is a reminder that your subscription for <strong>${tool.name}</strong> is set to renew or expire on <strong>${new Date(tool.nextRenewalDate!).toLocaleDateString()}</strong>.</p>
-              <div style="background-color: #f7fafc; padding: 15px; border-radius: 6px; margin: 20px 0;">
-                <p style="margin: 0;"><strong>Tool:</strong> ${tool.name}</p>
-                <p style="margin: 5px 0 0 0;"><strong>Renewal Date:</strong> ${new Date(tool.nextRenewalDate!).toLocaleDateString()}</p>
-                ${tool.billingAmount ? `<p style="margin: 5px 0 0 0;"><strong>Estimated Amount:</strong> ${tool.billingAmount}</p>` : ''}
-              </div>
-              <p>Log in to your ToolTrace dashboard to see all your upcoming bills and renewals.</p>
-              <a href="${process.env.APP_URL || 'http://localhost:5000'}/tools" style="display: inline-block; background-color: #4a5568; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 10px;">View Dashboard</a>
-              <p style="margin-top: 30px; font-size: 12px; color: #a0aec0;">You received this because you are tracking this tool on ToolTrace.</p>
-            </div>
-          `
-                });
-
-                // Mark as notified
+                // Mark as notified FIRST (pessimistic locking)
                 if (days === 3) {
                     await storage.updateTool(tool.id, { notified3Days: true });
                 } else if (days === 0) {
                     await storage.updateTool(tool.id, { notifiedRenewalDay: true });
+                }
+
+                log(`Sending expiration notification for tool ${tool.name} to user ${user.email} (${days} days left)`, "jobs");
+
+                try {
+                    await sendEmail({
+                        to: user.email,
+                        subject: days === 0 ? `${tool.name} is expiring today` : `${tool.name} is expiring in ${days} days`,
+                        html: `
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                  <h2 style="color: #1a202c;">Tool Expiration Reminder</h2>
+                  <p>Hi ${user.name || 'there'},</p>
+                  <p>This is a reminder that your subscription for <strong>${tool.name}</strong> is set to renew or expire on <strong>${new Date(tool.nextRenewalDate!).toLocaleDateString()}</strong>.</p>
+                  <div style="background-color: #f7fafc; padding: 15px; border-radius: 6px; margin: 20px 0;">
+                    <p style="margin: 0;"><strong>Tool:</strong> ${tool.name}</p>
+                    <p style="margin: 5px 0 0 0;"><strong>Renewal Date:</strong> ${new Date(tool.nextRenewalDate!).toLocaleDateString()}</p>
+                    ${tool.billingAmount ? `<p style="margin: 5px 0 0 0;"><strong>Estimated Amount:</strong> ${tool.billingAmount}</p>` : ''}
+                  </div>
+                  <p>Log in to your ToolTrace dashboard to see all your upcoming bills and renewals.</p>
+                  <a href="${process.env.APP_URL || 'http://localhost:5000'}/tools" style="display: inline-block; background-color: #4a5568; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 10px;">View Dashboard</a>
+                  <p style="margin-top: 30px; font-size: 12px; color: #a0aec0;">You received this because you are tracking this tool on ToolTrace.</p>
+                </div>
+              `
+                    });
+                } catch (emailError) {
+                    console.error(`[Jobs] Failed to send email for tool ${tool.id}:`, emailError);
+                    // We don't roll back the notified flag to prevent email spam if it's a permanent failure
                 }
             }
         }

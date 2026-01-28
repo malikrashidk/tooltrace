@@ -179,6 +179,12 @@ export class DbStorage implements IStorage {
         let paramIndex = 1;
 
         Object.entries(updates).forEach(([key, value]) => {
+            // When updating renewal date, automatically reset notification flags
+            if (key === "nextRenewalDate") {
+                (updates as any).notified3Days = false;
+                (updates as any).notifiedRenewalDay = false;
+            }
+
             const snakeKey = key.replace(/([A-Z])/g, '_$1').replace(/([0-9]+)/g, '_$1').toLowerCase();
             setClauses.push(`${snakeKey} = $${paramIndex}`);
             values.push(value === undefined ? null : value);

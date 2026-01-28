@@ -14,6 +14,10 @@ const REQUIRED_PRODUCTION_VARS = [
   'SMTP_USER',
   'SMTP_PASS',
   'MAIL_FROM',
+  'POLAR_WEBHOOK_SECRET',
+  'VITE_APP_URL',
+  'SENTRY_DSN',
+  'POLAR_ORGANIZATION_SLUG',
 ];
 
 const OPTIONAL_PRODUCTION_VARS = [
@@ -31,10 +35,10 @@ const OPTIONAL_PRODUCTION_VARS = [
  */
 export function validateEnvironmentVariables(): void {
   const nodeEnv = process.env.NODE_ENV || 'development';
-  
+
   if (nodeEnv === 'production') {
     const missing = REQUIRED_PRODUCTION_VARS.filter(varName => !process.env[varName]);
-    
+
     if (missing.length > 0) {
       console.error('[ENV Validation] Missing required environment variables in production:');
       missing.forEach(varName => {
@@ -42,7 +46,7 @@ export function validateEnvironmentVariables(): void {
       });
       throw new Error(`Missing ${missing.length} required environment variable(s) for production`);
     }
-    
+
     console.log('[ENV Validation] ✅ All required environment variables are set');
   } else {
     // Development - just warn about missing optional vars
