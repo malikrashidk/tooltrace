@@ -70,7 +70,7 @@ async function processToolExpirationNotifications() {
 
                 // Mark as notified
                 if (days === 3) {
-                    await storage.updateTool(tool.id, { notified_3_days: true });
+                    await storage.updateTool(tool.id, { notified3Days: true });
                 } else if (days === 0) {
                     await storage.updateTool(tool.id, { notifiedRenewalDay: true });
                 }

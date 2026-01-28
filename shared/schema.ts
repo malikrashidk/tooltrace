@@ -76,7 +76,7 @@ export const tools = pgTable(
     lastUsedAt: timestamp("last_used_at"),
     totalUsageTime: numeric("total_usage_time", { precision: 10, scale: 0 }).default("0"), // in minutes
     // Notification flags
-    notified_3_days: boolean("notified_3_days").notNull().default(false),
+    notified3Days: boolean("notified_3_days").notNull().default(false),
     notifiedRenewalDay: boolean("notified_renewal_day").notNull().default(false),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
