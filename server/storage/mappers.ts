@@ -185,6 +185,10 @@ export function mapDetectedSite(row: any): DetectedSite | undefined {
         billingAmount: row.billing_amount,
         currency: row.currency,
         billingCycle: row.billing_cycle,
+        visitedBillingPage: row.visited_billing_page,
+        billingPageUrl: row.billing_page_url,
+        usageIntensity: row.usage_intensity,
+        subscriptionProbability: row.subscription_probability,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
     };

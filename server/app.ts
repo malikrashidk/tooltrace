@@ -173,7 +173,7 @@ export default async function runApp(
         uptime: process.uptime(),
         environment: process.env.NODE_ENV || "development"
       });
-    } catch (error) {
+    } catch (_error) {
       res.status(503).json({
         status: "unhealthy",
         timestamp: new Date().toISOString(),
@@ -189,6 +189,7 @@ export default async function runApp(
   }
 
   // Final error handler
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     // Handle "entity too large" errors specifically (happens at body parser level)
     if (err.type === 'entity.too.large' ||

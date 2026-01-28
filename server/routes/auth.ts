@@ -554,7 +554,7 @@ router.get("/2fa/status", authMiddleware, async (req, res) => {
       hasBackupCodes: !!(user.twoFactorBackupCodes && user.twoFactorBackupCodes.length > 0),
       backupCodesRemaining: user.twoFactorBackupCodes?.length || 0,
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to get 2FA status" });
   }
 });
@@ -592,7 +592,7 @@ router.post("/2fa/regenerate-backup", authMiddleware, async (req, res) => {
       backupCodes: codes,
       message: "New backup codes generated. Save them securely!",
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to regenerate backup codes" });
   }
 });
