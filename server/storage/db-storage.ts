@@ -679,7 +679,7 @@ export class DbStorage implements IStorage {
             AND t.next_renewal_date <= (NOW() + ${days} * INTERVAL '1 day')
             AND t.next_renewal_date > (NOW() + (${days} - 0.5) * INTERVAL '1 day')
             AND (
-                (${days} = 3 AND t.notified3_days = false)
+                (${days} = 3 AND t.notified_3_days = false)
                 OR (${days} = 0 AND t.notified_renewal_day = false)
             )
         `;

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, numeric, timestamp, boolean, jsonb, index, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, numeric, timestamp, boolean, jsonb, index, integer, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -76,7 +76,7 @@ export const tools = pgTable(
     lastUsedAt: timestamp("last_used_at"),
     totalUsageTime: numeric("total_usage_time", { precision: 10, scale: 0 }).default("0"), // in minutes
     // Notification flags
-    notified3Days: boolean("notified3_days").notNull().default(false),
+    notified_3_days: boolean("notified_3_days").notNull().default(false),
     notifiedRenewalDay: boolean("notified_renewal_day").notNull().default(false),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -400,10 +400,10 @@ export const detectedSitesDaily = pgTable(
     detectedSiteId: varchar("detected_site_id").notNull().references(() => detectedSites.id, { onDelete: "cascade" }),
     date: text("date").notNull(), // YYYY-MM-DD
     visitCount: integer("visit_count").default(0).notNull(),
-    usageTime: integer("usage_time").default(0).notNull(), // in seconds
+    usageTime: integer("usage_time").default(0).notNull(),
   },
   (table) => ({
-    siteDateIdx: index("detected_daily_site_date_idx").on(table.detectedSiteId, table.date),
+    siteDateIdx: uniqueIndex("detected_daily_site_date_idx").on(table.detectedSiteId, table.date),
   })
 );
 
