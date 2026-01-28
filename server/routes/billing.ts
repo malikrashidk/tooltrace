@@ -416,7 +416,7 @@ router.post("/checkout", authMiddleware, async (req, res) => {
           // Sync immediately so the user record is updated before they redirect back
           await syncUserSubscription(user.id, user.email);
 
-          const successUrl = `${process.env.VITE_APP_URL || 'https://app.tooltrace.io'}/dashboard?checkout=upgrade_success`;
+          const successUrl = `${process.env.VITE_APP_URL || process.env.APP_URL || 'https://app.tooltrace.io'}/dashboard?checkout=upgrade_success`;
           return res.json({ url: successUrl });
         } else {
           console.warn(`[Checkout] Could not resolve ${productPriceId} to a Product ID.`);
@@ -446,7 +446,7 @@ router.post("/checkout", authMiddleware, async (req, res) => {
     // --- DEFAULT: STANDARD CHECKOUT SESSION (ONLY FOR NEW/FREE USERS) ---
     const checkout = await polarClient.checkouts.create({
       products: [productPriceId],
-      successUrl: `${process.env.VITE_APP_URL || 'https://app.tooltrace.io'}/dashboard?checkout=success`,
+      successUrl: `${process.env.VITE_APP_URL || process.env.APP_URL || 'https://app.tooltrace.io'}/dashboard?checkout=success`,
       customerEmail: user.email,
       // Polar: Only pass subscriptionId for upgrades FROM a free plan
       subscriptionId: isFree ? (polarSubscriptionId || undefined) : undefined,
