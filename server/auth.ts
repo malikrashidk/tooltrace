@@ -58,7 +58,7 @@ export function verifyToken(token: string): AuthToken | null {
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as AuthToken;
     return decoded;
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }

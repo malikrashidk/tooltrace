@@ -61,7 +61,7 @@ export function ResetPasswordPage({ token, onBackToLogin }: ResetPasswordPagePro
         } else {
           setIsValidToken(false);
         }
-      } catch (error) {
+      } catch (_error) {
         setIsValidToken(false);
       } finally {
         setIsVerifying(false);
