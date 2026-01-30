@@ -19,9 +19,6 @@ const POLAR_ENV = import.meta.env.VITE_POLAR_ENV || 'production';
  */
 export async function openPolarCheckout({
     productPriceId,
-    email,
-    userId,
-    successUrl,
 }: {
     productPriceId: string;
     email?: string;

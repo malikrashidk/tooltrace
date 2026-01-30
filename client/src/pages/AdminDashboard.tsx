@@ -10,7 +10,7 @@ export function AdminDashboard() {
   const { formatAmount } = useCurrency();
 
   // Fetch stats
-  const { data: statsResponse, isLoading: statsLoading } = useQuery({
+  const { data: statsResponse } = useQuery({
     queryKey: ["/api/admin/stats"],
     queryFn: async () => {
       const token = localStorage.getItem("token");

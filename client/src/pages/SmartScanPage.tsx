@@ -67,17 +67,6 @@ export default function SmartScanPage() {
     const userPlan = (user as any)?.plan || 'free';
     const hasAccess = userPlan === 'pro' || userPlan === 'enterprise';
 
-    // Paywall for free users
-    if (!hasAccess) {
-        return (
-            <FeaturePaywall
-                title="Smart Tracker"
-                description="Automatically discover subscriptions from your browsing activity. Track browsing activity across your web usage and get suggestions to add tools to your dashboard."
-                requiredPlan="pro"
-                icon={<Sparkles className="h-8 w-8 text-primary animate-pulse" />}
-            />
-        );
-    }
     const [addToolOpen, setAddToolOpen] = useState(false);
     const [selectedSite, setSelectedSite] = useState<DetectedSite | null>(null);
 
@@ -142,6 +131,18 @@ export default function SmartScanPage() {
     // Filter logic
     const sites = data?.sites || [];
     const activeSites = sites.filter(s => s.status !== 'ignored');
+
+    // Paywall for free users
+    if (!hasAccess) {
+        return (
+            <FeaturePaywall
+                title="Smart Tracker"
+                description="Automatically discover subscriptions from your browsing activity. Track browsing activity across your web usage and get suggestions to add tools to your dashboard."
+                requiredPlan="pro"
+                icon={<Sparkles className="h-8 w-8 text-primary animate-pulse" />}
+            />
+        );
+    }
 
     if (isLoading) {
         return (

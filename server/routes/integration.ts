@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response } from "express";
 import { storage } from "../storage";
 import { authMiddleware, auditLog } from "../middleware";
 import crypto from "crypto";

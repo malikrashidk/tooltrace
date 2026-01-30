@@ -24,7 +24,7 @@ Sentry.init({
     sendDefaultPii: false, // Set to true if you want IPs (GDPR consideration)
 
     // Filter out sensitive data
-    beforeSend(event: Sentry.ErrorEvent, hint: Sentry.EventHint) {
+    beforeSend(event: Sentry.ErrorEvent) {
         // Remove sensitive data from error reports
         if (event.request?.headers) {
             delete event.request.headers['authorization'];

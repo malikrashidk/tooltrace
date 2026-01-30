@@ -14,7 +14,6 @@ const router = Router();
 router.get("/tools", authMiddleware, async (req, res) => {
   try {
     const tools = await storage.getUserTools(req.userId!);
-    const user = await storage.getUser(req.userId!);
     const subscription = await storage.getUserSubscription(req.userId!);
 
     const limit = subscription?.toolsLimit ? parseInt(String(subscription.toolsLimit)) : 10;

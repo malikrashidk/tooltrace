@@ -30,7 +30,7 @@ const registerSchema = z.object({
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export function AcceptInvitePage() {
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
   const token = searchParams.get("token");
   const { toast } = useToast();
@@ -176,7 +176,7 @@ export function AcceptInvitePage() {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Join Team</CardTitle>
           <CardDescription className="text-center">
-            You've been invited to join a team on ToolTrace
+            You&apos;ve been invited to join a team on ToolTrace
           </CardDescription>
         </CardHeader>
         <CardContent>
