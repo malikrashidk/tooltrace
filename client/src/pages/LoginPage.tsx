@@ -43,7 +43,7 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
   const [requires2FA, setRequires2FA] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState("");
   const [pendingCredentials, setPendingCredentials] = useState<{ email: string; password: string } | null>(null);
-  const { login, refreshUser } = useAuth();
+  const { refreshUser } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -335,7 +335,7 @@ export function LoginPage({ onSwitchToSignup, onForgotPassword }: LoginPageProps
           </div>
 
           <div className="text-center text-sm">
-            <span className="text-muted-foreground">Don't have an account? </span>
+            <span className="text-muted-foreground">Don&apos;t have an account? </span>
             <button
               onClick={onSwitchToSignup}
               className="font-semibold text-primary hover:underline"

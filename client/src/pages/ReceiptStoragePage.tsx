@@ -1,10 +1,9 @@
 ﻿import { useState, useRef } from "react";
-import { FileText, Lock, Upload, Trash2, Download, Plus, X, Calendar, DollarSign, Link } from "lucide-react";
+import { FileText, Upload, Trash2, Download, Plus, Calendar, DollarSign, Link } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/context/AuthContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -32,7 +31,6 @@ import {
 import type { Receipt, Tool } from "@shared/schema";
 
 export function ReceiptStoragePage() {
-  const { user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { formatAmount } = useCurrency();
@@ -359,7 +357,7 @@ export function ReceiptStoragePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Receipt</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{receiptToDelete?.fileName}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{receiptToDelete?.fileName}&quot;? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

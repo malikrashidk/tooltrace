@@ -19,10 +19,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
-import { useLocation } from "wouter";
-import { Lock } from "lucide-react";
 
 export function AnalyticsPage() {
   const { formatAmount } = useCurrency();

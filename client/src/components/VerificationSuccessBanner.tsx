@@ -5,7 +5,6 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/context/AuthContext";
 
 export function VerificationSuccessBanner() {
-  const [, setLocation] = useLocation();
   const [isVisible, setIsVisible] = useState(false);
   const { user, refreshUser } = useAuth();
 

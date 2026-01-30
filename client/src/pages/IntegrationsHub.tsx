@@ -116,19 +116,6 @@ export function IntegrationsHub() {
     },
   ];
 
-  const extensions = [
-    {
-      name: "Chrome Extension",
-      description: "Auto-detect and save SaaS tools you're using",
-      status: "coming-soon",
-    },
-    {
-      name: "Firefox Extension",
-      description: "One-click tool detection while browsing",
-      status: "coming-soon",
-    },
-  ];
-
   return (
     <div className="space-y-6 md:space-y-8 p-3 sm:p-4 md:p-6">
       <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 sm:p-6 md:p-8">
@@ -239,7 +226,7 @@ export function IntegrationsHub() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Our browser extension automatically detects SaaS tools you're using and allows you to add them to Tooltrace with one click.
+                  Our browser extension automatically detects SaaS tools you&apos;re using and allows you to add them to Tooltrace with one click.
                 </p>
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/30 rounded-md p-3">
                   <p className="text-xs text-blue-800 dark:text-blue-200">

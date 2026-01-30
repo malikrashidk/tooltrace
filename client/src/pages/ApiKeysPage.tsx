@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { Key, Plus, Trash2, Copy, Check, Eye, EyeOff, Lock, AlertTriangle } from "lucide-react";
+import { Key, Plus, Trash2, Copy, Check, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
-import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -34,7 +33,6 @@ import type { ApiKey } from "@shared/schema";
 
 export function ApiKeysPage() {
   const { user } = useAuth();
-  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const isPaidPlan = user?.plan === "enterprise";
 
@@ -393,7 +391,7 @@ export function ApiKeysPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete API Key</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{keyToDelete?.name}"? Any integrations using this key will stop working immediately.
+              Are you sure you want to delete &quot;{keyToDelete?.name}&quot;? Any integrations using this key will stop working immediately.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

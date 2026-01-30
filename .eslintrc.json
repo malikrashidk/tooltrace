@@ -14,7 +14,16 @@
     ],
     "rules": {
         "@typescript-eslint/no-explicit-any": "off",
-        "react/react-in-jsx-scope": "off"
+        "react/react-in-jsx-scope": "off",
+        "@typescript-eslint/no-unused-vars": [
+            "error",
+            {
+                "argsIgnorePattern": "^(_|req|res|next$)",
+                "varsIgnorePattern": "^_",
+                "caughtErrorsIgnorePattern": "^(_|error|e$)",
+                "ignoreRestSiblings": true
+            }
+        ]
     },
     "settings": {
         "react": {

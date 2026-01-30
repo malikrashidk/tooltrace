@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { ArrowLeft, Wrench, CheckSquare, Trash2, Edit, Filter, Search, Tag, Lock, Sliders } from "lucide-react";
+import { ArrowLeft, Wrench, Trash2, Edit, Filter, Search, Tag, Sliders } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,7 +11,6 @@ import { useCurrency } from "@/context/CurrencyContext";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { getLogoUrl } from "@/lib/utils";
 import { fromCents } from "../../../shared/money";
 import { useToast } from "@/hooks/use-toast";
 import {

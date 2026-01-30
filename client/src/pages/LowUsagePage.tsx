@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Clock, AlertTriangle, TrendingDown, DollarSign, Lock } from "lucide-react";
+import { Clock, AlertTriangle, TrendingDown, DollarSign } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,14 +8,11 @@ import { useCurrency } from "@/context/CurrencyContext";
 import { type Tool } from "@/lib/analytics";
 import { fromCents } from "../../../shared/money";
 import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
-import { useLocation } from "wouter";
 import { FeaturePaywall } from "@/components/FeaturePaywall";
 
 export function LowUsagePage() {
   const { formatAmount } = useCurrency();
   const { user } = useAuth();
-  const [, setLocation] = useLocation();
   const isPaidPlan = user?.plan === "pro" || user?.plan === "enterprise";
 
   const { data: toolsData, isLoading } = useQuery<{ tools: Tool[] }>({
@@ -84,7 +81,7 @@ export function LowUsagePage() {
     <div className="space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
       <div>
         <h1 className="text-xl sm:text-2xl font-semibold">Low Usage Subscriptions</h1>
-        <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Identify tools you're paying for but rarely using</p>
+        <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Identify tools you&apos;re paying for but rarely using</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -137,7 +134,7 @@ export function LowUsagePage() {
               <AlertTriangle className="h-5 w-5 text-orange-500" />
               <CardTitle className="text-lg">Rarely Used Paid Tools</CardTitle>
             </div>
-            <CardDescription>These tools are marked as "rarely used" but you're still paying for them</CardDescription>
+            <CardDescription>These tools are marked as &quot;rarely used&quot; but you&apos;re still paying for them</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">

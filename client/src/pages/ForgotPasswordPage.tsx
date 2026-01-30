@@ -85,7 +85,7 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
             <div>
               <CardTitle className="text-2xl font-bold">Check Your Email</CardTitle>
               <CardDescription className="mt-2">
-                If an account exists with that email, we've sent password reset instructions.
+                If an account exists with that email, we&apos;ve sent password reset instructions.
               </CardDescription>
             </div>
           </CardHeader>
@@ -127,7 +127,7 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
           <div>
             <CardTitle className="text-2xl font-bold">Forgot Password?</CardTitle>
             <CardDescription className="mt-2">
-              Enter your email address and we'll send you a link to reset your password.
+              Enter your email address and we&apos;ll send you a link to reset your password.
             </CardDescription>
           </div>
         </CardHeader>
