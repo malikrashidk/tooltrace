@@ -4,6 +4,7 @@ import { extractTokenFromHeader, verifyToken } from "./auth";
 import { storage } from "./storage";
 import type { User } from "@shared/schema";
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 declare global {
   namespace Express {
     interface Request {
