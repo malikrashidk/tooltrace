@@ -271,7 +271,7 @@ router.patch("/smart-scan/:id/mark-added", authMiddleware, async (req, res) => {
       toolId: toolId
     });
     res.json({ site: updated });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to mark site as added" });
   }
 });
