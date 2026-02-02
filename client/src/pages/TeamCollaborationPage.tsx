@@ -1,5 +1,5 @@
 ﻿import { useState } from "react";
-import { Users, Lock, Plus, Mail, Shield, UserMinus, Crown, AlertTriangle } from "lucide-react";
+import { Users, Plus, Mail, Shield, UserMinus, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/context/AuthContext";
-import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -40,7 +39,6 @@ type TeamMember = {
 
 export function TeamCollaborationPage() {
   const { user } = useAuth();
-  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const isPremium = user?.plan === "enterprise";
 
@@ -48,7 +46,7 @@ export function TeamCollaborationPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<string>("member");
 
-  const { data: teamData, isLoading: teamLoading } = useQuery<{ members: TeamMember[] }>({
+  const { data: teamData } = useQuery<{ members: TeamMember[] }>({
     queryKey: ['/api/team/members'],
     enabled: isPremium,
   });
@@ -81,20 +79,6 @@ export function TeamCollaborationPage() {
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message || "Failed to remove team member", variant: "destructive" });
-    },
-  });
-
-  const updateRoleMutation = useMutation({
-    mutationFn: async ({ id, role }: { id: string; role: string }) => {
-      const response = await apiRequest("PATCH", `/api/team/members/${id}`, { role });
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/team/members'] });
-      toast({ title: "Success", description: "Role updated successfully" });
-    },
-    onError: (error: any) => {
-      toast({ title: "Error", description: error.message || "Failed to update role", variant: "destructive" });
     },
   });
 

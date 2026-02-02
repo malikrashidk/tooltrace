@@ -47,113 +47,6 @@ export function ToolsPage() {
 
   const tools = toolsData?.tools || [];
 
-  // Check for import param
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const importData = params.get("import");
-    if (importData) {
-      try {
-        const toolsToImport = JSON.parse(atob(importData));
-        if (Array.isArray(toolsToImport) && toolsToImport.length > 0) {
-          let addedCount = 0;
-          toolsToImport.forEach(t => {
-            if (!tools.some(existing => existing.name === t.name)) {
-              addToolMutation.mutate({
-                name: t.name,
-                websiteUrl: `https://${t.website}`,
-                categories: [t.category || "Other"],
-                isPaid: false
-              });
-              addedCount++;
-            }
-          });
-          if (addedCount > 0) {
-            toast({ title: "Import Successful", description: `Added ${addedCount} new tools from extension.` });
-          }
-          window.history.replaceState({}, "", "/tools");
-        }
-      } catch (e) {
-        console.error("Import failed", e);
-      }
-    }
-  }, [window.location.search, tools]);
-
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filters, setFilters] = useState<FilterState>({
-    categories: [],
-    usageFrequency: [],
-    isPaid: "all",
-    sortBy: "name",
-  });
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; tool: Tool | null }>({
-    open: false,
-    tool: null,
-  });
-  const [editDialog, setEditDialog] = useState<{ open: boolean; tool: Tool | null }>({ open: false, tool: null });
-
-  // Get unique categories from tools
-  const categories = useMemo(() => {
-    const cats = new Set<string>();
-    tools.forEach(tool => {
-      tool.categories?.forEach(cat => cats.add(cat));
-    });
-    return Array.from(cats);
-  }, [tools]);
-
-  const filteredTools = useMemo(() => {
-    let result = [...tools];
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (tool) =>
-          tool.name.toLowerCase().includes(query) ||
-          tool.notes?.toLowerCase().includes(query) ||
-          tool.categories?.some((c) => c.toLowerCase().includes(query)) ||
-          tool.tags?.some((t) => t.toLowerCase().includes(query))
-      );
-    }
-
-    if (filters.categories.length > 0) {
-      result = result.filter((tool) =>
-        tool.categories?.some((c) => filters.categories.includes(c))
-      );
-    }
-
-    if (filters.usageFrequency.length > 0) {
-      result = result.filter((tool) =>
-        tool.usageFrequency && filters.usageFrequency.includes(tool.usageFrequency)
-      );
-    }
-
-    if (filters.isPaid !== "all") {
-      result = result.filter((tool) =>
-        filters.isPaid === "paid" ? tool.isPaid : !tool.isPaid
-      );
-    }
-
-    result.sort((a, b) => {
-      switch (filters.sortBy) {
-        case "cost":
-          const amountA = typeof a.billingAmount === 'string' ? parseFloat(a.billingAmount) : (a.billingAmount || 0);
-          const amountB = typeof b.billingAmount === 'string' ? parseFloat(b.billingAmount) : (b.billingAmount || 0);
-          return amountB - amountA;
-        case "renewal":
-          if (!a.nextRenewalDate) return 1;
-          if (!b.nextRenewalDate) return -1;
-          return new Date(a.nextRenewalDate).getTime() - new Date(b.nextRenewalDate).getTime();
-        case "usage":
-          const usageOrder: Record<string, number> = { daily: 0, weekly: 1, rarely: 2 };
-          return (usageOrder[a.usageFrequency || "rarely"] || 2) - (usageOrder[b.usageFrequency || "rarely"] || 2);
-        default:
-          return a.name.localeCompare(b.name);
-      }
-    });
-
-    return result;
-  }, [tools, searchQuery, filters]);
-
   const addToolMutation = useMutation({
     mutationFn: async (newTool: Partial<Tool>) => {
       return await apiRequest("POST", "/api/tools", newTool);
@@ -216,6 +109,115 @@ export function ToolsPage() {
       });
     },
   });
+
+  // Check for import param
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const importData = params.get("import");
+    if (importData) {
+      try {
+        const toolsToImport = JSON.parse(atob(importData));
+        if (Array.isArray(toolsToImport) && toolsToImport.length > 0) {
+          let addedCount = 0;
+          toolsToImport.forEach(t => {
+            if (!tools.some(existing => existing.name === t.name)) {
+              addToolMutation.mutate({
+                name: t.name,
+                websiteUrl: `https://${t.website}`,
+                categories: [t.category || "Other"],
+                isPaid: false
+              });
+              addedCount++;
+            }
+          });
+          if (addedCount > 0) {
+            toast({ title: "Import Successful", description: `Added ${addedCount} new tools from extension.` });
+          }
+          window.history.replaceState({}, "", "/tools");
+        }
+      } catch (e) {
+        console.error("Import failed", e);
+      }
+    }
+  }, [window.location.search, tools, addToolMutation, toast]);
+
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState<FilterState>({
+    categories: [],
+    usageFrequency: [],
+    isPaid: "all",
+    sortBy: "name",
+  });
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; tool: Tool | null }>({
+    open: false,
+    tool: null,
+  });
+  const [editDialog, setEditDialog] = useState<{ open: boolean; tool: Tool | null }>({ open: false, tool: null });
+
+  // Get unique categories from tools
+  const categories = useMemo(() => {
+    const cats = new Set<string>();
+    tools.forEach(tool => {
+      tool.categories?.forEach(cat => cats.add(cat));
+    });
+    return Array.from(cats);
+  }, [tools]);
+
+  const filteredTools = useMemo(() => {
+    let result = [...tools];
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (tool) =>
+          tool.name.toLowerCase().includes(query) ||
+          tool.notes?.toLowerCase().includes(query) ||
+          tool.categories?.some((c) => c.toLowerCase().includes(query)) ||
+          tool.tags?.some((t) => t.toLowerCase().includes(query))
+      );
+    }
+
+    if (filters.categories.length > 0) {
+      result = result.filter((tool) =>
+        tool.categories?.some((c) => filters.categories.includes(c))
+      );
+    }
+
+    if (filters.usageFrequency.length > 0) {
+      result = result.filter((tool) =>
+        tool.usageFrequency && filters.usageFrequency.includes(tool.usageFrequency)
+      );
+    }
+
+    if (filters.isPaid !== "all") {
+      result = result.filter((tool) =>
+        filters.isPaid === "paid" ? tool.isPaid : !tool.isPaid
+      );
+    }
+
+    result.sort((a, b) => {
+      switch (filters.sortBy) {
+        case "cost": {
+          const amountA = typeof a.billingAmount === 'string' ? parseFloat(a.billingAmount) : (a.billingAmount || 0);
+          const amountB = typeof b.billingAmount === 'string' ? parseFloat(b.billingAmount) : (b.billingAmount || 0);
+          return amountB - amountA;
+        }
+        case "renewal":
+          if (!a.nextRenewalDate) return 1;
+          if (!b.nextRenewalDate) return -1;
+          return new Date(a.nextRenewalDate).getTime() - new Date(b.nextRenewalDate).getTime();
+        case "usage": {
+          const usageOrder: Record<string, number> = { daily: 0, weekly: 1, rarely: 2 };
+          return (usageOrder[a.usageFrequency || "rarely"] || 2) - (usageOrder[b.usageFrequency || "rarely"] || 2);
+        }
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
+
+    return result;
+  }, [tools, searchQuery, filters]);
 
   const handleAddTool = (newTool: Partial<Tool>) => {
     addToolMutation.mutate(newTool);

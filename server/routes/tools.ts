@@ -14,7 +14,6 @@ const router = Router();
 router.get("/tools", authMiddleware, async (req, res) => {
   try {
     const tools = await storage.getUserTools(req.userId!);
-    const user = await storage.getUser(req.userId!);
     const subscription = await storage.getUserSubscription(req.userId!);
 
     const limit = subscription?.toolsLimit ? parseInt(String(subscription.toolsLimit)) : 10;
@@ -247,7 +246,7 @@ router.get("/tools/:id/reveal", authMiddleware, async (req, res) => {
       credentials: revealedCredentials,
       secureNote: revealedNote
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to reveal secrets" });
   }
 });
@@ -265,7 +264,7 @@ router.delete("/tools/:id", authMiddleware, emailVerificationMiddleware, async (
     }
 
     res.json({ message: "Tool deleted" });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to delete tool" });
   }
 });
@@ -275,7 +274,7 @@ router.get("/notes", authMiddleware, async (req, res) => {
   try {
     const notes = await storage.getUserNotes(req.userId!);
     res.json({ notes });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to fetch notes" });
   }
 });
@@ -340,7 +339,7 @@ router.delete("/notes/:id", authMiddleware, emailVerificationMiddleware, async (
     await storage.deleteNote(req.params.id);
     await auditLog(req.userId!, "delete", "note", req.params.id, { title: note.title }, req);
     res.json({ success: true });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to delete note" });
   }
 });
@@ -365,7 +364,7 @@ const paidPlanMiddleware = async (req: any, res: any, next: any) => {
       return res.status(403).json({ error: "Receipt storage is only available for Pro and Enterprise plans" });
     }
     next();
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to verify subscription" });
   }
 };
@@ -386,7 +385,7 @@ router.get("/receipts", authMiddleware, paidPlanMiddleware, async (req, res) => 
         try {
           const signedUrl = await getR2DownloadUrl(r.fileUrl);
           return { ...r, fileUrl: signedUrl, originalKey: r.fileUrl };
-        } catch (e) {
+        } catch (_e) {
           // If R2 fails (e.g. not configured), return as is
           return r;
         }
@@ -489,7 +488,7 @@ router.delete("/receipts/:id", authMiddleware, paidPlanMiddleware, async (req, r
     await storage.deleteReceipt(req.params.id);
     await auditLog(req.userId!, "delete", "receipt", req.params.id, { fileName: receipt.fileName }, req);
     res.json({ success: true });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to delete receipt" });
   }
 });
@@ -507,7 +506,7 @@ router.post("/tools/match", authMiddleware, async (req, res) => {
       try {
         const toolHostname = new URL(t.websiteUrl.startsWith('http') ? t.websiteUrl : `https://${t.websiteUrl}`).hostname.replace('www.', '');
         return toolHostname === hostname;
-      } catch (e) {
+      } catch (_e) {
         return false;
       }
     });
