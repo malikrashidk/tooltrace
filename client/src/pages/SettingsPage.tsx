@@ -68,16 +68,18 @@ export function SettingsPage() {
     },
   });
 
+  const { reset } = profileForm;
+
   // Reset form when user data is available
   useEffect(() => {
     if (user) {
-      profileForm.reset({
+      reset({
         name: user.name || "",
         email: user.email || "",
         budgetThreshold: user.budgetThreshold ? parseFloat(user.budgetThreshold) : undefined,
       });
     }
-  }, [user, profileForm.reset]);
+  }, [user, reset]);
 
   const passwordForm = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),
