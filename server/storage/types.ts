@@ -19,7 +19,6 @@ import type {
     DetectedSite,
     InsertDetectedSite,
     DetectedSiteDaily,
-    InsertDetectedSiteDaily,
 } from "../../shared/schema";
 
 export interface IStorage {

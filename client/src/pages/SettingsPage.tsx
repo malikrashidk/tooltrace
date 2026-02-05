@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Save, Bell, Mail, User, Key, Shield, Download, Zap } from "lucide-react";
+import { Save, Bell, User, Key, Download, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,7 +77,7 @@ export function SettingsPage() {
         budgetThreshold: user.budgetThreshold ? parseFloat(user.budgetThreshold) : undefined,
       });
     }
-  }, [user, profileForm.reset]);
+  }, [user, profileForm]);
 
   const passwordForm = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),
@@ -101,7 +101,7 @@ export function SettingsPage() {
         title: "Profile updated",
         description: "Your profile and budget settings have been updated.",
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to update profile",

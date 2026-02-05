@@ -20,7 +20,6 @@ import type {
     DetectedSite,
     InsertDetectedSite,
     DetectedSiteDaily,
-    InsertDetectedSiteDaily,
 } from "../../shared/schema";
 import { IStorage } from "./types";
 
@@ -84,6 +83,7 @@ export class MemStorage implements IStorage {
             budgetThreshold: null,
             lastLoginAt: new Date(),
             emailVerifiedAt: new Date(),
+            onboardingStatus: {},
             polarCustomerId: null,
             polarSubscriptionId: null
         } as User;
@@ -105,6 +105,7 @@ export class MemStorage implements IStorage {
             language: (user as any).language || "en",
             budgetThreshold: null,
             lastLoginAt: new Date(),
+            onboardingStatus: {},
             polarCustomerId: null,
             polarSubscriptionId: null
         } as any;
@@ -383,6 +384,7 @@ export class MemStorage implements IStorage {
             budgetThreshold: null,
             lastLoginAt: new Date(),
             emailVerifiedAt: null,
+            onboardingStatus: {},
             polarCustomerId: null,
             polarSubscriptionId: null,
             twoFactorEnabled: false,
