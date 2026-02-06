@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { AlertCircle, RefreshCcw } from "lucide-react";
 
-export function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
+export function ErrorFallback({ error, resetErrorBoundary }: { error: any; resetErrorBoundary: () => void }) {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-background p-6 text-center">
             <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mb-6">
