@@ -20,7 +20,6 @@ import type {
     DetectedSite,
     InsertDetectedSite,
     DetectedSiteDaily,
-    InsertDetectedSiteDaily,
 } from "../../shared/schema";
 import { IStorage } from "./types";
 
@@ -394,6 +393,7 @@ export class MemStorage implements IStorage {
             oauthProvider: null,
             resetToken: null,
             resetTokenExpiry: null,
+            onboardingStatus: {},
         };
         this.users.set(userId, fullUser);
 

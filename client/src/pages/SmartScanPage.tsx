@@ -67,17 +67,6 @@ export default function SmartScanPage() {
     const userPlan = (user as any)?.plan || 'free';
     const hasAccess = userPlan === 'pro' || userPlan === 'enterprise';
 
-    // Paywall for free users
-    if (!hasAccess) {
-        return (
-            <FeaturePaywall
-                title="Smart Tracker"
-                description="Automatically discover subscriptions from your browsing activity. Track browsing activity across your web usage and get suggestions to add tools to your dashboard."
-                requiredPlan="pro"
-                icon={<Sparkles className="h-8 w-8 text-primary animate-pulse" />}
-            />
-        );
-    }
     const [addToolOpen, setAddToolOpen] = useState(false);
     const [selectedSite, setSelectedSite] = useState<DetectedSite | null>(null);
 
@@ -86,7 +75,8 @@ export default function SmartScanPage() {
         queryFn: async () => {
             const res = await apiRequest("GET", "/api/activity/smart-scan");
             return await res.json();
-        }
+        },
+        enabled: hasAccess,
     });
 
     const updateStatusMutation = useMutation({
@@ -106,11 +96,6 @@ export default function SmartScanPage() {
             queryClient.invalidateQueries({ queryKey: ["/api/activity/smart-scan"] });
         }
     });
-
-    const handleAddClick = (site: DetectedSite) => {
-        setSelectedSite(site);
-        setAddToolOpen(true);
-    };
 
     const addToolMutation = useMutation({
         mutationFn: async (newTool: any) => {
@@ -135,9 +120,26 @@ export default function SmartScanPage() {
         }
     });
 
+    const handleAddClick = (site: DetectedSite) => {
+        setSelectedSite(site);
+        setAddToolOpen(true);
+    };
+
     const handleSaveTool = (tool: any) => {
         addToolMutation.mutate(tool);
     };
+
+    // Paywall for free users
+    if (!hasAccess) {
+        return (
+            <FeaturePaywall
+                title="Smart Tracker"
+                description="Automatically discover subscriptions from your browsing activity. Track browsing activity across your web usage and get suggestions to add tools to your dashboard."
+                requiredPlan="pro"
+                icon={<Sparkles className="h-8 w-8 text-primary animate-pulse" />}
+            />
+        );
+    }
 
     // Filter logic
     const sites = data?.sites || [];

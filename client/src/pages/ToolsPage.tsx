@@ -135,17 +135,20 @@ export function ToolsPage() {
 
     result.sort((a, b) => {
       switch (filters.sortBy) {
-        case "cost":
+        case "cost": {
           const amountA = typeof a.billingAmount === 'string' ? parseFloat(a.billingAmount) : (a.billingAmount || 0);
           const amountB = typeof b.billingAmount === 'string' ? parseFloat(b.billingAmount) : (b.billingAmount || 0);
           return amountB - amountA;
-        case "renewal":
+        }
+        case "renewal": {
           if (!a.nextRenewalDate) return 1;
           if (!b.nextRenewalDate) return -1;
           return new Date(a.nextRenewalDate).getTime() - new Date(b.nextRenewalDate).getTime();
-        case "usage":
+        }
+        case "usage": {
           const usageOrder: Record<string, number> = { daily: 0, weekly: 1, rarely: 2 };
           return (usageOrder[a.usageFrequency || "rarely"] || 2) - (usageOrder[b.usageFrequency || "rarely"] || 2);
+        }
         default:
           return a.name.localeCompare(b.name);
       }

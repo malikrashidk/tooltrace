@@ -14,7 +14,6 @@ const router = Router();
 router.get("/tools", authMiddleware, async (req, res) => {
   try {
     const tools = await storage.getUserTools(req.userId!);
-    const user = await storage.getUser(req.userId!);
     const subscription = await storage.getUserSubscription(req.userId!);
 
     const limit = subscription?.toolsLimit ? parseInt(String(subscription.toolsLimit)) : 10;
@@ -50,8 +49,8 @@ router.get("/tools", authMiddleware, async (req, res) => {
     }));
 
     res.json({ tools: enrichedTools, count: enrichedTools.length, limit });
-  } catch (error) {
-    console.error("[GET /api/tools] Error:", error);
+  } catch (_error) {
+    console.error("[GET /api/tools] Error:", _error);
     res.status(500).json({ error: "Failed to fetch tools" });
   }
 });
@@ -129,8 +128,8 @@ router.post("/tools", authMiddleware, emailVerificationMiddleware, async (req, r
     const toolResponse = { ...tool, credentials: null, secureNote: !!tool.secureNote };
 
     res.status(201).json({ tool: toolResponse });
-  } catch (error) {
-    console.error("[POST /api/tools] Error:", error);
+  } catch (_error) {
+    console.error("[POST /api/tools] Error:", _error);
     res.status(500).json({ error: "Failed to create tool" });
   }
 });
@@ -209,8 +208,8 @@ router.patch("/tools/:id", authMiddleware, emailVerificationMiddleware, async (r
     await auditLog(req.userId, "update", "tool", req.params.id, req.body, req);
 
     res.json({ tool: toolResponse });
-  } catch (error) {
-    console.error("Update tool error:", error);
+  } catch (_error) {
+    console.error("Update tool error:", _error);
     res.status(500).json({ error: "Failed to update tool" });
   }
 });
@@ -229,8 +228,8 @@ router.get("/tools/:id/reveal", authMiddleware, async (req, res) => {
       try {
         const decrypted = decrypt(tool.credentials as any);
         revealedCredentials = JSON.parse(decrypted);
-      } catch (e) {
-        console.error("Failed to decrypt credentials", e);
+      } catch (_e) {
+        console.error("Failed to decrypt credentials", _e);
       }
     }
 
@@ -238,8 +237,8 @@ router.get("/tools/:id/reveal", authMiddleware, async (req, res) => {
       try {
         const noteData = JSON.parse(tool.secureNote);
         revealedNote = decrypt(noteData);
-      } catch (e) {
-        console.error("Failed to decrypt note", e);
+      } catch (_e) {
+        console.error("Failed to decrypt note", _e);
       }
     }
 
@@ -247,7 +246,7 @@ router.get("/tools/:id/reveal", authMiddleware, async (req, res) => {
       credentials: revealedCredentials,
       secureNote: revealedNote
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to reveal secrets" });
   }
 });
@@ -265,7 +264,7 @@ router.delete("/tools/:id", authMiddleware, emailVerificationMiddleware, async (
     }
 
     res.json({ message: "Tool deleted" });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to delete tool" });
   }
 });
@@ -275,7 +274,7 @@ router.get("/notes", authMiddleware, async (req, res) => {
   try {
     const notes = await storage.getUserNotes(req.userId!);
     res.json({ notes });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to fetch notes" });
   }
 });
@@ -340,7 +339,7 @@ router.delete("/notes/:id", authMiddleware, emailVerificationMiddleware, async (
     await storage.deleteNote(req.params.id);
     await auditLog(req.userId!, "delete", "note", req.params.id, { title: note.title }, req);
     res.json({ success: true });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: "Failed to delete note" });
   }
 });
